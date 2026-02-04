@@ -3,7 +3,7 @@
  *
  * Tests route matching, state filtering, redirects, and specificity ordering.
  */
-import { describe, it, expect } from 'bun:test';
+import { describe, it, expect } from 'vitest';
 import { RouteMatcher } from '../RouteMatcher';
 import type { Route, StateRoutes, RouteMatch } from '../types';
 
@@ -608,41 +608,41 @@ describe('RouteMatcher', () => {
 		it('should expand path when route starts with param segment', () => {
 			const routes: StateRoutes<'auth'> = {
 				auth: {
-					routes: [createRoute('/[projectAlias]/incidents'), createRoute('/[projectAlias]/monitors')],
+					routes: [createRoute('/[orgId]/dashboard'), createRoute('/[orgId]/items')],
 					default: null
 				}
 			};
 
 			const matcher = new RouteMatcher(routes);
-			const expanded = matcher.tryExpandPath('/incidents', 'auth', { projectAlias: 'ip' });
+			const expanded = matcher.tryExpandPath('/dashboard', 'auth', { orgId: 'acme' });
 
-			expect(expanded).toBe('/ip/incidents');
+			expect(expanded).toBe('/acme/dashboard');
 		});
 
 		it('should expand path with lowercase param value', () => {
 			const routes: StateRoutes<'auth'> = {
 				auth: {
-					routes: [createRoute('/[projectAlias]/incidents')],
+					routes: [createRoute('/[orgId]/dashboard')],
 					default: null
 				}
 			};
 
 			const matcher = new RouteMatcher(routes);
-			const expanded = matcher.tryExpandPath('/incidents', 'auth', { projectAlias: 'IP' });
+			const expanded = matcher.tryExpandPath('/dashboard', 'auth', { orgId: 'ACME' });
 
-			expect(expanded).toBe('/ip/incidents');
+			expect(expanded).toBe('/acme/dashboard');
 		});
 
 		it('should return null when no matching route exists', () => {
 			const routes: StateRoutes<'auth'> = {
 				auth: {
-					routes: [createRoute('/[projectAlias]/incidents')],
+					routes: [createRoute('/[orgId]/dashboard')],
 					default: null
 				}
 			};
 
 			const matcher = new RouteMatcher(routes);
-			const expanded = matcher.tryExpandPath('/unknown', 'auth', { projectAlias: 'ip' });
+			const expanded = matcher.tryExpandPath('/unknown', 'auth', { orgId: 'acme' });
 
 			expect(expanded).toBeNull();
 		});
@@ -650,13 +650,13 @@ describe('RouteMatcher', () => {
 		it('should return null when stateData is undefined', () => {
 			const routes: StateRoutes<'auth'> = {
 				auth: {
-					routes: [createRoute('/[projectAlias]/incidents')],
+					routes: [createRoute('/[orgId]/dashboard')],
 					default: null
 				}
 			};
 
 			const matcher = new RouteMatcher(routes);
-			const expanded = matcher.tryExpandPath('/incidents', 'auth', undefined);
+			const expanded = matcher.tryExpandPath('/dashboard', 'auth', undefined);
 
 			expect(expanded).toBeNull();
 		});
@@ -664,42 +664,42 @@ describe('RouteMatcher', () => {
 		it('should return null when param value is missing from stateData', () => {
 			const routes: StateRoutes<'auth'> = {
 				auth: {
-					routes: [createRoute('/[projectAlias]/incidents')],
+					routes: [createRoute('/[orgId]/dashboard')],
 					default: null
 				}
 			};
 
 			const matcher = new RouteMatcher(routes);
-			const expanded = matcher.tryExpandPath('/incidents', 'auth', { otherParam: 'value' });
+			const expanded = matcher.tryExpandPath('/dashboard', 'auth', { otherParam: 'value' });
 
 			expect(expanded).toBeNull();
 		});
 
-		it('should expand root path to project root', () => {
+		it('should expand root path to org root', () => {
 			const routes: StateRoutes<'auth'> = {
 				auth: {
-					routes: [createRoute('/[projectAlias]')],
+					routes: [createRoute('/[orgId]')],
 					default: null
 				}
 			};
 
 			const matcher = new RouteMatcher(routes);
-			const expanded = matcher.tryExpandPath('/', 'auth', { projectAlias: 'ip' });
+			const expanded = matcher.tryExpandPath('/', 'auth', { orgId: 'acme' });
 
-			expect(expanded).toBe('/ip');
+			expect(expanded).toBe('/acme');
 		});
 
 		it('should not expand paths that do not need expansion', () => {
 			const routes: StateRoutes<'auth'> = {
 				auth: {
-					routes: [createRoute('/settings'), createRoute('/[projectAlias]/incidents')],
+					routes: [createRoute('/settings'), createRoute('/[orgId]/dashboard')],
 					default: null
 				}
 			};
 
 			const matcher = new RouteMatcher(routes);
 			// /settings is a static route, not starting with a param
-			const expanded = matcher.tryExpandPath('/settings', 'auth', { projectAlias: 'ip' });
+			const expanded = matcher.tryExpandPath('/settings', 'auth', { orgId: 'acme' });
 
 			// Should return null because /settings doesn't match the pattern /[param]/rest
 			expect(expanded).toBeNull();
@@ -708,15 +708,15 @@ describe('RouteMatcher', () => {
 		it('should work with nested param routes', () => {
 			const routes: StateRoutes<'auth'> = {
 				auth: {
-					routes: [createRoute('/[projectAlias]/on-call/rosters')],
+					routes: [createRoute('/[orgId]/settings/team')],
 					default: null
 				}
 			};
 
 			const matcher = new RouteMatcher(routes);
-			const expanded = matcher.tryExpandPath('/on-call/rosters', 'auth', { projectAlias: 'ip' });
+			const expanded = matcher.tryExpandPath('/settings/team', 'auth', { orgId: 'acme' });
 
-			expect(expanded).toBe('/ip/on-call/rosters');
+			expect(expanded).toBe('/acme/settings/team');
 		});
 	});
 

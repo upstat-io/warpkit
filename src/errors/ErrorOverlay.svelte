@@ -40,8 +40,9 @@
 	}
 
 	// Focus the dismiss button when dialog appears (WCAG 2.4.3)
+	// Track showErrorUI to only focus when dialog becomes visible, not on every dialogElement change
 	$effect(() => {
-		if (dialogElement) {
+		if (showErrorUI && dialogElement) {
 			dialogElement.querySelector<HTMLButtonElement>('button')?.focus();
 		}
 	});

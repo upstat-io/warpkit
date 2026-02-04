@@ -4,7 +4,7 @@
  * Tests the Firebase error code to user-friendly message mapping.
  */
 
-import { describe, it, expect } from 'bun:test';
+import { describe, it, expect } from 'vitest';
 import { getErrorMessage, mapFirebaseError, isFirebaseAuthError, FirebaseAuthError } from '../error-mapping';
 
 describe('getErrorMessage', () => {

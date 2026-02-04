@@ -3,7 +3,7 @@
  *
  * Tests state transitions, stateId tracking, and listener notifications.
  */
-import { describe, it, expect, mock } from 'bun:test';
+import { describe, it, expect, vi } from 'vitest';
 import { StateMachine } from '../StateMachine';
 
 type TestState = 'initializing' | 'unauthenticated' | 'authenticated';
@@ -98,7 +98,7 @@ describe('StateMachine', () => {
 	describe('subscribe', () => {
 		it('should notify listener on state change', () => {
 			const machine = new StateMachine<TestState>('initializing');
-			const listener = mock(() => {});
+			const listener = vi.fn(() => {});
 
 			machine.subscribe(listener);
 			machine.setState('authenticated');
@@ -114,8 +114,8 @@ describe('StateMachine', () => {
 
 		it('should notify multiple listeners', () => {
 			const machine = new StateMachine<TestState>('initializing');
-			const listener1 = mock(() => {});
-			const listener2 = mock(() => {});
+			const listener1 = vi.fn(() => {});
+			const listener2 = vi.fn(() => {});
 
 			machine.subscribe(listener1);
 			machine.subscribe(listener2);
@@ -127,7 +127,7 @@ describe('StateMachine', () => {
 
 		it('should notify listener for every transition', () => {
 			const machine = new StateMachine<TestState>('initializing');
-			const listener = mock(() => {});
+			const listener = vi.fn(() => {});
 
 			machine.subscribe(listener);
 			machine.setState('unauthenticated');
@@ -139,7 +139,7 @@ describe('StateMachine', () => {
 
 		it('should notify listener for same-state transitions', () => {
 			const machine = new StateMachine<TestState>('authenticated');
-			const listener = mock(() => {});
+			const listener = vi.fn(() => {});
 
 			machine.subscribe(listener);
 			machine.setState('authenticated');
@@ -155,7 +155,7 @@ describe('StateMachine', () => {
 
 		it('should return unsubscribe function', () => {
 			const machine = new StateMachine<TestState>('initializing');
-			const listener = mock(() => {});
+			const listener = vi.fn(() => {});
 
 			const unsubscribe = machine.subscribe(listener);
 			machine.setState('authenticated');
@@ -168,7 +168,7 @@ describe('StateMachine', () => {
 
 		it('should handle unsubscribe called multiple times', () => {
 			const machine = new StateMachine<TestState>('initializing');
-			const listener = mock(() => {});
+			const listener = vi.fn(() => {});
 
 			const unsubscribe = machine.subscribe(listener);
 			unsubscribe();
@@ -181,8 +181,8 @@ describe('StateMachine', () => {
 
 		it('should continue notifying other listeners after one unsubscribes', () => {
 			const machine = new StateMachine<TestState>('initializing');
-			const listener1 = mock(() => {});
-			const listener2 = mock(() => {});
+			const listener1 = vi.fn(() => {});
+			const listener2 = vi.fn(() => {});
 
 			const unsubscribe1 = machine.subscribe(listener1);
 			machine.subscribe(listener2);

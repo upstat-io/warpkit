@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'bun:test';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Component } from 'svelte';
 import { Navigator, type NavigatorDeps } from '../Navigator.js';
 import { NavigationErrorCode } from '../types.js';
@@ -116,7 +116,7 @@ describe('Navigator', () => {
 
 		mockGetResolvedDefault = vi.fn().mockReturnValue(null);
 
-		const deps: NavigatorDeps = {
+		const deps = {
 			matcher: mockMatcher,
 			stateMachine: mockStateMachine,
 			pageState: mockPageState,
@@ -129,7 +129,7 @@ describe('Navigator', () => {
 			fireNavigationComplete: mockFireNavigationComplete,
 			// Default resolver - used for state mismatch handling
 			getResolvedDefault: mockGetResolvedDefault
-		};
+		} as NavigatorDeps;
 
 		navigator = new Navigator(deps);
 	});

@@ -3,7 +3,7 @@
 	 * Test wrapper for ErrorOverlay browser tests
 	 */
 	import ErrorOverlay from '../src/errors/ErrorOverlay.svelte';
-	import { errorStore } from '../src/errors/error-store';
+	import { errorStore } from '../src/errors/error-store.svelte';
 
 	// Expose store methods for testing via buttons
 	function triggerError() {
@@ -30,12 +30,12 @@
 		errorStore.hideErrorUI();
 	}
 
-	// Expose store state for assertions
+	// State tracking from error store
 	let storeState = $state({ currentError: null as null | { message: string }, showErrorUI: false });
 
 	$effect(() => {
 		const unsubscribe = errorStore.subscribe((state) => {
-			storeState = state;
+			storeState = { currentError: state.currentError, showErrorUI: state.showErrorUI };
 		});
 		return unsubscribe;
 	});

@@ -3,7 +3,7 @@
  *
  * Tests createRoute and createStateRoutes factory functions.
  */
-import { describe, it, expect, mock, beforeEach, afterEach, spyOn } from 'bun:test';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createRoute, createStateRoutes } from '../route';
 
 describe('createRoute', () => {
@@ -221,10 +221,10 @@ describe('createRoute', () => {
 });
 
 describe('createStateRoutes', () => {
-	let consoleWarnSpy: ReturnType<typeof spyOn<Console, 'warn'>>;
+	let consoleWarnSpy: ReturnType<typeof vi.spyOn>;
 
 	beforeEach(() => {
-		consoleWarnSpy = spyOn(console, 'warn').mockImplementation(() => {});
+		consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 	});
 
 	afterEach(() => {

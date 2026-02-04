@@ -51,6 +51,8 @@ export interface ErrorStoreState {
 	errorHistory: NormalizedError[];
 	/** Whether error UI should be shown */
 	showErrorUI: boolean;
+	/** Whether there's a fatal error */
+	hasFatalError: boolean;
 }
 
 /**

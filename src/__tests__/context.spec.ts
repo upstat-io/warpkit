@@ -3,7 +3,7 @@
  *
  * Tests for the context symbol and context types.
  */
-import { describe, it, expect } from 'bun:test';
+import { describe, it, expect } from 'vitest';
 import { WARPKIT_CONTEXT } from '../context';
 import type { WarpKitContext, WarpKit } from '../context';
 import type { SvelteURLSearchParams } from '../core/SvelteURLSearchParams.svelte';
@@ -96,6 +96,8 @@ describe('WarpKit v2 Context', () => {
 				page: {} as never,
 				events: {} as never,
 				ready: true,
+				loadedComponent: null,
+				loadedLayout: null,
 				navigate: async () => ({ success: true }),
 				setState: async () => {},
 				buildUrl: (path) => path,
@@ -103,7 +105,8 @@ describe('WarpKit v2 Context', () => {
 				getState: () => 'test',
 				getStateId: () => 0,
 				start: async () => {},
-				destroy: () => {}
+				destroy: () => {},
+				retry: async () => ({ success: true })
 			};
 
 			expect(typeof mockWarpKit.navigate).toBe('function');

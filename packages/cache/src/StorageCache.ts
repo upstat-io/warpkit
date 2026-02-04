@@ -80,8 +80,10 @@ export class StorageCache {
 		try {
 			this.storage.setItem(fullKey, JSON.stringify(entry));
 		} catch {
-			// Quota exceeded or other error - fail silently
-			console.warn(`[WarpKit Cache] Failed to store ${key} (quota exceeded?)`);
+			// Quota exceeded or other error - fail silently in production
+			if (import.meta.env?.DEV) {
+				console.warn(`[WarpKit Cache] Failed to store ${key} (quota exceeded?)`);
+			}
 		}
 	}
 

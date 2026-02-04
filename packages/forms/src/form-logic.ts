@@ -148,12 +148,22 @@ export function mergeInitialValues<T extends object>(
 }
 
 /**
+ * Debouncer interface for error display delay.
+ */
+export interface ErrorDebouncer {
+	set(field: string, message: string, setError: (field: string, message: string) => void): void;
+	clear(field: string): void;
+	clearAll(): void;
+	hasPending(field: string): boolean;
+}
+
+/**
  * Create a debounced error setter.
  *
  * @param delayMs - Delay in milliseconds (0 = no delay)
  * @returns Object with set and clear functions
  */
-export function createErrorDebouncer(delayMs: number) {
+export function createErrorDebouncer(delayMs: number): ErrorDebouncer {
 	const timers = new Map<string, ReturnType<typeof setTimeout>>();
 
 	return {

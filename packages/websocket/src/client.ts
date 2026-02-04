@@ -65,6 +65,15 @@ const DEFAULT_BACKOFF_MIN_MS = 500;
 /** Default maximum backoff delay in milliseconds */
 const DEFAULT_BACKOFF_MAX_MS = 20000;
 
+/** Default connection timeout in milliseconds */
+const DEFAULT_CONNECTION_TIMEOUT_MS = 5000;
+
+/** Default heartbeat interval in milliseconds */
+const DEFAULT_HEARTBEAT_INTERVAL_MS = 25000;
+
+/** Default heartbeat timeout (waiting for pong) in milliseconds */
+const DEFAULT_HEARTBEAT_TIMEOUT_MS = 5000;
+
 /**
  * Full jitter backoff calculator.
  * Provides the best performance for distributed systems by completely
@@ -168,11 +177,11 @@ export class SocketClient {
 		this.options = {
 			reconnect: options.reconnect ?? true,
 			maxReconnectAttempts: options.maxReconnectAttempts ?? Infinity,
-			reconnectDelay: options.reconnectDelay ?? 500,
-			maxReconnectDelay: options.maxReconnectDelay ?? 20000,
-			connectionTimeout: options.connectionTimeout ?? 5000,
-			heartbeatInterval: options.heartbeatInterval ?? 25000,
-			heartbeatTimeout: options.heartbeatTimeout ?? 5000
+			reconnectDelay: options.reconnectDelay ?? DEFAULT_BACKOFF_MIN_MS,
+			maxReconnectDelay: options.maxReconnectDelay ?? DEFAULT_BACKOFF_MAX_MS,
+			connectionTimeout: options.connectionTimeout ?? DEFAULT_CONNECTION_TIMEOUT_MS,
+			heartbeatInterval: options.heartbeatInterval ?? DEFAULT_HEARTBEAT_INTERVAL_MS,
+			heartbeatTimeout: options.heartbeatTimeout ?? DEFAULT_HEARTBEAT_TIMEOUT_MS
 		};
 
 		this.backoff = new Backoff({

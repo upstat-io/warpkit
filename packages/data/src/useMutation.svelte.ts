@@ -49,7 +49,7 @@ export function useMutation<TData, TError = Error, TVariables = void>(
 	// State
 	let data = $state<TData | undefined>(undefined);
 	let error = $state<TError | null>(null);
-	let isPending = $state(false);
+	let isPending = $state<boolean>(false);
 	let status = $state<'idle' | 'pending' | 'success' | 'error'>('idle');
 
 	// Derived state

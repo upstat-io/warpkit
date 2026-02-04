@@ -17,7 +17,7 @@ export const ValidatedType = ValidatedTypeFactory;
 export type ValidatedType<T> = ValidatedTypeType<T>;
 
 // Validation utilities
-export { validate, isValidatedType } from './validate';
+export { validate, validateAsync, isValidatedType } from './validate';
 
 // Errors
 export { ValidationError } from './errors';

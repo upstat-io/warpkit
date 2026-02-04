@@ -1,7 +1,7 @@
 /**
  * MemoryBrowserProvider Unit Tests
  */
-import { describe, it, expect, mock, beforeEach } from 'bun:test';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryBrowserProvider } from '../MemoryBrowserProvider';
 
 describe('MemoryBrowserProvider', () => {
@@ -175,7 +175,7 @@ describe('MemoryBrowserProvider', () => {
 		});
 
 		it('should fire popstate listeners', () => {
-			const listener = mock(() => {});
+			const listener = vi.fn(() => {});
 			provider.onPopState(listener);
 
 			provider.go(-1);
@@ -184,7 +184,7 @@ describe('MemoryBrowserProvider', () => {
 		});
 
 		it('should provide direction to listener', () => {
-			const listener = mock(() => {});
+			const listener = vi.fn(() => {});
 			provider.onPopState(listener);
 
 			provider.go(-1);
@@ -197,7 +197,7 @@ describe('MemoryBrowserProvider', () => {
 
 	describe('onPopState', () => {
 		it('should register listener', () => {
-			const listener = mock(() => {});
+			const listener = vi.fn(() => {});
 			provider.onPopState(listener);
 			provider.push('/page1', { __warpkit: true, id: 1, position: 1, appState: 'auth' });
 			provider.go(-1);
@@ -206,7 +206,7 @@ describe('MemoryBrowserProvider', () => {
 		});
 
 		it('should return cleanup function', () => {
-			const listener = mock(() => {});
+			const listener = vi.fn(() => {});
 			const cleanup = provider.onPopState(listener);
 
 			cleanup();
@@ -218,8 +218,8 @@ describe('MemoryBrowserProvider', () => {
 		});
 
 		it('should notify multiple listeners', () => {
-			const listener1 = mock(() => {});
-			const listener2 = mock(() => {});
+			const listener1 = vi.fn(() => {});
+			const listener2 = vi.fn(() => {});
 			provider.onPopState(listener1);
 			provider.onPopState(listener2);
 
@@ -242,7 +242,7 @@ describe('MemoryBrowserProvider', () => {
 		});
 
 		it('simulatePopState should fire listeners', () => {
-			const listener = mock(() => {});
+			const listener = vi.fn(() => {});
 			provider.onPopState(listener);
 
 			provider.simulatePopState('back');

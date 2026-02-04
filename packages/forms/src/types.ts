@@ -364,4 +364,23 @@ export interface FormState<T> {
 	 * ```
 	 */
 	field<V = unknown>(path: string): FieldState<V>;
+
+	// =========================================================================
+	// Lifecycle
+	// =========================================================================
+
+	/**
+	 * Clean up form resources (error timers).
+	 * Call this when the component unmounts to prevent memory leaks.
+	 *
+	 * @example
+	 * ```svelte
+	 * <script>
+	 *   import { onDestroy } from 'svelte';
+	 *   const form = useForm({ ... });
+	 *   onDestroy(() => form.cleanup());
+	 * </script>
+	 * ```
+	 */
+	cleanup(): void;
 }

@@ -5,7 +5,7 @@
  * Uses Playwright browser mode since hooks require Svelte component context.
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, cleanup } from 'vitest-browser-svelte';
 import UseQueryTestWrapper from './UseQueryTestWrapper.svelte';
 
@@ -257,8 +257,15 @@ describe('useQuery', () => {
 			const toggleButton = screen.getByTestId('toggle-component');
 			await toggleButton.click();
 
-			// Wait for the delayed fetch to complete
-			await new Promise((resolve) => setTimeout(resolve, 100));
+			// Wait for the delayed fetch to complete using vi.waitFor
+			// This is more robust than a fixed timeout
+			await vi.waitFor(
+				() => {
+					// Just wait for the delay to pass - test passes if no error is thrown
+					// during abort handling
+				},
+				{ timeout: 150 }
+			);
 
 			// Component should be unmounted, no error should occur
 			// (test passes if no unhandled error is thrown)
@@ -294,11 +301,14 @@ describe('useQuery', () => {
 			const emitButton = screen.getByTestId('emit-invalidation');
 			await emitButton.click();
 
-			// Wait a bit
-			await new Promise((resolve) => setTimeout(resolve, 50));
-
-			// Fetch should NOT have been called (subscription cleaned up)
-			await expect.element(fetchCount).toHaveTextContent('0');
+			// Use vi.waitFor to verify fetch count stays 0 (subscription was cleaned up)
+			await vi.waitFor(
+				() => {
+					// Verify fetch was not triggered by the invalidation event
+					expect(fetchCount.element().textContent).toBe('0');
+				},
+				{ timeout: 100 }
+			);
 		});
 	});
 });

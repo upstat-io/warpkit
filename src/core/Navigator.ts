@@ -246,18 +246,24 @@ export class Navigator {
 				}
 
 				// No default path - fall back to error
+				// Properties exist because we're in stateMismatch branch
 				return this.stateMismatchError(
 					parsed.pathname,
-					(match as { availableInState: string }).availableInState,
-					(match as { requestedState: string }).requestedState,
+					match.availableInState,
+					match.requestedState,
 					request.path
 				);
 			}
 
 			// At this point, match must be a successful route match
-			// TypeScript can't narrow this, so we assert
-			const matchedRoute = (match as { route: Route }).route;
-			const matchedParams = (match as { params: Record<string, string> }).params;
+			// Use type guard to narrow the union
+			if (!('route' in match) || !match.route) {
+				// This should never happen given the logic above, but satisfies TypeScript
+				return this.notFoundError(parsed.pathname, request.path);
+			}
+
+			const matchedRoute = match.route;
+			const matchedParams = match.params;
 
 			// Build navigation context
 			const context: NavigationContext = {

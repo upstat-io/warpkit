@@ -10,6 +10,37 @@ import type { ValidationMode } from './types';
 import { pathToString } from './paths';
 
 /**
+ * Normalize a StandardSchema issue path to a simple (string | number)[] array.
+ *
+ * StandardSchema allows paths to contain either:
+ * - Simple PropertyKey values (string | number | symbol)
+ * - Objects with a `key` property: `{ readonly key: PropertyKey }`
+ *
+ * This function normalizes both formats to a simple array for use with pathToString.
+ *
+ * @param path - StandardSchema issue path (or undefined)
+ * @returns Normalized path as (string | number)[] or undefined
+ */
+function normalizePathArray(
+	path: ReadonlyArray<PropertyKey | { readonly key: PropertyKey }> | undefined
+): (string | number)[] | undefined {
+	if (!path || path.length === 0) {
+		return undefined;
+	}
+
+	return path.map((segment) => {
+		// Handle object-wrapped path segments (used by some validators)
+		if (typeof segment === 'object' && segment !== null && 'key' in segment) {
+			const key = segment.key;
+			// Convert symbol to string, keep string/number as-is
+			return typeof key === 'symbol' ? String(key) : (key as string | number);
+		}
+		// Handle simple PropertyKey (string | number | symbol)
+		return typeof segment === 'symbol' ? String(segment) : (segment as string | number);
+	});
+}
+
+/**
  * Result of a validation operation.
  */
 export interface ValidationResult {
@@ -56,7 +87,7 @@ export function validateSchema<T>(schema: StandardSchema<T> | undefined, values:
 	const errors: Record<string, string> = {};
 
 	for (const issue of result.issues) {
-		const path = pathToString(issue.path as (string | number)[] | undefined);
+		const path = pathToString(normalizePathArray(issue.path));
 		const key = path || '_root';
 		// Only keep first error for each path
 		if (!(key in errors)) {
@@ -101,7 +132,7 @@ export async function validateSchemaAsync<T>(
 	const errors: Record<string, string> = {};
 
 	for (const issue of result.issues) {
-		const path = pathToString(issue.path as (string | number)[] | undefined);
+		const path = pathToString(normalizePathArray(issue.path));
 		const key = path || '_root';
 		// Only keep first error for each path
 		if (!(key in errors)) {

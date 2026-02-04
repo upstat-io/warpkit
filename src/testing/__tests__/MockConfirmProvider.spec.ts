@@ -1,7 +1,7 @@
 /**
  * MockConfirmProvider Unit Tests
  */
-import { describe, it, expect, beforeEach } from 'bun:test';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { MockConfirmProvider } from '../MockConfirmProvider';
 
 describe('MockConfirmProvider', () => {

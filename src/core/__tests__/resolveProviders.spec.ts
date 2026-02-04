@@ -1,7 +1,7 @@
 /**
  * resolveProviders Unit Tests
  */
-import { describe, it, expect, mock } from 'bun:test';
+import { describe, it, expect, vi } from 'vitest';
 import {
 	resolveProviders,
 	CircularDependencyError,
@@ -88,7 +88,7 @@ describe('resolveProviders', () => {
 
 	describe('initialization', () => {
 		it('should call initialize on providers', async () => {
-			const initFn = mock(() => {});
+			const initFn = vi.fn(() => {});
 			const provider: Provider = {
 				id: 'test',
 				initialize: initFn

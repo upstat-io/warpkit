@@ -6,8 +6,7 @@
 |------|-------------|
 | `code-quality.md` | Generic types, no @upstat deps, exports, naming |
 | `svelte5.md` | Runes, props, snippets, file naming |
-| `testing.md` | Browser tests, mocking, XState actor testing |
-| `xstate.md` | Stub actors, state design, invoke patterns |
+| `testing.md` | Browser tests, mocking, async testing patterns |
 
 ## Quick Reference
 
@@ -23,11 +22,10 @@
 - Props: `let { prop } = $props()`
 - Events: `onclick` not `on:click`
 
-### XState v5
-- Stub actor pattern for dependency injection
-- `listenToAuth` at ROOT level
-- `signingOut` state prevents race conditions
-- Always `actor.stop()` in cleanup
+### State Management
+- Custom FSM in `src/core/StateMachine.ts`
+- Auth via adapter pattern (`AuthAdapter` interface)
+- State transitions via `setAppState()` method
 
 ### Testing
 - Browser tests: `vitest-browser-svelte` + Playwright

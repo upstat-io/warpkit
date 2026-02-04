@@ -85,13 +85,13 @@ export function createMockForm<T extends object>(options: MockFormOptions<T> = {
 	let warningsState = $state<Record<string, string>>(initialWarnings);
 	let touchedState = $state<Record<string, boolean>>(initialTouched);
 	const dirtyState = $state<Record<string, boolean>>(initialDirty);
-	const isValidState = $state(initialIsValid);
-	const isDirtyState = $state(initialIsDirty);
-	const isSubmittingState = $state(initialIsSubmitting);
-	const isValidatingState = $state(initialIsValidating);
-	const isSubmittedState = $state(initialIsSubmitted);
+	const isValidState = $state<boolean>(initialIsValid);
+	const isDirtyState = $state<boolean>(initialIsDirty);
+	const isSubmittingState = $state<boolean>(initialIsSubmitting);
+	const isValidatingState = $state<boolean>(initialIsValidating);
+	const isSubmittedState = $state<boolean>(initialIsSubmitted);
 	const submitErrorState = $state<Error | null>(initialSubmitError);
-	const submitCountState = $state(initialSubmitCount);
+	const submitCountState = $state<number>(initialSubmitCount);
 
 	return {
 		// Reactive state (via getters)

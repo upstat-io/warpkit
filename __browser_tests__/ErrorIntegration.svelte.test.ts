@@ -6,14 +6,18 @@
  * 2. Error is captured by errorStore
  * 3. ErrorOverlay displays the error to the user
  */
-import { render } from 'vitest-browser-svelte';
-import { expect, test, describe, beforeEach } from 'vitest';
+import { render, cleanup } from 'vitest-browser-svelte';
+import { expect, test, describe, beforeEach, afterEach } from 'vitest';
 import TestErrorIntegration from './TestErrorIntegration.svelte';
-import { errorStore } from '../src/errors/error-store';
+import { errorStore } from '../src/errors/error-store.svelte';
 
 describe('WarpKit Error Integration', () => {
 	beforeEach(() => {
 		errorStore.clearHistory();
+	});
+
+	afterEach(() => {
+		cleanup();
 	});
 
 	describe('startup', () => {
@@ -136,11 +140,7 @@ describe('WarpKit Error Integration', () => {
 			await expect.element(screen.getByTestId('has-error')).toHaveTextContent('true');
 
 			// Check error store has context
-			let errorContext: Record<string, unknown> | undefined;
-			const unsubscribe = errorStore.subscribe((state) => {
-				errorContext = state.currentError?.context;
-			});
-			unsubscribe();
+			const errorContext = errorStore.currentError?.context;
 
 			expect(errorContext).toBeDefined();
 			expect(errorContext?.requestedPath).toBe('/fail-load');

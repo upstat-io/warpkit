@@ -48,6 +48,18 @@ export interface WarpKit<TAppState extends string = string> {
 	 */
 	readonly ready: boolean;
 
+	/**
+	 * Currently loaded route component (null during navigation or error).
+	 * Used by WarpKitProvider to expose to RouterView.
+	 */
+	readonly loadedComponent: Component | null;
+
+	/**
+	 * Currently loaded layout component (null if route has no layout).
+	 * Used by WarpKitProvider to expose to RouterView.
+	 */
+	readonly loadedLayout: Component | null;
+
 	/** Navigate to a path */
 	navigate(path: string, options?: NavigateOptions): Promise<NavigationResult>;
 
@@ -71,6 +83,9 @@ export interface WarpKit<TAppState extends string = string> {
 
 	/** Destroy WarpKit (cleans up providers, event listeners) */
 	destroy(): void;
+
+	/** Retry the last navigation (useful after error recovery) */
+	retry(): Promise<NavigationResult>;
 }
 
 /**

@@ -11,7 +11,7 @@
  * - Captures Vite dev server errors (HMR, compile errors)
  */
 /// <reference types="vite/client" />
-import { errorStore } from './error-store.js';
+import { errorStore } from './error-store.svelte.js';
 import type { ReportingProvider } from './types.js';
 
 /** Track if handlers are already installed */

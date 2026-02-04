@@ -10,7 +10,7 @@
 	import ErrorOverlay from '../src/errors/ErrorOverlay.svelte';
 	import { WarpKit, createStateRoutes } from '../src';
 	import { MemoryBrowserProvider } from '../src/providers/browser/MemoryBrowserProvider';
-	import { errorStore } from '../src/errors/error-store';
+	import { errorStore } from '../src/errors/error-store.svelte';
 	import SuccessPage from './stubs/SuccessPage.svelte';
 
 	type TestState = 'ready';
@@ -54,7 +54,7 @@
 	let hasError = $state(false);
 	let errorMessage = $state('');
 
-	// Subscribe to error store
+	// Subscribe to error store for reactive updates
 	$effect(() => {
 		const unsubscribe = errorStore.subscribe((state) => {
 			hasError = state.showErrorUI;

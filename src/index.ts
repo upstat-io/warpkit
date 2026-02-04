@@ -95,7 +95,13 @@ export type {
 // ============================================================================
 
 export { default as ErrorOverlay } from './errors/ErrorOverlay.svelte';
-export { errorStore, currentError, showErrorUI, errorHistory, hasFatalError } from './errors/error-store';
+export {
+	errorStore,
+	getCurrentError,
+	getShowErrorUI,
+	getErrorHistory,
+	getHasFatalError
+} from './errors/error-store.svelte';
 export {
 	setupGlobalErrorHandlers,
 	removeGlobalErrorHandlers,

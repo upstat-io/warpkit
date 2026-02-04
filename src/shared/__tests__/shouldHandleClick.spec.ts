@@ -4,7 +4,7 @@
  * Tests for the click guard utility.
  */
 
-import { describe, it, expect, beforeEach } from 'bun:test';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { shouldHandleClick } from '../shouldHandleClick';
 
 describe('shouldHandleClick', () => {

@@ -99,67 +99,6 @@ Create stub files for complex component mocks:
 <div data-testid="mock-complex">{value}</div>
 ```
 
-## XState Actor Testing
-
-### Callback Actors
-
-Callback actors use `sendBack` to communicate with parent:
-
-```typescript
-test('callback actor sends events', async () => {
-  const events: string[] = [];
-
-  const testMachine = setup({
-    actors: {
-      myCallback: fromCallback(({ sendBack }) => {
-        sendBack({ type: 'CALLBACK_EVENT' });
-        return () => {};
-      })
-    }
-  }).createMachine({
-    invoke: { src: 'myCallback' },
-    on: {
-      CALLBACK_EVENT: { actions: () => events.push('received') }
-    }
-  });
-
-  const actor = createActor(testMachine);
-  actor.start();
-
-  await vi.waitFor(() => expect(events).toContain('received'));
-  actor.stop();
-});
-```
-
-### Promise Actors with Errors
-
-```typescript
-test('handles promise rejection', async () => {
-  const testMachine = setup({
-    actors: {
-      failingActor: fromPromise(async () => {
-        throw new Error('fail');
-      })
-    }
-  }).createMachine({
-    invoke: {
-      src: 'failingActor',
-      onError: { target: 'error' }
-    }
-  });
-});
-```
-
-### Always Clean Up
-
-```typescript
-let actor: Actor<typeof machine>;
-
-afterEach(() => {
-  actor?.stop();
-});
-```
-
 ## Effect Testing
 
 Wrap tests with `$effect` in `$effect.root()`:

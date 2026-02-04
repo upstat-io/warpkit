@@ -44,6 +44,43 @@ export function validate<T>(schema: StandardSchema<T>, data: unknown): T {
 }
 
 /**
+ * Validate data against a StandardSchema asynchronously.
+ * Supports both sync and async schemas.
+ * Returns the validated data on success, throws ValidationError on failure.
+ *
+ * @template T - The expected output type
+ * @param schema - Schema implementing StandardSchema interface
+ * @param data - Unknown data to validate
+ * @returns Promise resolving to validated data of type T
+ * @throws {ValidationError} When validation fails
+ *
+ * @example
+ * ```typescript
+ * import { Type } from '@sinclair/typebox';
+ *
+ * const UserSchema = Type.Object({ name: Type.String() });
+ *
+ * try {
+ *   const user = await validateAsync(UserSchema, { name: 'Alice' });
+ *   // user is typed as { name: string }
+ * } catch (e) {
+ *   if (e instanceof ValidationError) {
+ *     console.error(e.issues);
+ *   }
+ * }
+ * ```
+ */
+export async function validateAsync<T>(schema: StandardSchema<T>, data: unknown): Promise<T> {
+	const result = await schema['~standard'].validate(data);
+
+	if ('issues' in result) {
+		throw new ValidationError(result.issues);
+	}
+
+	return result.value;
+}
+
+/**
  * Type guard to check if a TypeDefinition has a schema (is a ValidatedType).
  *
  * @template T - The type parameter

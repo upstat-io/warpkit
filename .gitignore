@@ -1,2 +1,51 @@
-# Vitest browser test screenshots
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+.svelte-kit/
+
+# Bun
+bun.lockb
+
+# TypeScript
+*.tsbuildinfo
+
+# Vite / Svelte
+.vite/
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+
+# Vitest
+coverage/
 __screenshots__/
+
+# Playwright
+playwright-report/
+playwright/.cache/
+test-results/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# IDE
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Optional: local development
+.claude/settings.local.json

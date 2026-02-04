@@ -1,7 +1,7 @@
 /**
  * NoOpStorageProvider Unit Tests
  */
-import { describe, it, expect } from 'bun:test';
+import { describe, it, expect } from 'vitest';
 import { NoOpStorageProvider } from '../NoOpStorageProvider';
 
 describe('NoOpStorageProvider', () => {

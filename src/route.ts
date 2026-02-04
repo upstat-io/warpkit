@@ -206,7 +206,7 @@ export function createStateRoutes<TAppState extends string, TStateData = unknown
 			const isRedirectTarget = stateConfig.redirects
 				? Object.values(stateConfig.redirects).includes(defaultPath)
 				: false;
-			if (!defaultMatches && !isRedirectTarget) {
+			if (!defaultMatches && !isRedirectTarget && import.meta.env?.DEV !== false) {
 				console.warn(
 					`[WarpKit] Default path '${defaultPath}' in state '${state}' ` +
 						`does not match any route in this state. Navigation to this state ` +

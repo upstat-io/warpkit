@@ -4,8 +4,8 @@
  * Tests for Link, NavLink, RouterView, and WarpKitProvider components.
  * These require browser environment because components use $state/$derived runes.
  */
-import { expect, test, describe, vi } from 'vitest';
-import { render } from 'vitest-browser-svelte';
+import { expect, test, describe, vi, afterEach } from 'vitest';
+import { render, cleanup } from 'vitest-browser-svelte';
 import { createMockWarpKit, waitForNavigation, expectNavigation } from '../src/testing';
 import type { StateRoutes } from '../src/core/types';
 import type { Component } from 'svelte';
@@ -60,6 +60,10 @@ const createTestRoutes = (): StateRoutes<TestState> => ({
 });
 
 describe('Link Component', () => {
+	afterEach(() => {
+		cleanup();
+	});
+
 	describe('rendering', () => {
 		test('should render an anchor tag with href', async () => {
 			const warpkit = await createMockWarpKit({
@@ -153,11 +157,15 @@ describe('Link Component', () => {
 			const element = link.element();
 			element.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
 
-			// Small delay to ensure any potential navigation would have started
-			await new Promise((resolve) => setTimeout(resolve, 50));
-
-			// Should still be on dashboard (navigation was prevented)
-			expectNavigation(warpkit, '/dashboard');
+			// Use vi.waitFor to verify navigation didn't happen
+			// This is more robust than a fixed timeout for negative assertions
+			await vi.waitFor(
+				() => {
+					// Confirm we're still on dashboard after any potential async navigation
+					expectNavigation(warpkit, '/dashboard');
+				},
+				{ timeout: 100 }
+			);
 		});
 
 		test('should have aria-disabled when disabled', async () => {

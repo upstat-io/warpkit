@@ -7,8 +7,10 @@
 		".": "./src/index.ts",
 		"./testing": "./src/testing/index.ts"
 	},
+	"dependencies": {
+		"@warpkit/validation": "workspace:*"
+	},
 	"peerDependencies": {
-		"@warpkit/validation": "workspace:*",
 		"svelte": "^5.0.0"
 	},
 	"devDependencies": {

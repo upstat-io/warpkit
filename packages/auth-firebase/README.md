@@ -102,7 +102,7 @@ async function getInitialState(user: FirebaseUser | null) {
 
 	return {
 		state: 'authenticated',
-		stateData: { projectAlias: userData.projectAlias }
+		stateData: { workspace: userData.defaultWorkspace }
 	};
 }
 ```
@@ -132,7 +132,7 @@ async function getInitialState(user: FirebaseUser | null) {
 ### Basic Setup with WarpKit
 
 ```typescript
-import { WarpKit } from '@upstat/warpkit';
+import { WarpKit } from '@warpkit/core';
 import { FirebaseAuthAdapter } from '@warpkit/auth-firebase';
 
 const authAdapter = new FirebaseAuthAdapter(
@@ -153,7 +153,7 @@ const authAdapter = new FirebaseAuthAdapter(
 
 			return {
 				state: 'authenticated',
-				stateData: { projectAlias: userData.defaultProject }
+				stateData: { workspace: userData.defaultWorkspace }
 			};
 		}
 	}
@@ -210,13 +210,13 @@ const warpkit = new WarpKit({
 	}
 </script>
 
-<form on:submit|preventDefault={handleEmailLogin}>
+<form onsubmit={(e) => { e.preventDefault(); handleEmailLogin(); }}>
 	<input type="email" bind:value={email} placeholder="Email" />
 	<input type="password" bind:value={password} placeholder="Password" />
 	<button type="submit" disabled={loading}>Sign In</button>
 </form>
 
-<button on:click={handleGoogleLogin} disabled={loading}>Sign in with Google</button>
+<button onclick={handleGoogleLogin} disabled={loading}>Sign in with Google</button>
 
 {#if error}
 	<p class="error">{error}</p>
@@ -270,7 +270,7 @@ const authAdapter = new FirebaseAuthAdapter(config, {
 
 		return {
 			state: 'authenticated',
-			stateData: { projectAlias: userData.defaultProject }
+			stateData: { workspace: userData.defaultWorkspace }
 		};
 	}
 });

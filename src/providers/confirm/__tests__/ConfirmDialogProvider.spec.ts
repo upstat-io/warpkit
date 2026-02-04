@@ -1,7 +1,7 @@
 /**
  * ConfirmDialogProvider Unit Tests
  */
-import { describe, it, expect, beforeEach, afterEach, mock } from 'bun:test';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { DefaultConfirmDialogProvider } from '../ConfirmDialogProvider';
 
 describe('DefaultConfirmDialogProvider', () => {
@@ -26,7 +26,7 @@ describe('DefaultConfirmDialogProvider', () => {
 	describe('confirm', () => {
 		it('should return true when user confirms', async () => {
 			// @ts-expect-error - mocking window.confirm
-			globalThis.window = { confirm: mock(() => true) };
+			globalThis.window = { confirm: vi.fn(() => true) };
 
 			const result = await provider.confirm('Leave page?');
 			expect(result).toBe(true);
@@ -34,14 +34,14 @@ describe('DefaultConfirmDialogProvider', () => {
 
 		it('should return false when user cancels', async () => {
 			// @ts-expect-error - mocking window.confirm
-			globalThis.window = { confirm: mock(() => false) };
+			globalThis.window = { confirm: vi.fn(() => false) };
 
 			const result = await provider.confirm('Leave page?');
 			expect(result).toBe(false);
 		});
 
 		it('should pass message to window.confirm', async () => {
-			const confirmMock = mock(() => true);
+			const confirmMock = vi.fn(() => true);
 			// @ts-expect-error - mocking window.confirm
 			globalThis.window = { confirm: confirmMock };
 

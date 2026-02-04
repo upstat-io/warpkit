@@ -5,7 +5,7 @@
  * They verify the actual Firebase SDK behavior, not mocks.
  */
 
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'bun:test';
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { initializeApp, deleteApp, type FirebaseApp } from 'firebase/app';
 import { getFirebaseEmulator, stopFirebaseEmulator } from './firebase-emulator-container';
 import { FirebaseAuthAdapter } from '../adapter';

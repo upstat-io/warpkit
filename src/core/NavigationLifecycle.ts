@@ -83,7 +83,9 @@ export class NavigationLifecycle {
 					return await hook(context);
 				} catch (error) {
 					// Hook threw - treat as abort
-					console.error('[WarpKit] beforeNavigate hook threw:', error);
+					if (import.meta.env?.DEV) {
+						console.error('[WarpKit] beforeNavigate hook threw:', error);
+					}
 					return false;
 				}
 			})
@@ -125,7 +127,9 @@ export class NavigationLifecycle {
 			try {
 				await hook(context);
 			} catch (error) {
-				console.error('[WarpKit] onNavigate hook threw:', error);
+				if (import.meta.env?.DEV) {
+					console.error('[WarpKit] onNavigate hook threw:', error);
+				}
 			}
 		}
 	}
@@ -143,7 +147,9 @@ export class NavigationLifecycle {
 			try {
 				hook(context);
 			} catch (error) {
-				console.error('[WarpKit] afterNavigate hook threw:', error);
+				if (import.meta.env?.DEV) {
+					console.error('[WarpKit] afterNavigate hook threw:', error);
+				}
 			}
 		}
 	}

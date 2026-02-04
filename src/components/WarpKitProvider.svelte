@@ -29,19 +29,16 @@ const context: WarpKitContext = {
 		return warpkit.page;
 	},
 	get routeComponent() {
-		// Access the $state field on WarpKit
-		return (warpkit as any).loadedComponent;
+		return warpkit.loadedComponent;
 	},
 	get layoutComponent() {
-		// Access the $state field on WarpKit
-		return (warpkit as any).loadedLayout;
+		return warpkit.loadedLayout;
 	},
 	get stateId() {
 		return warpkit.getStateId();
 	},
 	retryLoad: () => {
-		// Call retry which triggers re-navigation
-		(warpkit as any).retry?.();
+		warpkit.retry();
 	}
 };
 

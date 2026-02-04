@@ -108,36 +108,22 @@ export async function renderWithWarpKit<TAppState extends string>(
  *
  * This is a factory function because Svelte components need to be defined
  * with their props known at definition time.
+ *
+ * @remarks
+ * **Known Limitation**: This function currently returns WarpKitTestWrapper directly
+ * because Svelte components cannot be dynamically composed at runtime without a build step.
+ * The TargetComponent and props parameters are not used - tests should use
+ * WarpKitTestWrapper directly for full control.
  */
-function createTestHarness(
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	TargetComponent: Component<any>,
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	warpkit: MockWarpKit<any>,
-	props: Record<string, unknown>
-): Component {
-	// Create a wrapper that renders:
-	// <WarpKitTestWrapper {warpkit}>
-	//   <TargetComponent {...props} />
-	// </WarpKitTestWrapper>
-	//
-	// Since we can't dynamically create Svelte components in JS, we return
-	// a pre-built harness component. Users who need custom wrappers can
-	// use WarpKitTestWrapper directly.
-
-	// For now, we'll need to use a different approach - export a factory
-	// that creates the wrapper. Users will need to use the wrapper directly.
-	// This limitation is documented.
-
-	// Return a simple wrapper that the test can render
-	// The limitation is that props can't be passed through easily
-	// without a dedicated wrapper component per test
-
-	// Actually, vitest-browser-svelte's render accepts props as second arg
-	// but for wrapped components, we need a different approach
-
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	return WarpKitTestWrapper as any;
+function createTestHarness<TAppState extends string>(
+	_targetComponent: Component,
+	_warpkit: MockWarpKit<TAppState>,
+	_props: Record<string, unknown>
+): typeof WarpKitTestWrapper {
+	// Note: Parameters prefixed with _ to indicate intentionally unused
+	// due to Svelte's compile-time component model.
+	// For full test control, use WarpKitTestWrapper directly in your test file.
+	return WarpKitTestWrapper;
 }
 
 /**

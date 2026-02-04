@@ -118,7 +118,7 @@ export interface StateConfig<TStateData = unknown> {
 	 * Default path when entering this state without explicit path.
 	 * Can be:
 	 * - string: Static default path (e.g., '/login')
-	 * - function: Dynamic default that receives state data (e.g., (data) => `/${data.projectAlias}/`)
+	 * - function: Dynamic default that receives state data (e.g., (data) => `/${data.orgId}/`)
 	 * - null: No default (used for states with no routes like 'initializing')
 	 */
 	default: string | ((data: TStateData) => string) | null;

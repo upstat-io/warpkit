@@ -193,3 +193,47 @@ export function getAllPaths(obj: unknown, prefix = ''): string[] {
 
 	return paths;
 }
+
+/**
+ * Compute a structural signature for an object.
+ *
+ * This signature changes only when the structure changes (keys added/removed,
+ * array lengths changed), NOT when values change. Used for caching getAllPaths()
+ * results to avoid O(n) traversal on every value change.
+ *
+ * @param obj - Object to compute signature for
+ * @param prefix - Internal: path prefix for recursion
+ * @returns A string that uniquely identifies the object's structure
+ *
+ * @example
+ * ```typescript
+ * // Same structure = same signature
+ * getStructuralSignature({ a: 1, b: 2 }) === getStructuralSignature({ a: 99, b: 100 })
+ *
+ * // Different structure = different signature
+ * getStructuralSignature({ a: 1 }) !== getStructuralSignature({ a: 1, b: 2 })
+ * getStructuralSignature({ items: [1] }) !== getStructuralSignature({ items: [1, 2] })
+ * ```
+ */
+export function getStructuralSignature(obj: unknown, prefix = ''): string {
+	if (obj === null || obj === undefined || typeof obj !== 'object') {
+		return prefix || '_leaf';
+	}
+
+	if (Array.isArray(obj)) {
+		// For arrays, include length and recurse into elements
+		const parts = [`${prefix}[${obj.length}]`];
+		for (let i = 0; i < obj.length; i++) {
+			parts.push(getStructuralSignature(obj[i], `${prefix}.${i}`));
+		}
+		return parts.join('|');
+	}
+
+	// For objects, include sorted keys and recurse
+	const keys = Object.keys(obj).sort();
+	const parts = [prefix + '{' + keys.join(',') + '}'];
+	for (const key of keys) {
+		parts.push(getStructuralSignature((obj as Record<string, unknown>)[key], `${prefix}.${key}`));
+	}
+	return parts.join('|');
+}

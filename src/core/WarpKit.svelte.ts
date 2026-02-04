@@ -43,7 +43,7 @@ import { Navigator } from './Navigator.js';
 import { DefaultBrowserProvider } from '../providers/browser/BrowserProvider.js';
 import { DefaultConfirmDialogProvider } from '../providers/confirm/ConfirmDialogProvider.js';
 import { DefaultStorageProvider } from '../providers/storage/StorageProvider.js';
-import { errorStore } from '../errors/error-store.js';
+import { errorStore } from '../errors/error-store.svelte.js';
 import { setupGlobalErrorHandlers } from '../errors/global-handlers.js';
 
 /**
@@ -298,7 +298,9 @@ export class WarpKit<TAppState extends string, TStateData = unknown> implements 
 				});
 			} catch (error) {
 				// Auth initialization failed - fall back to initial state from config
-				console.error('[WarpKit] Auth adapter initialization failed:', error);
+				if (import.meta.env?.DEV) {
+					console.error('[WarpKit] Auth adapter initialization failed:', error);
+				}
 			}
 		}
 
@@ -358,9 +360,13 @@ export class WarpKit<TAppState extends string, TStateData = unknown> implements 
 		// Unsubscribe from auth state changes
 		this.authUnsubscribe?.();
 
-		// Destroy providers
+		// Destroy providers (try-catch to ensure all providers get cleanup attempt)
 		for (const provider of Object.values(this.providers)) {
-			provider.destroy?.();
+			try {
+				provider.destroy?.();
+			} catch {
+				// Continue cleaning up other providers even if one fails
+			}
 		}
 
 		// Clear internal state
@@ -376,9 +382,9 @@ export class WarpKit<TAppState extends string, TStateData = unknown> implements 
 	/**
 	 * Navigate to a path.
 	 *
-	 * Supports automatic path expansion: if `/incidents` doesn't match directly
-	 * but `/[projectAlias]/incidents` exists and stateData has `projectAlias`,
-	 * automatically expands to `/ip/incidents`.
+	 * Supports automatic path expansion: if `/dashboard` doesn't match directly
+	 * but `/[orgId]/dashboard` exists and stateData has `orgId`,
+	 * automatically expands to `/acme/dashboard`.
 	 *
 	 * @param path - Target path (e.g., '/dashboard' or '/incidents')
 	 * @param options - Navigation options (replace, state, scrollPosition)
@@ -401,8 +407,8 @@ export class WarpKit<TAppState extends string, TStateData = unknown> implements 
 	/**
 	 * Try to expand a path using state data.
 	 *
-	 * If `/incidents` doesn't match but `/[projectAlias]/incidents` exists
-	 * and stateData.projectAlias is 'ip', returns '/ip/incidents'.
+	 * If `/dashboard` doesn't match but `/[orgId]/dashboard` exists
+	 * and stateData.orgId is 'acme', returns '/acme/dashboard'.
 	 *
 	 * @param path - The path to potentially expand
 	 * @returns The expanded path, or the original path if no expansion needed/possible
@@ -424,9 +430,9 @@ export class WarpKit<TAppState extends string, TStateData = unknown> implements 
 			pathname = path.slice(0, searchIndex);
 		}
 
-		// Try expansion FIRST - this handles paths like /incidents -> /ip/incidents
-		// We check expansion before direct match because param routes like /[projectAlias]
-		// would otherwise greedily match /incidents (treating "incidents" as a project alias)
+		// Try expansion FIRST - this handles paths like /dashboard -> /acme/dashboard
+		// We check expansion before direct match because param routes like /[orgId]
+		// would otherwise greedily match /dashboard (treating "dashboard" as an org ID)
 		const expanded = this.matcher.tryExpandPath(
 			pathname,
 			this.stateMachine.getState(),
@@ -847,7 +853,9 @@ export class WarpKit<TAppState extends string, TStateData = unknown> implements 
 			try {
 				listener(context);
 			} catch (error) {
-				console.error('[WarpKit] Navigation complete listener threw:', error);
+				if (import.meta.env?.DEV) {
+					console.error('[WarpKit] Navigation complete listener threw:', error);
+				}
 			}
 		}
 	}

@@ -70,7 +70,9 @@ export class StateMachine<TAppState extends string> {
 			try {
 				listener(transition);
 			} catch (error) {
-				console.error('[WarpKit] State listener threw error:', error);
+				if (import.meta.env?.DEV) {
+					console.error('[WarpKit] State listener threw error:', error);
+				}
 			}
 		}
 

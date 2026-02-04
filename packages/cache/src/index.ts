@@ -13,8 +13,7 @@ export type {
 	ETagCacheProviderOptions
 } from './types.js';
 
-// Re-export CacheProvider interface from @warpkit/data for convenience
-export type { CacheProvider, CacheEntry } from '@warpkit/data';
+// Note: CacheProvider and CacheEntry types are available from @warpkit/data
 
 // Cache implementations
 export { MemoryCache } from './MemoryCache.js';

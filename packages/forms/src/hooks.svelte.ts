@@ -17,12 +17,13 @@ import type {
 import { createDeepProxy } from './proxy';
 import { validateSchemaAsync } from './validation';
 import { extractDefaults, type TypeBoxSchemaLike } from './defaults';
-import { getPath, setPath, getAllPaths } from './paths';
+import { getPath, setPath, getAllPaths, getStructuralSignature } from './paths';
 import {
 	shouldValidateField as shouldValidate,
 	reindexArrayErrors as reindexErrors,
 	mergeInitialValues,
 	createErrorDebouncer,
+	calculateDirtyState,
 	removeKey,
 	setKey
 } from './form-logic';
@@ -92,27 +93,42 @@ export function useForm<T extends object>(options: FormOptions<T>): FormState<T>
 	let errors = $state<Record<string, string>>({});
 	let warnings = $state<Record<string, string>>({});
 	let touched = $state<Record<string, boolean>>({});
-	let isSubmitting = $state(false);
-	let isValidating = $state(false);
-	let isSubmitted = $state(false);
+	let isSubmitting = $state<boolean>(false);
+	let isValidating = $state<boolean>(false);
+	let isSubmitted = $state<boolean>(false);
 	let submitError = $state<Error | null>(null);
-	let submitCount = $state(0);
+	let submitCount = $state<number>(0);
 
 	// Debounce timers for delayError
 	const errorTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
 	// =========================================================================
+	// Path Caching (Performance Optimization)
+	// =========================================================================
+
+	// Cache paths based on structural signature to avoid O(n) traversal on every value change.
+	// Paths only need to be recalculated when the object structure changes (keys added/removed,
+	// array lengths changed), not when values change.
+	let cachedSignature = '';
+	let cachedPaths: string[] = [];
+
+	function getCachedPaths(): string[] {
+		const currentSignature = getStructuralSignature(values);
+		if (currentSignature !== cachedSignature) {
+			cachedSignature = currentSignature;
+			cachedPaths = getAllPaths(values);
+		}
+		return cachedPaths;
+	}
+
+	// =========================================================================
 	// Derived State ($derived)
 	// =========================================================================
 
+	// Dirty computation uses cached paths for better performance on large forms.
 	const dirty = $derived.by(() => {
-		const result: Record<string, boolean> = {};
-		for (const path of getAllPaths(values)) {
-			const currentValue = getPath(values, path);
-			const initialValue = getPath(initial, path);
-			result[path] = !Object.is(currentValue, initialValue);
-		}
-		return result;
+		const paths = getCachedPaths();
+		return calculateDirtyState(values, initial, paths, getPath);
 	});
 
 	const isDirty = $derived(Object.values(dirty).some(Boolean));
@@ -541,6 +557,14 @@ export function useForm<T extends object>(options: FormOptions<T>): FormState<T>
 	// Return (with getters for reactivity)
 	// =========================================================================
 
+	/**
+	 * Clean up form resources (error timers).
+	 * Call this when the component unmounts to prevent memory leaks.
+	 */
+	function cleanup(): void {
+		clearAllErrorTimers();
+	}
+
 	return {
 		get data() {
 			return proxiedData;
@@ -592,6 +616,7 @@ export function useForm<T extends object>(options: FormOptions<T>): FormState<T>
 		insert,
 		move,
 		swap,
-		field
+		field,
+		cleanup
 	};
 }

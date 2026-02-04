@@ -28,16 +28,16 @@ const context: WarpKitContext = {
 		return warpkit.page;
 	},
 	get routeComponent() {
-		return (warpkit as any).loadedComponent;
+		return warpkit.loadedComponent;
 	},
 	get layoutComponent() {
-		return (warpkit as any).loadedLayout;
+		return warpkit.loadedLayout;
 	},
 	get stateId() {
 		return warpkit.getStateId();
 	},
 	retryLoad: () => {
-		(warpkit as any).retry?.();
+		warpkit.retry();
 	}
 };
 

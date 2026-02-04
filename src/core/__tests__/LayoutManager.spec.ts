@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'bun:test';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Component } from 'svelte';
 import { LayoutManager } from '../LayoutManager.js';
 import type { Route, StateConfig, LayoutConfig } from '../types.js';

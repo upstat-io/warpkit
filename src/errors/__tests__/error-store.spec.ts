@@ -1,11 +1,10 @@
 /**
  * Error Store Unit Tests
  *
- * Tests error state management, history tracking, and derived stores.
+ * Tests error state management, history tracking, and derived values.
  */
-import { describe, it, expect, beforeEach } from 'bun:test';
-import { get } from 'svelte/store';
-import { errorStore, currentError, showErrorUI, errorHistory, hasFatalError } from '../error-store';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { errorStore } from '../error-store.svelte';
 
 describe('errorStore', () => {
 	// Clear store before each test
@@ -15,15 +14,15 @@ describe('errorStore', () => {
 
 	describe('initial state', () => {
 		it('should start with no current error', () => {
-			expect(get(errorStore).currentError).toBeNull();
+			expect(errorStore.currentError).toBeNull();
 		});
 
 		it('should start with empty error history', () => {
-			expect(get(errorStore).errorHistory).toEqual([]);
+			expect(errorStore.errorHistory).toEqual([]);
 		});
 
 		it('should start with showErrorUI false', () => {
-			expect(get(errorStore).showErrorUI).toBe(false);
+			expect(errorStore.showErrorUI).toBe(false);
 		});
 	});
 
@@ -96,22 +95,22 @@ describe('errorStore', () => {
 
 		it('should update currentError in store', () => {
 			const normalized = errorStore.setError('Test error');
-			expect(get(errorStore).currentError).toEqual(normalized);
+			expect(errorStore.currentError).toEqual(normalized);
 		});
 
 		it('should add error to history', () => {
 			const normalized = errorStore.setError('Test error');
-			expect(get(errorStore).errorHistory).toContain(normalized);
+			expect(errorStore.errorHistory).toContain(normalized);
 		});
 
 		it('should show error UI by default', () => {
 			errorStore.setError('Test error');
-			expect(get(errorStore).showErrorUI).toBe(true);
+			expect(errorStore.showErrorUI).toBe(true);
 		});
 
 		it('should not show error UI when showUI is false', () => {
 			errorStore.setError('Test error', { showUI: false });
-			expect(get(errorStore).showErrorUI).toBe(false);
+			expect(errorStore.showErrorUI).toBe(false);
 		});
 	});
 
@@ -120,7 +119,7 @@ describe('errorStore', () => {
 			const err1 = errorStore.setError('Error 1');
 			const err2 = errorStore.setError('Error 2');
 
-			const history = get(errorStore).errorHistory;
+			const history = errorStore.errorHistory;
 			expect(history[0]).toEqual(err2);
 			expect(history[1]).toEqual(err1);
 		});
@@ -133,7 +132,7 @@ describe('errorStore', () => {
 			errorStore.setError('Error 3');
 			const err4 = errorStore.setError('Error 4');
 
-			const history = get(errorStore).errorHistory;
+			const history = errorStore.errorHistory;
 			expect(history.length).toBe(3);
 			expect(history[0]).toEqual(err4);
 			expect(history.find((e) => e.message === 'Error 1')).toBeUndefined();
@@ -143,18 +142,18 @@ describe('errorStore', () => {
 	describe('markAsReported', () => {
 		it('should mark current error as reported', () => {
 			const normalized = errorStore.setError('Test error');
-			expect(get(errorStore).currentError?.reported).toBe(false);
+			expect(errorStore.currentError?.reported).toBe(false);
 
 			errorStore.markAsReported(normalized.id);
 
-			expect(get(errorStore).currentError?.reported).toBe(true);
+			expect(errorStore.currentError?.reported).toBe(true);
 		});
 
 		it('should mark error in history as reported', () => {
 			const normalized = errorStore.setError('Test error');
 			errorStore.markAsReported(normalized.id);
 
-			const historyError = get(errorStore).errorHistory.find((e) => e.id === normalized.id);
+			const historyError = errorStore.errorHistory.find((e) => e.id === normalized.id);
 			expect(historyError?.reported).toBe(true);
 		});
 
@@ -164,8 +163,8 @@ describe('errorStore', () => {
 
 			errorStore.markAsReported(err1.id);
 
-			expect(get(errorStore).currentError?.reported).toBe(false); // err2 is current
-			const historyErr2 = get(errorStore).errorHistory.find((e) => e.id === err2.id);
+			expect(errorStore.currentError?.reported).toBe(false); // err2 is current
+			const historyErr2 = errorStore.errorHistory.find((e) => e.id === err2.id);
 			expect(historyErr2?.reported).toBe(false);
 		});
 	});
@@ -173,29 +172,29 @@ describe('errorStore', () => {
 	describe('clearCurrentError', () => {
 		it('should clear current error', () => {
 			errorStore.setError('Test error');
-			expect(get(errorStore).currentError).not.toBeNull();
+			expect(errorStore.currentError).not.toBeNull();
 
 			errorStore.clearCurrentError();
 
-			expect(get(errorStore).currentError).toBeNull();
+			expect(errorStore.currentError).toBeNull();
 		});
 
 		it('should hide error UI', () => {
 			errorStore.setError('Test error');
-			expect(get(errorStore).showErrorUI).toBe(true);
+			expect(errorStore.showErrorUI).toBe(true);
 
 			errorStore.clearCurrentError();
 
-			expect(get(errorStore).showErrorUI).toBe(false);
+			expect(errorStore.showErrorUI).toBe(false);
 		});
 
 		it('should preserve error history', () => {
 			errorStore.setError('Test error');
-			const historyLength = get(errorStore).errorHistory.length;
+			const historyLength = errorStore.errorHistory.length;
 
 			errorStore.clearCurrentError();
 
-			expect(get(errorStore).errorHistory.length).toBe(historyLength);
+			expect(errorStore.errorHistory.length).toBe(historyLength);
 		});
 	});
 
@@ -205,8 +204,8 @@ describe('errorStore', () => {
 
 			errorStore.hideErrorUI();
 
-			expect(get(errorStore).showErrorUI).toBe(false);
-			expect(get(errorStore).currentError).toEqual(normalized);
+			expect(errorStore.showErrorUI).toBe(false);
+			expect(errorStore.currentError).toEqual(normalized);
 		});
 	});
 
@@ -217,9 +216,9 @@ describe('errorStore', () => {
 
 			errorStore.clearHistory();
 
-			expect(get(errorStore).currentError).toBeNull();
-			expect(get(errorStore).errorHistory).toEqual([]);
-			expect(get(errorStore).showErrorUI).toBe(false);
+			expect(errorStore.currentError).toBeNull();
+			expect(errorStore.errorHistory).toEqual([]);
+			expect(errorStore.showErrorUI).toBe(false);
 		});
 	});
 
@@ -243,73 +242,73 @@ describe('errorStore', () => {
 	});
 });
 
-describe('derived stores', () => {
+describe('derived values', () => {
 	beforeEach(() => {
 		errorStore.clearHistory();
 	});
 
-	describe('currentError', () => {
+	describe('currentError getter', () => {
 		it('should return null when no error', () => {
-			expect(get(currentError)).toBeNull();
+			expect(errorStore.currentError).toBeNull();
 		});
 
 		it('should return current error when set', () => {
 			const normalized = errorStore.setError('Test error');
-			expect(get(currentError)).toEqual(normalized);
+			expect(errorStore.currentError).toEqual(normalized);
 		});
 	});
 
-	describe('showErrorUI', () => {
+	describe('showErrorUI getter', () => {
 		it('should return false when no error', () => {
-			expect(get(showErrorUI)).toBe(false);
+			expect(errorStore.showErrorUI).toBe(false);
 		});
 
 		it('should return true when error is shown', () => {
 			errorStore.setError('Test error');
-			expect(get(showErrorUI)).toBe(true);
+			expect(errorStore.showErrorUI).toBe(true);
 		});
 
 		it('should return false after hiding UI', () => {
 			errorStore.setError('Test error');
 			errorStore.hideErrorUI();
-			expect(get(showErrorUI)).toBe(false);
+			expect(errorStore.showErrorUI).toBe(false);
 		});
 	});
 
-	describe('errorHistory', () => {
+	describe('errorHistory getter', () => {
 		it('should return empty array initially', () => {
-			expect(get(errorHistory)).toEqual([]);
+			expect(errorStore.errorHistory).toEqual([]);
 		});
 
 		it('should return history in reverse chronological order', () => {
 			const err1 = errorStore.setError('Error 1');
 			const err2 = errorStore.setError('Error 2');
 
-			const history = get(errorHistory);
+			const history = errorStore.errorHistory;
 			expect(history[0]).toEqual(err2);
 			expect(history[1]).toEqual(err1);
 		});
 	});
 
-	describe('hasFatalError', () => {
+	describe('hasFatalError getter', () => {
 		it('should return false when no error', () => {
-			expect(get(hasFatalError)).toBe(false);
+			expect(errorStore.hasFatalError).toBe(false);
 		});
 
 		it('should return false for non-fatal errors', () => {
 			errorStore.setError('Test error', { severity: 'error' });
-			expect(get(hasFatalError)).toBe(false);
+			expect(errorStore.hasFatalError).toBe(false);
 		});
 
 		it('should return true for fatal errors', () => {
 			errorStore.setError('Fatal error', { severity: 'fatal' });
-			expect(get(hasFatalError)).toBe(true);
+			expect(errorStore.hasFatalError).toBe(true);
 		});
 
 		it('should return false after clearing fatal error', () => {
 			errorStore.setError('Fatal error', { severity: 'fatal' });
 			errorStore.clearCurrentError();
-			expect(get(hasFatalError)).toBe(false);
+			expect(errorStore.hasFatalError).toBe(false);
 		});
 	});
 });

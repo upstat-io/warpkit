@@ -4,7 +4,7 @@
  * These tests verify provider interface definitions compile correctly.
  * Since interfaces have no runtime behavior, tests focus on type inference.
  */
-import { describe, it, expect, mock } from 'bun:test';
+import { describe, it, expect, vi } from 'vitest';
 import type {
 	Provider,
 	WarpKitCore,
@@ -39,7 +39,7 @@ describe('WarpKit v2 Provider Interfaces', () => {
 		});
 
 		it('should allow optional initialize', () => {
-			const initFn = mock(() => {});
+			const initFn = vi.fn(() => {});
 			const provider: Provider = {
 				id: 'test',
 				initialize: initFn
@@ -48,7 +48,7 @@ describe('WarpKit v2 Provider Interfaces', () => {
 		});
 
 		it('should allow optional destroy', () => {
-			const destroyFn = mock(() => {});
+			const destroyFn = vi.fn(() => {});
 			const provider: Provider = {
 				id: 'test',
 				destroy: destroyFn
@@ -64,9 +64,9 @@ describe('WarpKit v2 Provider Interfaces', () => {
 				getLocation: () => ({ pathname: '/', search: '', hash: '' }),
 				buildUrl: (path) => path,
 				parseUrl: (url) => url,
-				push: mock(() => {}),
-				replace: mock(() => {}),
-				go: mock(() => {}),
+				push: vi.fn(() => {}),
+				replace: vi.fn(() => {}),
+				go: vi.fn(() => {}),
 				getHistoryState: () => null,
 				onPopState: () => () => {}
 			};
@@ -136,9 +136,9 @@ describe('WarpKit v2 Provider Interfaces', () => {
 		it('should have fixed id of storage', () => {
 			const mockStorageProvider: StorageProvider = {
 				id: 'storage',
-				saveScrollPosition: mock(() => {}),
+				saveScrollPosition: vi.fn(() => {}),
 				getScrollPosition: () => null,
-				saveIntendedPath: mock(() => {}),
+				saveIntendedPath: vi.fn(() => {}),
 				popIntendedPath: () => null
 			};
 			expect(mockStorageProvider.id).toBe('storage');
@@ -150,7 +150,7 @@ describe('WarpKit v2 Provider Interfaces', () => {
 				id: 'storage',
 				saveScrollPosition: (id, pos) => positions.set(id, pos),
 				getScrollPosition: (id) => positions.get(id) ?? null,
-				saveIntendedPath: mock(() => {}),
+				saveIntendedPath: vi.fn(() => {}),
 				popIntendedPath: () => null
 			};
 
@@ -163,7 +163,7 @@ describe('WarpKit v2 Provider Interfaces', () => {
 			let storedPath: string | null = null;
 			const mockStorageProvider: StorageProvider = {
 				id: 'storage',
-				saveScrollPosition: mock(() => {}),
+				saveScrollPosition: vi.fn(() => {}),
 				getScrollPosition: () => null,
 				saveIntendedPath: (path) => {
 					storedPath = path;
@@ -188,9 +188,9 @@ describe('WarpKit v2 Provider Interfaces', () => {
 				getLocation: () => ({ pathname: '/', search: '', hash: '' }),
 				buildUrl: (path) => path,
 				parseUrl: (url) => url,
-				push: mock(() => {}) as BrowserProvider['push'],
-				replace: mock(() => {}) as BrowserProvider['replace'],
-				go: mock(() => {}) as BrowserProvider['go'],
+				push: vi.fn(() => {}) as BrowserProvider['push'],
+				replace: vi.fn(() => {}) as BrowserProvider['replace'],
+				go: vi.fn(() => {}) as BrowserProvider['go'],
 				getHistoryState: () => null,
 				onPopState: () => () => {}
 			};
@@ -203,7 +203,7 @@ describe('WarpKit v2 Provider Interfaces', () => {
 			const registry: ProviderRegistry = {
 				customAuth: {
 					id: 'customAuth',
-					initialize: mock(() => {})
+					initialize: vi.fn(() => {})
 				}
 			};
 			expect(registry.customAuth?.id).toBe('customAuth');
@@ -217,9 +217,9 @@ describe('WarpKit v2 Provider Interfaces', () => {
 				getLocation: () => ({ pathname: '/', search: '', hash: '' }),
 				buildUrl: (path) => path,
 				parseUrl: (url) => url,
-				push: mock(() => {}) as BrowserProvider['push'],
-				replace: mock(() => {}) as BrowserProvider['replace'],
-				go: mock(() => {}) as BrowserProvider['go'],
+				push: vi.fn(() => {}) as BrowserProvider['push'],
+				replace: vi.fn(() => {}) as BrowserProvider['replace'],
+				go: vi.fn(() => {}) as BrowserProvider['go'],
 				getHistoryState: () => null,
 				onPopState: () => () => {}
 			};
@@ -229,9 +229,9 @@ describe('WarpKit v2 Provider Interfaces', () => {
 			};
 			const storage: StorageProvider = {
 				id: 'storage',
-				saveScrollPosition: mock(() => {}) as StorageProvider['saveScrollPosition'],
+				saveScrollPosition: vi.fn(() => {}) as StorageProvider['saveScrollPosition'],
 				getScrollPosition: () => null,
-				saveIntendedPath: mock(() => {}) as StorageProvider['saveIntendedPath'],
+				saveIntendedPath: vi.fn(() => {}) as StorageProvider['saveIntendedPath'],
 				popIntendedPath: () => null
 			};
 			const resolved: ResolvedProviders = { browser, confirmDialog, storage };

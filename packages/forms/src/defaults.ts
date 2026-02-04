@@ -3,6 +3,30 @@
  *
  * Extracts default values from TypeBox schemas.
  * Enables auto-population of form initial values from schema definitions.
+ *
+ * **IMPORTANT: TypeBox Only**
+ *
+ * This module ONLY works with TypeBox schemas. Other StandardSchema-compatible
+ * validators (Zod, Valibot, ArkType) store defaults differently and are NOT
+ * supported by this automatic extraction.
+ *
+ * For non-TypeBox schemas, provide explicit initialValues to useForm():
+ *
+ * @example Using Zod (manual defaults required)
+ * ```typescript
+ * import { z } from 'zod';
+ *
+ * const schema = z.object({
+ *   name: z.string().default(''),
+ *   age: z.number().default(0)
+ * });
+ *
+ * // Zod defaults are NOT auto-extracted - provide them explicitly:
+ * const form = useForm({
+ *   schema,
+ *   initialValues: { name: '', age: 0 }
+ * });
+ * ```
  */
 
 /**

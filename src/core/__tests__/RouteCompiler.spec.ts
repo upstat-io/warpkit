@@ -3,7 +3,7 @@
  *
  * Tests path-to-RegExp conversion and specificity scoring.
  */
-import { describe, it, expect } from 'bun:test';
+import { describe, it, expect } from 'vitest';
 import { RouteCompiler } from '../RouteCompiler';
 import type { Route } from '../types';
 

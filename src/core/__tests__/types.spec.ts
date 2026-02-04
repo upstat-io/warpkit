@@ -7,7 +7,7 @@
  * - Enum value correctness
  * - Discriminated union exhaustiveness
  */
-import { describe, it, expect } from 'bun:test';
+import { describe, it, expect } from 'vitest';
 import type {
 	Route,
 	RouteConfig,

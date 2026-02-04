@@ -3,14 +3,18 @@
  *
  * Tests the error overlay display, interaction, and accessibility features.
  */
-import { render } from 'vitest-browser-svelte';
-import { expect, test, describe, beforeEach } from 'vitest';
+import { render, cleanup } from 'vitest-browser-svelte';
+import { expect, test, describe, beforeEach, afterEach } from 'vitest';
 import TestErrorOverlay from './TestErrorOverlay.svelte';
-import { errorStore } from '../src/errors/error-store';
+import { errorStore } from '../src/errors/error-store.svelte';
 
 describe('ErrorOverlay', () => {
 	beforeEach(() => {
 		errorStore.clearHistory();
+	});
+
+	afterEach(() => {
+		cleanup();
 	});
 
 	describe('visibility', () => {

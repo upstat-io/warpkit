@@ -22,7 +22,7 @@ interface CompiledRouteWithOrder extends CompiledRoute {
 
 /** Pre-computed info for path expansion */
 interface ExpandableRoute {
-	/** The param name at the start (e.g., 'projectAlias') */
+	/** The param name at the start (e.g., 'orgId') */
 	paramName: string;
 	/** The rest of the route after the param (e.g., '/incidents' or '') */
 	restOfRoute: string;
@@ -242,16 +242,16 @@ export class RouteMatcher {
 	/**
 	 * Try to expand a path by prepending a param value from state data.
 	 *
-	 * When a path like `/incidents` doesn't match directly, this method checks
-	 * if there's a route like `/[projectAlias]/incidents` that would match
+	 * When a path like `/dashboard` doesn't match directly, this method checks
+	 * if there's a route like `/[orgId]/dashboard` that would match
 	 * if we prepend the param value from stateData.
 	 *
 	 * Uses pre-computed expansion lookup for O(1) path matching.
 	 *
-	 * @param pathname - The path to expand (e.g., '/incidents')
+	 * @param pathname - The path to expand (e.g., '/dashboard')
 	 * @param state - The current app state
-	 * @param stateData - State data containing param values (e.g., { projectAlias: 'ip' })
-	 * @returns The expanded path (e.g., '/ip/incidents') or null if no expansion possible
+	 * @param stateData - State data containing param values (e.g., { orgId: 'acme' })
+	 * @returns The expanded path (e.g., '/acme/dashboard') or null if no expansion possible
 	 */
 	public tryExpandPath(pathname: string, state: string, stateData: Record<string, unknown> | undefined): string | null {
 		if (!stateData) return null;

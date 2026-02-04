@@ -55,23 +55,60 @@ export { useQuery } from './hooks.svelte.js';
 
 // ============================================================================
 // Backwards Compatibility (Deprecated)
+// These exports are maintained for backwards compatibility only.
+// Please migrate to the new API:
+//   - QueryClient -> DataClient
+//   - QueryClientProvider -> DataClientProvider
+//   - QueryKeyRegistry -> DataRegistry
+//   - getQueryClient -> getDataClient
 // ============================================================================
 
-// Deprecated type aliases (re-exported from types.ts)
-export type {
-	QueryKeyRegistry,
-	QueryKey,
-	QueryKeyConfig,
-	QueryClientConfig,
-	QueryClientOptions,
-	QueryEventEmitter
-} from './types.js';
+/**
+ * @deprecated Use `DataRegistry` instead. Will be removed in v1.0.
+ */
+export type { QueryKeyRegistry } from './types.js';
 
-// Deprecated context exports
-export { QUERY_CLIENT_CONTEXT, getQueryClient } from './context.js';
+/**
+ * @deprecated Use `DataKey` instead. Will be removed in v1.0.
+ */
+export type { QueryKey } from './types.js';
 
-// Deprecated class alias
+/**
+ * @deprecated Use `DataKeyConfig` instead. Will be removed in v1.0.
+ */
+export type { QueryKeyConfig } from './types.js';
+
+/**
+ * @deprecated Use `DataClientConfig` instead. Will be removed in v1.0.
+ */
+export type { QueryClientConfig } from './types.js';
+
+/**
+ * @deprecated Use `DataClientOptions` instead. Will be removed in v1.0.
+ */
+export type { QueryClientOptions } from './types.js';
+
+/**
+ * @deprecated Use `DataEventEmitter` instead. Will be removed in v1.0.
+ */
+export type { QueryEventEmitter } from './types.js';
+
+/**
+ * @deprecated Use `DATA_CLIENT_CONTEXT` instead. Will be removed in v1.0.
+ */
+export { QUERY_CLIENT_CONTEXT } from './context.js';
+
+/**
+ * @deprecated Use `getDataClient` instead. Will be removed in v1.0.
+ */
+export { getQueryClient } from './context.js';
+
+/**
+ * @deprecated Use `DataClient` instead. Will be removed in v1.0.
+ */
 export { DataClient as QueryClient } from './DataClient.js';
 
-// Deprecated component
+/**
+ * @deprecated Use `DataClientProvider` instead. Will be removed in v1.0.
+ */
 export { default as QueryClientProvider } from './QueryClientProvider.svelte';

@@ -28,7 +28,7 @@ export interface AuthAdapterContext {
 export interface AuthInitResult<TAppState extends string, TStateData = unknown> {
 	/** The initial app state based on auth check */
 	state: TAppState;
-	/** Optional state data (e.g., projectAlias for dynamic route defaults) */
+	/** Optional state data (e.g., orgId for dynamic route defaults) */
 	stateData?: TStateData;
 }
 
@@ -48,7 +48,7 @@ export interface AuthInitResult<TAppState extends string, TStateData = unknown> 
  *
  * @example
  * ```typescript
- * class MyAuthAdapter implements AuthAdapter<'authenticated' | 'unauthenticated', { projectAlias: string }> {
+ * class MyAuthAdapter implements AuthAdapter<'authenticated' | 'unauthenticated', { orgId: string }> {
  *   async initialize(context) {
  *     const session = localStorage.getItem('session');
  *     if (!session) {
@@ -61,7 +61,7 @@ export interface AuthInitResult<TAppState extends string, TStateData = unknown> 
  *
  *     return {
  *       state: 'authenticated',
- *       stateData: { projectAlias: userData.projectAlias }
+ *       stateData: { orgId: userData.defaultOrgId }
  *     };
  *   }
  *
