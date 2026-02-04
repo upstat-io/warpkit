@@ -1,0 +1,128 @@
+<script lang="ts">
+	import { setContext } from 'svelte';
+	import { DATA_CLIENT_CONTEXT } from '../../packages/data/src/context.js';
+	import { DataClient } from '../../packages/data/src/DataClient.js';
+	import type { DataClientConfig, DataKey, DataKeyConfig, DataEventEmitter } from '../../packages/data/src/types.js';
+	import UseQueryTestConsumer from './UseQueryTestConsumer.svelte';
+	import { EventEmitter } from '../../src/events/EventEmitter.js';
+	import type { WarpKitEventRegistry } from '../../src/events/types.js';
+
+	interface Props {
+		queryKey: string;
+		params?: Record<string, string>;
+		enabled?: boolean;
+		showComponent?: boolean;
+		mockData?: unknown;
+		mockError?: Error | null;
+		mockDelay?: number;
+		invalidateOn?: string[];
+	}
+
+	let {
+		queryKey,
+		params,
+		enabled = true,
+		showComponent = true,
+		mockData = null,
+		mockError = null,
+		mockDelay = 0,
+		invalidateOn = []
+	}: Props = $props();
+
+	let fetchCount = $state(0);
+
+	// Create event emitter for testing invalidation
+	const events = new EventEmitter<WarpKitEventRegistry>();
+
+	// Adapter to make EventEmitter work as DataEventEmitter
+	const dataEventAdapter: DataEventEmitter = {
+		on: (event: string, handler: () => void | Promise<void>) => {
+			return events.on(event as keyof WarpKitEventRegistry, handler as () => void);
+		}
+	};
+
+	// Create config with test key
+	const config: DataClientConfig = {
+		baseUrl: 'http://localhost/api',
+		keys: {
+			[queryKey]: {
+				key: queryKey,
+				url: `/${queryKey}`,
+				invalidateOn: invalidateOn.length > 0 ? invalidateOn : undefined
+			}
+		} as Record<DataKey, DataKeyConfig<DataKey>>
+	};
+
+	// Create client
+	const client = new DataClient(config, { events: dataEventAdapter });
+
+	// Mock the fetch method - using type assertion for test file
+	const originalFetch = globalThis.fetch;
+	const mockFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+		fetchCount++;
+
+		// Handle abort
+		if (init?.signal?.aborted) {
+			throw new DOMException('Aborted', 'AbortError');
+		}
+
+		// Simulate delay
+		if (mockDelay > 0) {
+			await new Promise(resolve => setTimeout(resolve, mockDelay));
+
+			// Check abort again after delay
+			if (init?.signal?.aborted) {
+				throw new DOMException('Aborted', 'AbortError');
+			}
+		}
+
+		// Simulate error
+		if (mockError) {
+			throw mockError;
+		}
+
+		// Return mock data
+		return new Response(JSON.stringify(mockData), {
+			status: 200,
+			headers: { 'Content-Type': 'application/json' }
+		});
+	};
+	// @ts-expect-error - mock fetch doesn't have preconnect but it's not needed for tests
+	globalThis.fetch = mockFetch;
+
+	// Cleanup on unmount
+	$effect(() => {
+		return () => {
+			globalThis.fetch = originalFetch;
+		};
+	});
+
+	// Provide context
+	setContext(DATA_CLIENT_CONTEXT, client);
+
+	function emitInvalidationEvent() {
+		if (invalidateOn.length > 0) {
+			// Emit the first invalidation event
+			events.emit(invalidateOn[0] as keyof WarpKitEventRegistry, {} as never);
+		}
+	}
+
+	function toggleComponent() {
+		showComponent = !showComponent;
+	}
+
+	function resetFetchCount() {
+		fetchCount = 0;
+	}
+</script>
+
+{#if showComponent}
+	<UseQueryTestConsumer {queryKey} {params} {enabled} />
+{/if}
+
+<div data-testid="fetch-count">{fetchCount}</div>
+<button data-testid="emit-invalidation" onclick={emitInvalidationEvent}>Emit Invalidation</button>
+<button data-testid="toggle-component" onclick={toggleComponent}>Toggle</button>
+<button data-testid="reset-fetch-count" onclick={resetFetchCount}>Reset Fetch Count</button>
+<button data-testid="toggle-enabled" onclick={() => enabled = !enabled}>Toggle Enabled</button>
+<div data-testid="enabled-state">{enabled}</div>

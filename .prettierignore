@@ -1,0 +1,7 @@
+# Prettier v3.x doesn't support Svelte 5 syntax (@render, #snippet, runes)
+# prettier-plugin-svelte v4 (not yet released) is required for Svelte 5 support
+*.svelte
+
+coverage/
+dist/
+node_modules/

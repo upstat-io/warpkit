@@ -1,0 +1,26 @@
+{
+	"name": "@upstat/warpkit",
+	"version": "0.0.1",
+	"type": "module",
+	"module": "src/index.ts",
+	"scripts": {
+		"test": "bun test src",
+		"test:packages": "bunx vitest run --config vitest.config.ts",
+		"test:browser": "bunx vitest run --config vitest.browser.config.ts",
+		"test:all": "bun run test && bun run test:packages && bun run test:browser",
+		"test:watch": "bun test src --watch",
+		"test:coverage": "bun test src --coverage",
+		"typecheck": "bunx svelte-check --tsconfig ./tsconfig.json",
+		"check": "bunx svelte-check --tsconfig ./tsconfig.json",
+		"dev": "bun run --hot src/index.ts"
+	},
+	"devDependencies": {
+		"@playwright/experimental-ct-svelte": "^1.58.0",
+		"@playwright/test": "^1.58.0",
+		"@vitest/browser": "^4.0.18",
+		"@vitest/browser-playwright": "^4.0.18",
+		"mitata": "^1.0.34",
+		"vitest": "^4.0.18",
+		"vitest-browser-svelte": "^2.0.2"
+	}
+}

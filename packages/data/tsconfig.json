@@ -1,0 +1,12 @@
+{
+	"extends": "../../tsconfig.json",
+	"compilerOptions": {
+		"rootDir": "src",
+		"paths": {
+			"@warpkit/data": ["./src/index.ts"],
+			"@warpkit/state-machine": ["../../packages/state-machine/src/index.ts"],
+			"@warpkit/state-machine/svelte": ["../../packages/state-machine/src/svelte/index.ts"]
+		}
+	},
+	"include": ["src/**/*"]
+}

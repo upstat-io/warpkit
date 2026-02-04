@@ -1,0 +1,13 @@
+{
+	"name": "@warpkit/validation",
+	"version": "0.0.1",
+	"type": "module",
+	"module": "src/index.ts",
+	"exports": {
+		".": "./src/index.ts"
+	},
+	"devDependencies": {
+		"@sinclair/typebox": "^0.34.33",
+		"zod": "^3.24.2"
+	}
+}

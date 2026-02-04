@@ -1,0 +1,21 @@
+{
+	"name": "@warpkit/auth-firebase",
+	"version": "0.0.1",
+	"type": "module",
+	"module": "src/index.ts",
+	"exports": {
+		".": "./src/index.ts"
+	},
+	"scripts": {
+		"test": "bun test",
+		"test:build-emulator": "docker build -t warpkit-firebase-emulator:latest ."
+	},
+	"peerDependencies": {
+		"firebase": "^11.0.0"
+	},
+	"devDependencies": {
+		"@warpkit/types": "workspace:*",
+		"firebase": "^11.0.0",
+		"testcontainers": "^10.0.0"
+	}
+}

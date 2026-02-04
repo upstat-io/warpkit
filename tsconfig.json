@@ -1,0 +1,33 @@
+{
+	"compilerOptions": {
+		"target": "ES2022",
+		"module": "ESNext",
+		"moduleResolution": "bundler",
+		"lib": ["ES2022", "DOM", "DOM.Iterable"],
+		"allowJs": true,
+		"checkJs": true,
+		"esModuleInterop": true,
+		"forceConsistentCasingInFileNames": true,
+		"resolveJsonModule": true,
+		"skipLibCheck": true,
+		"sourceMap": true,
+		"strict": true,
+		"isolatedModules": true,
+		"noEmit": true,
+		"verbatimModuleSyntax": true,
+		"types": ["bun-types"],
+		"paths": {
+			"@warpkit/state-machine": ["./packages/state-machine/src/index.ts"],
+			"@warpkit/state-machine/svelte": ["./packages/state-machine/src/svelte/index.ts"],
+			"@warpkit/data": ["./packages/data/src/index.ts"],
+			"@warpkit/cache": ["./packages/cache/src/index.ts"],
+			"@warpkit/validation": ["./packages/validation/src/index.ts"],
+			"@warpkit/types": ["./packages/types/src/index.ts"],
+			"@warpkit/auth-firebase": ["./packages/auth-firebase/src/index.ts"],
+			"@warpkit/forms": ["./packages/forms/src/index.ts"],
+			"@warpkit/forms/testing": ["./packages/forms/src/testing/index.ts"]
+		}
+	},
+	"include": ["src/**/*", "packages/**/*", "__browser_tests__/**/*"],
+	"exclude": ["node_modules", "dist", "src/v1"]
+}

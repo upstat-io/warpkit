@@ -1,0 +1,7 @@
+[test]
+preload = ["./src/__tests__/preload.ts"]
+coverage = false
+timeout = 1000
+root = "./src"
+# Exclude browser tests - they run with vitest instead
+exclude = ["**/**.svelte.test.ts", "**/**.browser.spec.ts"]
