@@ -4,7 +4,28 @@
 
 ## Overview
 
-WarpKit is a standalone Svelte 5 SPA framework with XState-powered routing and state management.
+WarpKit is an open-source SPA framework for Svelte 5 that provides state-based routing, data fetching, forms, and real-time capabilities. Install `@warpkit/core` and optional packages to build type-safe SPAs with minimal boilerplate.
+
+### Key Features
+
+- **State-Based Routing** - Routes organized by application state (authenticated/unauthenticated) with automatic redirects
+- **Auth-Agnostic** - Bring your own auth provider (Firebase, Auth0, custom) via adapter pattern
+- **Modular Packages** - Use only what you need: data fetching, forms, caching, WebSocket
+- **Svelte 5 Native** - Built entirely on runes ($state, $derived, $effect)
+- **Type-Safe** - Generic types throughout; consumers provide their own User/Data types
+- **StandardSchema Validation** - Works with Zod, TypeBox, Valibot
+
+### Packages
+
+| Package | Description |
+|---------|-------------|
+| `@warpkit/core` | Router, navigation, state machine, components |
+| `@warpkit/data` | Data fetching with caching and mutations |
+| `@warpkit/cache` | Memory, localStorage, and E-Tag cache providers |
+| `@warpkit/forms` | Schema-driven form state with deep proxy binding |
+| `@warpkit/validation` | StandardSchema integration utilities |
+| `@warpkit/websocket` | Type-safe WebSocket client with auto-reconnect |
+| `@warpkit/auth-firebase` | Firebase Authentication adapter |
 
 **GitHub**: https://github.com/upstat-io/warpkit
 
@@ -18,7 +39,7 @@ WarpKit is a standalone Svelte 5 SPA framework with XState-powered routing and s
 
 ## Repository Structure
 
-- `src/` - Core framework code (@upstat/warpkit main package)
+- `src/` - Core framework code (@warpkit/core)
 - `src/core/` - Router, navigation, state machine
 - `src/components/` - Link, NavLink, RouterView, WarpKitProvider
 - `src/auth/` - Auth adapter interface
