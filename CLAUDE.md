@@ -63,7 +63,7 @@ WarpKit is an open-source SPA framework for Svelte 5 that provides state-based r
 
 - **Runtime**: Bun
 - **Framework**: Svelte 5 (runes)
-- **State Management**: XState v5
+- **State Management**: Custom FSM (StateMachine.ts) + Auth Adapter Pattern
 - **Testing**: Vitest (unit), Playwright (browser)
 - **Validation**: Standard Schema compatible (Zod, TypeBox)
 
@@ -102,21 +102,33 @@ $effect(() => { console.log(count); });
 </script>
 ```
 
-## XState Patterns
+## State Management
 
-### Stub Actor Pattern
+WarpKit uses a custom finite state machine (`src/core/StateMachine.ts`) with the Auth Adapter pattern:
+
 ```typescript
-// Define stub for type safety
-const authActorStub = fromCallback(() => () => {});
+// StateMachine manages app states (e.g., 'unauthenticated', 'authenticated')
+const machine = new StateMachine<AppState>('unauthenticated');
 
-// Inject real implementation
-machine.provide({ actors: { listenToAuth: realAuthActor } });
+// Subscribe to state changes
+const unsubscribe = machine.subscribe((state) => {
+  console.log('New state:', state.current);
+});
+
+// Transition states
+machine.setState('authenticated');
 ```
 
-### State Machine Testing
-- Use `vi.waitFor()` for async transitions
-- Always call `actor.stop()` in cleanup
-- Callback actors send via `sendBack`, not external listeners
+### Auth Adapter Pattern
+```typescript
+// Consumer provides their own auth implementation
+const authAdapter: AuthAdapter<MyUser> = {
+  initialize: () => Promise.resolve({ authenticated: false }),
+  onAuthStateChanged: (callback) => { /* ... */ },
+  signOut: () => Promise.resolve(),
+  // ...
+};
+```
 
 ## Testing Rules
 

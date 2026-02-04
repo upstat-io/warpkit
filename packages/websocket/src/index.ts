@@ -76,9 +76,5 @@ export type {
 	ErrorHandler
 } from './types';
 
-// Re-export validation utilities for convenience (ValidatedType should be imported from @warpkit/validation)
-export type { StandardSchema, StandardInfer } from '@warpkit/validation';
-export { validate, ValidationError, isStandardSchema } from '@warpkit/validation';
-
 // Protocol constants (for server implementations)
 export { PING_FRAME, PONG_FRAME } from './types';

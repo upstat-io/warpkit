@@ -1,10 +1,26 @@
 <script lang="ts">
 	// Global Error Overlay
 	// Displays a full error dialog with stack trace when unhandled errors occur.
-	import { errorStore } from './error-store';
+	import { errorStore } from './error-store.svelte';
+	import type { NormalizedError } from './types';
 
-	let copied = $state(false);
+	/** Duration to show "Copied!" feedback after copying error to clipboard */
+	const COPY_FEEDBACK_TIMEOUT_MS = 2000;
+
+	let copied = $state<boolean>(false);
 	let dialogElement: HTMLDivElement | undefined = $state();
+
+	// Subscribe to error store for reactive updates
+	let showErrorUI = $state(false);
+	let currentError = $state<NormalizedError | null>(null);
+
+	$effect(() => {
+		const unsubscribe = errorStore.subscribe((state) => {
+			showErrorUI = state.showErrorUI;
+			currentError = state.currentError;
+		});
+		return unsubscribe;
+	});
 
 	/**
 	 * Clean up Vite dev server URLs in stack traces to show actual file paths.
@@ -63,17 +79,17 @@
 	}
 
 	async function copyError(): Promise<void> {
-		const error = $errorStore.currentError;
+		const error = errorStore.currentError;
 		if (!error) return;
 
 		const text = `${error.message}\n\n${error.stack ?? ''}`;
 		await navigator.clipboard.writeText(text);
 		copied = true;
-		setTimeout(() => (copied = false), 2000);
+		setTimeout(() => (copied = false), COPY_FEEDBACK_TIMEOUT_MS);
 	}
 </script>
 
-{#if $errorStore.showErrorUI && $errorStore.currentError}
+{#if showErrorUI && currentError}
 	<div
 		class="warpkit-error-overlay"
 		role="alertdialog"
@@ -88,8 +104,8 @@
 				<h2 id="error-title">Unhandled Error</h2>
 			</div>
 			<div class="warpkit-error-body">
-				<p class="warpkit-error-message">{$errorStore.currentError.message}</p>
-				{#if $errorStore.currentError.stack}
+				<p class="warpkit-error-message">{currentError.message}</p>
+				{#if currentError.stack}
 					<div class="warpkit-stack-container">
 						<button class="warpkit-btn-copy" onclick={copyError} title="Copy to clipboard" aria-label="Copy error to clipboard">
 							{#if copied}
@@ -117,7 +133,7 @@
 								</svg>
 							{/if}
 						</button>
-						<pre class="warpkit-error-stack">{cleanStackTrace($errorStore.currentError.stack)}</pre>
+						<pre class="warpkit-error-stack">{cleanStackTrace(currentError.stack)}</pre>
 					</div>
 				{/if}
 			</div>

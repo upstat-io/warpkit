@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'bun:test';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 import { SocketClient, Connected, Disconnected } from '../src/client';
 import type { ClientMessageDefinition, SocketClientOptions } from '../src/types';
 import { waitFor, delay } from './test-helpers';
@@ -632,9 +632,6 @@ describe('SocketClient with Real WebSocket', () => {
 			// Verify
 			expect(joinMessages.length).toBe(1);
 			expect((joinMessages[0]!.parsed as { room: string }).room).toBe('test-room');
-
-			// Log events for debugging
-			// console.log('Event sequence:', events);
 		});
 	});
 });

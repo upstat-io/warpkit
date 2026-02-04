@@ -59,6 +59,12 @@ const DISCONNECTED_MESSAGE = '__disconnected__';
 const PING_FRAME = '2';
 const PONG_FRAME = '3';
 
+/** Default minimum backoff delay in milliseconds */
+const DEFAULT_BACKOFF_MIN_MS = 500;
+
+/** Default maximum backoff delay in milliseconds */
+const DEFAULT_BACKOFF_MAX_MS = 20000;
+
 /**
  * Full jitter backoff calculator.
  * Provides the best performance for distributed systems by completely
@@ -70,8 +76,8 @@ class Backoff {
 	public attempts = 0;
 
 	constructor(options: { min?: number; max?: number } = {}) {
-		this.ms = options.min ?? 500;
-		this.max = options.max ?? 20000;
+		this.ms = options.min ?? DEFAULT_BACKOFF_MIN_MS;
+		this.max = options.max ?? DEFAULT_BACKOFF_MAX_MS;
 	}
 
 	/**

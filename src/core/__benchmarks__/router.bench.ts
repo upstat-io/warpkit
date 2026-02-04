@@ -28,7 +28,7 @@ function createRoute(path: string): Route {
 	};
 }
 
-// Realistic route configuration matching warpkit-frontend-app
+// Realistic route configuration for benchmarking (generic SaaS patterns)
 const realisticRoutes: StateRoutes<'unauthenticated' | 'authenticated'> = {
 	unauthenticated: {
 		routes: [
@@ -40,30 +40,30 @@ const realisticRoutes: StateRoutes<'unauthenticated' | 'authenticated'> = {
 	},
 	authenticated: {
 		routes: [
-			createRoute('/[projectAlias]'),
-			createRoute('/[projectAlias]/incidents'),
-			createRoute('/[projectAlias]/monitors'),
-			createRoute('/[projectAlias]/heartbeats'),
-			createRoute('/[projectAlias]/catalog'),
-			createRoute('/[projectAlias]/on-call/rosters'),
-			createRoute('/[projectAlias]/on-call/rosters/[range]/[date]'),
-			createRoute('/[projectAlias]/escalations'),
-			createRoute('/[projectAlias]/runbooks'),
-			createRoute('/[projectAlias]/automations'),
-			createRoute('/[projectAlias]/status-pages'),
-			createRoute('/[projectAlias]/maintenance'),
-			createRoute('/[projectAlias]/alerts'),
-			createRoute('/[projectAlias]/teams'),
-			createRoute('/[projectAlias]/calendar'),
-			createRoute('/[projectAlias]/reports'),
-			createRoute('/[projectAlias]/project/[uuid]'),
+			createRoute('/[org]'),
+			createRoute('/[org]/dashboard'),
+			createRoute('/[org]/items'),
+			createRoute('/[org]/analytics'),
+			createRoute('/[org]/catalog'),
+			createRoute('/[org]/schedules/list'),
+			createRoute('/[org]/schedules/[range]/[date]'),
+			createRoute('/[org]/workflows'),
+			createRoute('/[org]/docs'),
+			createRoute('/[org]/automations'),
+			createRoute('/[org]/pages'),
+			createRoute('/[org]/maintenance'),
+			createRoute('/[org]/notifications'),
+			createRoute('/[org]/teams'),
+			createRoute('/[org]/calendar'),
+			createRoute('/[org]/reports'),
+			createRoute('/[org]/project/[id]'),
 			createRoute('/settings'),
 			createRoute('/profile'),
 			createRoute('/new-account')
 		],
 		default: (data) => {
-			const d = data as { projectAlias?: string } | undefined;
-			return d?.projectAlias ? `/${d.projectAlias}/` : '/';
+			const d = data as { org?: string } | undefined;
+			return d?.org ? `/${d.org}/` : '/';
 		}
 	}
 };
@@ -91,16 +91,16 @@ group('RouteMatcher.match() - static paths', () => {
 });
 
 group('RouteMatcher.match() - param paths', () => {
-	bench('match /ip/incidents (1 param)', () => {
-		matcher.match('/ip/incidents', 'authenticated');
+	bench('match /acme/items (1 param)', () => {
+		matcher.match('/acme/items', 'authenticated');
 	});
 
-	bench('match /ip/on-call/rosters/week/2024-01-15 (3 params)', () => {
-		matcher.match('/ip/on-call/rosters/week/2024-01-15', 'authenticated');
+	bench('match /acme/schedules/week/2024-01-15 (3 params)', () => {
+		matcher.match('/acme/schedules/week/2024-01-15', 'authenticated');
 	});
 
-	bench('match /ip/project/abc-123 (2 params)', () => {
-		matcher.match('/ip/project/abc-123', 'authenticated');
+	bench('match /acme/project/abc-123 (2 params)', () => {
+		matcher.match('/acme/project/abc-123', 'authenticated');
 	});
 });
 
@@ -115,14 +115,14 @@ group('RouteMatcher.match() - no match / state mismatch', () => {
 });
 
 group('RouteMatcher.tryExpandPath()', () => {
-	const stateData = { projectAlias: 'ip' };
+	const stateData = { org: 'acme' };
 
-	bench('expand /incidents -> /ip/incidents', () => {
-		matcher.tryExpandPath('/incidents', 'authenticated', stateData);
+	bench('expand /items -> /acme/items', () => {
+		matcher.tryExpandPath('/items', 'authenticated', stateData);
 	});
 
-	bench('expand /on-call/rosters -> /ip/on-call/rosters', () => {
-		matcher.tryExpandPath('/on-call/rosters', 'authenticated', stateData);
+	bench('expand /schedules/list -> /acme/schedules/list', () => {
+		matcher.tryExpandPath('/schedules/list', 'authenticated', stateData);
 	});
 
 	bench('expand /settings (no expansion needed)', () => {
@@ -139,8 +139,8 @@ group('RouteCompiler.compile()', () => {
 		compiler.compile(createRoute('/dashboard'), 'auth');
 	});
 
-	bench('compile /[projectAlias]/incidents (1 param)', () => {
-		compiler.compile(createRoute('/[projectAlias]/incidents'), 'auth');
+	bench('compile /[workspace]/incidents (1 param)', () => {
+		compiler.compile(createRoute('/[workspace]/incidents'), 'auth');
 	});
 
 	bench('compile /[a]/[b]/[c]/[d] (4 params)', () => {
@@ -564,7 +564,7 @@ group('Full navigation simulation (sync parts)', () => {
 		const sm = new StateMachine<'unauthenticated' | 'authenticated'>('authenticated');
 
 		// Match route
-		const match = m.match('/ip/incidents', sm.getState());
+		const match = m.match('/acme/items', sm.getState());
 
 		// Check lifecycle (no hooks = fast path)
 		const hasHooks = lc['beforeNavigateHooks'].size > 0;
