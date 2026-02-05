@@ -141,10 +141,13 @@ export function mergeInitialValues<T extends object>(
 	schemaDefaults: Partial<T> | undefined,
 	initialValues: Partial<T> | undefined
 ): T {
-	return structuredClone({
-		...schemaDefaults,
-		...initialValues
-	}) as T;
+	// Use JSON clone to handle potential Svelte 5 reactive proxies
+	return JSON.parse(
+		JSON.stringify({
+			...schemaDefaults,
+			...initialValues
+		})
+	) as T;
 }
 
 /**

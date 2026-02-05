@@ -61,7 +61,8 @@ export function setPath<T>(obj: T, path: string, value: unknown): T {
 	if (!path) return value as T;
 
 	const parts = path.split('.');
-	const result = structuredClone(obj) as Record<string, unknown>;
+	// Use JSON clone to handle Svelte 5 reactive proxies that structuredClone can't handle
+	const result = JSON.parse(JSON.stringify(obj)) as Record<string, unknown>;
 
 	let current: Record<string, unknown> = result;
 

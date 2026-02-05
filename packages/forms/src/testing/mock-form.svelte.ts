@@ -80,7 +80,8 @@ export function createMockForm<T extends object>(options: MockFormOptions<T> = {
 
 	// Use $state for reactive properties
 	// Variables that are reassigned use let, others use const
-	const dataState = $state<T>(structuredClone(initialValues));
+	// Use JSON clone to handle potential Svelte 5 reactive proxies
+	const dataState = $state<T>(JSON.parse(JSON.stringify(initialValues)));
 	let errorsState = $state<Record<string, string>>(initialErrors);
 	let warningsState = $state<Record<string, string>>(initialWarnings);
 	let touchedState = $state<Record<string, boolean>>(initialTouched);
