@@ -89,7 +89,8 @@ export function useForm<T extends object>(options: FormOptions<T>): FormState<T>
 	// Core State ($state)
 	// =========================================================================
 
-	let values = $state<T>(structuredClone(initial) as T);
+	// Use JSON clone to handle potential Svelte 5 reactive proxies
+	let values = $state<T>(JSON.parse(JSON.stringify(initial)) as T);
 	let errors = $state<Record<string, string>>({});
 	let warnings = $state<Record<string, string>>({});
 	let touched = $state<Record<string, boolean>>({});
@@ -363,7 +364,7 @@ export function useForm<T extends object>(options: FormOptions<T>): FormState<T>
 			await onSubmit(values);
 		} catch (e) {
 			submitError = e instanceof Error ? e : new Error(String(e));
-			// Don't re-throw - error is captured in submitError
+			throw e;
 		} finally {
 			isSubmitting = false;
 		}
@@ -378,7 +379,10 @@ export function useForm<T extends object>(options: FormOptions<T>): FormState<T>
 		clearAllErrorTimers();
 
 		// Reset values by mutating in place (keeps proxy reference valid)
-		const resetValues = newValues ? structuredClone({ ...initial, ...newValues }) : structuredClone(initial);
+		// Use JSON clone to handle potential Svelte 5 reactive proxies
+		const resetValues = newValues
+			? JSON.parse(JSON.stringify({ ...initial, ...newValues }))
+			: JSON.parse(JSON.stringify(initial));
 
 		// Clear existing keys and copy new values
 		for (const key of Object.keys(values)) {
@@ -403,9 +407,23 @@ export function useForm<T extends object>(options: FormOptions<T>): FormState<T>
 
 	/**
 	 * Set a field value with type safety.
+	 * Mutates in place to maintain proxy reference.
 	 */
 	function setField<K extends keyof T>(field: K, value: T[K]): void {
-		values = setPath(values, String(field), value);
+		const path = String(field);
+		const parts = path.split('.');
+
+		if (parts.length === 1) {
+			// Top-level field - direct assignment
+			(values as Record<string, unknown>)[path] = value;
+		} else {
+			// Nested field - navigate to parent and set
+			let current: Record<string, unknown> = values as Record<string, unknown>;
+			for (let i = 0; i < parts.length - 1; i++) {
+				current = current[parts[i]] as Record<string, unknown>;
+			}
+			current[parts[parts.length - 1]] = value;
+		}
 	}
 
 	/**

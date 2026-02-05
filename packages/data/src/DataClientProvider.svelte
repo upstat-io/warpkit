@@ -22,9 +22,9 @@ interface Props {
 	children: Snippet;
 }
 
-let { client, children }: Props = $props();
+const { children, ...rest }: Props = $props();
 
-setContext(DATA_CLIENT_CONTEXT, client);
+setContext(DATA_CLIENT_CONTEXT, rest.client);
 </script>
 
 {@render children()}
