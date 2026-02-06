@@ -165,6 +165,9 @@ export function createMockForm<T extends object>(options: MockFormOptions<T> = {
 			warningsState = {};
 		},
 
+		// Lifecycle
+		cleanup: () => {},
+
 		// Array operations (no-ops by default)
 		push: () => {},
 		remove: () => {},

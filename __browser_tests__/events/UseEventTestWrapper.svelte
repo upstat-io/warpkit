@@ -23,6 +23,8 @@
 		// Stub other required properties (not used in these tests)
 		page: {} as WarpKit['page'],
 		ready: true,
+		loadedComponent: null,
+		loadedLayout: null,
 		navigate: async () => ({ success: true }),
 		setState: async () => {},
 		buildUrl: (path: string) => path,
@@ -30,7 +32,8 @@
 		getState: () => 'idle',
 		getStateId: () => 0,
 		start: async () => {},
-		destroy: () => {}
+		destroy: () => {},
+		retry: async () => ({ success: true })
 	};
 
 	// Provide WarpKit context

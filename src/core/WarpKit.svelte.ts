@@ -45,6 +45,7 @@ import { DefaultConfirmDialogProvider } from '../providers/confirm/ConfirmDialog
 import { DefaultStorageProvider } from '../providers/storage/StorageProvider.js';
 import { errorStore } from '../errors/error-store.svelte.js';
 import { setupGlobalErrorHandlers } from '../errors/global-handlers.js';
+import { reportError } from '@warpkit/errors';
 
 /**
  * Queued state change request (for pre-start calls).
@@ -150,6 +151,9 @@ export class WarpKit<TAppState extends string, TStateData = unknown> implements 
 	/** Auth state change unsubscribe function */
 	private authUnsubscribe?: () => void;
 
+	/** Data client integration for cache management */
+	private readonly dataConfig?: WarpKitConfig<TAppState, TStateData>['data'];
+
 	// ============================================================================
 	// Constructor
 	// ============================================================================
@@ -163,6 +167,7 @@ export class WarpKit<TAppState extends string, TStateData = unknown> implements 
 	public constructor(config: WarpKitConfig<TAppState, TStateData>) {
 		this.routes = config.routes;
 		this.authAdapter = config.authAdapter;
+		this.dataConfig = config.data;
 
 		// Use errorStore by default if no onError handler is provided
 		this.onError =
@@ -290,6 +295,14 @@ export class WarpKit<TAppState extends string, TStateData = unknown> implements 
 				}
 				this.stateMachine.setState(result.state);
 
+				// Scope cache during initial auth if callback provided
+				if (this.dataConfig?.client && this.dataConfig.scopeKey) {
+					const scope = this.dataConfig.scopeKey(result.stateData ?? this.stateData);
+					if (scope) {
+						this.dataConfig.client.scopeCache(scope);
+					}
+				}
+
 				// Subscribe to subsequent auth state changes
 				this.authUnsubscribe = this.authAdapter.onAuthStateChanged((changeResult) => {
 					if (changeResult) {
@@ -298,9 +311,10 @@ export class WarpKit<TAppState extends string, TStateData = unknown> implements 
 				});
 			} catch (error) {
 				// Auth initialization failed - fall back to initial state from config
-				if (import.meta.env?.DEV) {
-					console.error('[WarpKit] Auth adapter initialization failed:', error);
-				}
+				reportError('auth', error, {
+					showUI: true,
+					context: { phase: 'initialization' }
+				});
 			}
 		}
 
@@ -337,6 +351,19 @@ export class WarpKit<TAppState extends string, TStateData = unknown> implements 
 
 		// Transition app state if different
 		if (this.stateMachine.getState() !== result.state) {
+			// Clear data cache on auth state transition (sign-out, user switch)
+			if (this.dataConfig?.client) {
+				await this.dataConfig.client.clearCache();
+			}
+
+			// Scope cache if callback provided and returns a value
+			if (this.dataConfig?.client && this.dataConfig.scopeKey) {
+				const scope = this.dataConfig.scopeKey(result.stateData ?? this.stateData);
+				if (scope) {
+					this.dataConfig.client.scopeCache(scope);
+				}
+			}
+
 			await this.setAppState(result.state, result.stateData);
 		}
 	}
@@ -853,9 +880,10 @@ export class WarpKit<TAppState extends string, TStateData = unknown> implements 
 			try {
 				listener(context);
 			} catch (error) {
-				if (import.meta.env?.DEV) {
-					console.error('[WarpKit] Navigation complete listener threw:', error);
-				}
+				reportError('navigation-lifecycle', error, {
+					showUI: false,
+					context: { hook: 'navigationComplete' }
+				});
 			}
 		}
 	}

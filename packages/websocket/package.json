@@ -13,6 +13,7 @@
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
+		"@warpkit/errors": "workspace:*",
 		"@warpkit/validation": "workspace:*"
 	},
 	"devDependencies": {

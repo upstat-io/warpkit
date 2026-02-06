@@ -5,6 +5,7 @@
  * Use for mutations that don't belong to a specific data key.
  */
 
+import { reportError } from '@warpkit/errors';
 import type { MutationState, UseMutationOptions } from './types';
 
 /**
@@ -85,6 +86,11 @@ export function useMutation<TData, TError = Error, TVariables = void>(
 			const thrownError = e as TError;
 			error = thrownError;
 			status = 'error';
+
+			reportError('data:mutation', thrownError instanceof Error ? thrownError : new Error(String(thrownError)), {
+				handledLocally: true,
+				showUI: false
+			});
 
 			// Call onError callback
 			if (options.onError) {

@@ -192,6 +192,8 @@ export interface CacheProvider {
 	deleteByPrefix(prefix: string): Promise<void>;
 	/** Clear all cached entries */
 	clear(): Promise<void>;
+	/** Create a new cache provider scoped to a key. Optional. */
+	createScoped?(scope: string): CacheProvider;
 }
 
 /**

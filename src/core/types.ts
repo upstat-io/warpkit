@@ -445,6 +445,18 @@ export interface WarpKitConfig<TAppState extends string, TStateData = unknown> {
 	 * This removes the need for manual `{#if ready}` wrappers.
 	 */
 	authAdapter?: AuthAdapter<TAppState, TStateData>;
+	/**
+	 * Data client integration for automatic cache management.
+	 * When provided, WarpKit will:
+	 * - Clear cache on auth state transitions
+	 * - Scope cache via scopeKey callback (if provided)
+	 */
+	data?: {
+		/** Data client with cache management support */
+		client: { clearCache(): Promise<void>; scopeCache(scope: string): void };
+		/** Derive cache scope from state data. Return undefined to skip scoping. */
+		scopeKey?: (stateData: TStateData | undefined) => string | undefined;
+	};
 }
 
 // ============================================================================

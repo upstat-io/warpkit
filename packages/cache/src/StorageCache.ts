@@ -11,6 +11,7 @@
  */
 
 import type { CacheEntry } from '@warpkit/data';
+import { reportError } from '@warpkit/errors';
 import type { StorageCacheOptions, StorageAdapter } from './types.js';
 
 const DEFAULT_PREFIX = 'warpkit:';
@@ -56,7 +57,13 @@ export class StorageCache {
 			const raw = this.storage.getItem(fullKey);
 			if (!raw) return undefined;
 			return JSON.parse(raw) as CacheEntry<T>;
-		} catch {
+		} catch (error) {
+			reportError('cache', error, {
+				severity: 'warning',
+				showUI: false,
+				handledLocally: true,
+				context: { operation: 'get', key }
+			});
 			// Corrupted JSON - delete and return undefined
 			try {
 				this.storage.removeItem(fullKey);
@@ -79,11 +86,13 @@ export class StorageCache {
 		const fullKey = this.prefix + key;
 		try {
 			this.storage.setItem(fullKey, JSON.stringify(entry));
-		} catch {
-			// Quota exceeded or other error - fail silently in production
-			if (import.meta.env?.DEV) {
-				console.warn(`[WarpKit Cache] Failed to store ${key} (quota exceeded?)`);
-			}
+		} catch (error) {
+			reportError('cache', error, {
+				severity: 'warning',
+				showUI: false,
+				handledLocally: true,
+				context: { operation: 'set', key }
+			});
 		}
 	}
 

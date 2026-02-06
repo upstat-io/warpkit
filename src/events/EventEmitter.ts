@@ -6,6 +6,7 @@
  */
 
 import type { EventEmitterAPI, EventHandler, EventRegistry } from './types.js';
+import { reportError } from '@warpkit/errors';
 
 // ============================================================================
 // EventEmitter Class
@@ -106,11 +107,17 @@ export class EventEmitter<R extends EventRegistry = EventRegistry> implements Ev
 				const result = handler(payload);
 				if (result instanceof Promise) {
 					result.catch((error) => {
-						console.error(`[WarpKit Events] Async handler error for '${String(event)}':`, error);
+						reportError('event-emitter', error, {
+							showUI: false,
+							context: { event: String(event) }
+						});
 					});
 				}
 			} catch (error) {
-				console.error(`[WarpKit Events] Handler error for '${String(event)}':`, error);
+				reportError('event-emitter', error, {
+					showUI: false,
+					context: { event: String(event) }
+				});
 			}
 		}
 	}

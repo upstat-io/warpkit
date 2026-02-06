@@ -14,6 +14,7 @@ export default defineConfig({
 	resolve: {
 		conditions: ['browser'],
 		alias: {
+			'@warpkit/errors': './packages/errors/src/index.ts',
 			'@warpkit/data': './packages/data/src/index.ts',
 			'@warpkit/cache': './packages/cache/src/index.ts',
 			'@warpkit/state-machine': './packages/state-machine/src/index.ts',

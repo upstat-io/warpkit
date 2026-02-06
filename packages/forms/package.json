@@ -8,6 +8,7 @@
 		"./testing": "./src/testing/index.ts"
 	},
 	"dependencies": {
+		"@warpkit/errors": "workspace:*",
 		"@warpkit/validation": "workspace:*"
 	},
 	"peerDependencies": {

@@ -13,7 +13,23 @@ export type ErrorSeverity = 'fatal' | 'error' | 'warning' | 'info';
 /**
  * Source of the error
  */
-export type ErrorSource = 'global' | 'unhandled-rejection' | 'router' | 'component' | 'manual';
+export type ErrorSource =
+	| 'global'
+	| 'unhandled-rejection'
+	| 'router'
+	| 'component'
+	| 'manual'
+	| 'data:query'
+	| 'data:mutation'
+	| 'websocket'
+	| 'websocket:message'
+	| 'websocket:heartbeat'
+	| 'forms:submit'
+	| 'cache'
+	| 'auth'
+	| 'event-emitter'
+	| 'state-machine'
+	| 'navigation-lifecycle';
 
 /**
  * Normalized error state stored in error-store

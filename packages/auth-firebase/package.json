@@ -11,6 +11,7 @@
 		"test:build-emulator": "docker build -t warpkit-firebase-emulator:latest ."
 	},
 	"dependencies": {
+		"@warpkit/errors": "workspace:*",
 		"@warpkit/types": "workspace:*"
 	},
 	"peerDependencies": {

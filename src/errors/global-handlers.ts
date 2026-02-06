@@ -13,6 +13,7 @@
 /// <reference types="vite/client" />
 import { errorStore } from './error-store.svelte.js';
 import type { ReportingProvider } from './types.js';
+import { onErrorReport } from '@warpkit/errors';
 
 /** Track if handlers are already installed */
 let installed = false;
@@ -22,6 +23,9 @@ let reporter: ReportingProvider | undefined;
 
 /** Vite HMR cleanup function */
 let viteCleanup: (() => void) | undefined;
+
+/** Error channel unsubscribe function */
+let channelCleanup: (() => void) | undefined;
 
 /**
  * Vite error payload types (from vite/types/hmrPayload.d.ts)
@@ -126,6 +130,23 @@ export function setupGlobalErrorHandlers(options?: { reporter?: ReportingProvide
 		}
 	};
 
+	// Subscribe to error channel from sub-packages
+	channelCleanup = onErrorReport((report) => {
+		try {
+			const showUI = report.showUI && !report.handledLocally;
+			const normalizedError = errorStore.setError(report.error, {
+				source: report.source,
+				severity: report.severity,
+				context: report.context,
+				showUI
+			});
+
+			reporter?.captureError(normalizedError);
+		} catch {
+			// Never throw from error handler
+		}
+	});
+
 	installed = true;
 
 	return () => removeGlobalErrorHandlers();
@@ -146,6 +167,10 @@ export function removeGlobalErrorHandlers(): void {
 	// Clean up Vite handlers
 	viteCleanup?.();
 	viteCleanup = undefined;
+
+	// Clean up error channel subscription
+	channelCleanup?.();
+	channelCleanup = undefined;
 
 	installed = false;
 	reporter = undefined;

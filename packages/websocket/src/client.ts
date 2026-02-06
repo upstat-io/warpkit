@@ -45,6 +45,7 @@ import type {
 } from './types';
 import { JoinRoom, LeaveRoom } from './control-messages';
 import { Json } from './json';
+import { reportError } from '@warpkit/errors';
 
 /** Internal message name for connection established */
 const CONNECTED_MESSAGE = '__connected__';
@@ -299,6 +300,12 @@ export class SocketClient {
 	 * Notify all error handlers of an error.
 	 */
 	private notifyError(error: Error): void {
+		reportError('websocket', error, {
+			severity: 'warning',
+			showUI: false,
+			handledLocally: this.errorHandlers.size > 0,
+			context: { url: this.url, state: this.state }
+		});
 		for (const handler of this.errorHandlers) {
 			try {
 				handler(error);
@@ -566,8 +573,12 @@ export class SocketClient {
 			// Use Json.parse for prototype pollution protection
 			const envelope = Json.parse<MessageEnvelope>(data);
 			this.emitToHandlers(envelope.name, envelope.data, envelope);
-		} catch {
-			// Ignore malformed messages
+		} catch (error) {
+			reportError('websocket:message', error, {
+				severity: 'warning',
+				showUI: false,
+				context: { rawLength: data.length }
+			});
 		}
 	}
 
@@ -583,8 +594,11 @@ export class SocketClient {
 		for (const handler of handlers) {
 			try {
 				(handler as MessageHandler<TData>)(data, envelope);
-			} catch {
-				// Don't let one handler break others
+			} catch (error) {
+				reportError('websocket:message', error, {
+					showUI: false,
+					context: { messageName: name }
+				});
 			}
 		}
 	}

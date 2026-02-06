@@ -317,6 +317,25 @@ export class DataClient {
 	}
 
 	/**
+	 * Clear all cached data from memory and storage.
+	 */
+	public async clearCache(): Promise<void> {
+		await this.cache.clear();
+	}
+
+	/**
+	 * Scope cache to a key. Requires cache with createScoped support.
+	 * If the cache doesn't support scoping, this is a no-op.
+	 * @param scope - Scope identifier (e.g., user ID)
+	 */
+	public scopeCache(scope: string): void {
+		const scoped = this.cache.createScoped?.(scope);
+		if (scoped) {
+			this.cache = scoped;
+		}
+	}
+
+	/**
 	 * Set the cache provider (for late injection).
 	 *
 	 * @param cache - The cache provider to use

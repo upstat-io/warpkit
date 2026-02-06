@@ -26,8 +26,10 @@ import { StorageCache } from './StorageCache.js';
 export class ETagCacheProvider implements CacheProvider {
 	private readonly memory: MemoryCache;
 	private readonly storage: StorageCache;
+	private readonly options: ETagCacheProviderOptions | undefined;
 
 	constructor(options?: ETagCacheProviderOptions) {
+		this.options = options;
 		this.memory = new MemoryCache(options?.memory);
 		this.storage = new StorageCache(options?.storage);
 	}
@@ -91,5 +93,23 @@ export class ETagCacheProvider implements CacheProvider {
 	async clear(): Promise<void> {
 		this.memory.clear();
 		this.storage.clear();
+	}
+
+	/**
+	 * Create a new cache provider scoped to a key.
+	 * Builds on the existing storage prefix: `warpkit:` → `warpkit:<scope>:`.
+	 * Memory cache shares the same options but starts empty.
+	 * @param scope - Scope identifier (e.g., user ID)
+	 * @returns A new ETagCacheProvider with scoped storage keys
+	 */
+	createScoped(scope: string): ETagCacheProvider {
+		const basePrefix = this.options?.storage?.prefix ?? 'warpkit:';
+		return new ETagCacheProvider({
+			memory: this.options?.memory,
+			storage: {
+				...this.options?.storage,
+				prefix: `${basePrefix}${scope}:`
+			}
+		});
 	}
 }

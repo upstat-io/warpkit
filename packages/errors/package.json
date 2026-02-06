@@ -1,0 +1,9 @@
+{
+	"name": "@warpkit/errors",
+	"version": "0.0.1",
+	"type": "module",
+	"module": "src/index.ts",
+	"exports": {
+		".": "./src/index.ts"
+	}
+}

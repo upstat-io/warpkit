@@ -7,7 +7,8 @@
 		".": "./src/index.ts"
 	},
 	"dependencies": {
-		"@warpkit/data": "workspace:*"
+		"@warpkit/data": "workspace:*",
+		"@warpkit/errors": "workspace:*"
 	},
 	"peerDependencies": {
 		"svelte": "^5.0.0"

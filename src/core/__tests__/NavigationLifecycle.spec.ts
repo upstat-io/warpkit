@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NavigationLifecycle } from '../NavigationLifecycle.js';
+import { onErrorReport, _resetChannel } from '@warpkit/errors';
+import type { ErrorReport } from '@warpkit/errors';
 import type { NavigationContext } from '../types.js';
 
 describe('NavigationLifecycle', () => {
@@ -7,6 +9,7 @@ describe('NavigationLifecycle', () => {
 	let mockContext: NavigationContext;
 
 	beforeEach(() => {
+		_resetChannel();
 		lifecycle = new NavigationLifecycle();
 		mockContext = {
 			from: null,
@@ -170,9 +173,9 @@ describe('NavigationLifecycle', () => {
 			expect(result.redirect).toBe('/first');
 		});
 
-		it('should treat hook throwing as abort', async () => {
-			// Suppress console.error from hook error (DEV-only logging)
-			const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+		it('should treat hook throwing as abort and report to error channel', async () => {
+			const reports: ErrorReport[] = [];
+			onErrorReport((report) => reports.push(report));
 
 			lifecycle.registerBeforeNavigate(() => {
 				throw new Error('Hook error');
@@ -182,9 +185,13 @@ describe('NavigationLifecycle', () => {
 
 			// Hook throw should be treated as abort
 			expect(result.proceed).toBe(false);
-			// Note: console.error is DEV-only, not asserted here
 
-			consoleError.mockRestore();
+			// Error should be reported to channel
+			expect(reports).toHaveLength(1);
+			expect(reports[0].source).toBe('navigation-lifecycle');
+			expect(reports[0].error.message).toBe('Hook error');
+			expect(reports[0].severity).toBe('warning');
+			expect(reports[0].context).toEqual({ hook: 'beforeNavigate' });
 		});
 
 		it('should handle async hooks', async () => {
@@ -231,9 +238,10 @@ describe('NavigationLifecycle', () => {
 			expect(hook).toHaveBeenCalledWith(mockContext);
 		});
 
-		it('should continue running hooks even if one throws', async () => {
-			// Suppress console.error from hook error (DEV-only logging)
-			const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+		it('should continue running hooks even if one throws and report to error channel', async () => {
+			const reports: ErrorReport[] = [];
+			onErrorReport((report) => reports.push(report));
+
 			const hook1 = vi.fn(() => {
 				throw new Error('Hook error');
 			});
@@ -247,9 +255,11 @@ describe('NavigationLifecycle', () => {
 			// Both hooks should be called even when first one throws
 			expect(hook1).toHaveBeenCalled();
 			expect(hook2).toHaveBeenCalled();
-			// Note: console.error is DEV-only, not asserted here
 
-			consoleError.mockRestore();
+			// Error should be reported to channel
+			expect(reports).toHaveLength(1);
+			expect(reports[0].source).toBe('navigation-lifecycle');
+			expect(reports[0].context).toEqual({ hook: 'onNavigate' });
 		});
 	});
 
@@ -267,9 +277,10 @@ describe('NavigationLifecycle', () => {
 			expect(hook2).toHaveBeenCalledWith(mockContext);
 		});
 
-		it('should not throw when a hook throws', () => {
-			// Suppress console.error from hook error (DEV-only logging)
-			const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+		it('should not throw when a hook throws and report to error channel', () => {
+			const reports: ErrorReport[] = [];
+			onErrorReport((report) => reports.push(report));
+
 			const hook1 = vi.fn(() => {
 				throw new Error('Hook error');
 			});
@@ -284,9 +295,11 @@ describe('NavigationLifecycle', () => {
 			// Both hooks should be called even when first one throws
 			expect(hook1).toHaveBeenCalled();
 			expect(hook2).toHaveBeenCalled();
-			// Note: console.error is DEV-only, not asserted here
 
-			consoleError.mockRestore();
+			// Error should be reported to channel
+			expect(reports).toHaveLength(1);
+			expect(reports[0].source).toBe('navigation-lifecycle');
+			expect(reports[0].context).toEqual({ hook: 'afterNavigate' });
 		});
 
 		it('should be fire-and-forget (synchronous)', () => {

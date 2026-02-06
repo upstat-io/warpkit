@@ -3,12 +3,18 @@
  *
  * Tests state transitions, stateId tracking, and listener notifications.
  */
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { StateMachine } from '../StateMachine';
+import { onErrorReport, _resetChannel } from '@warpkit/errors';
+import type { ErrorReport } from '@warpkit/errors';
 
 type TestState = 'initializing' | 'unauthenticated' | 'authenticated';
 
 describe('StateMachine', () => {
+	beforeEach(() => {
+		_resetChannel();
+	});
+
 	describe('constructor', () => {
 		it('should initialize with given state', () => {
 			const machine = new StateMachine<TestState>('initializing');
@@ -196,6 +202,27 @@ describe('StateMachine', () => {
 			machine.setState('authenticated');
 			expect(listener1).toHaveBeenCalledTimes(1); // Not called again
 			expect(listener2).toHaveBeenCalledTimes(2); // Still receiving updates
+		});
+
+		it('should report listener errors to the error channel', () => {
+			const machine = new StateMachine<TestState>('initializing');
+			const reports: ErrorReport[] = [];
+			onErrorReport((report) => reports.push(report));
+
+			machine.subscribe(() => {
+				throw new Error('listener bug');
+			});
+
+			machine.setState('authenticated');
+
+			expect(reports).toHaveLength(1);
+			expect(reports[0].source).toBe('state-machine');
+			expect(reports[0].error.message).toBe('listener bug');
+			expect(reports[0].showUI).toBe(false);
+			expect(reports[0].context).toEqual({
+				previous: 'initializing',
+				current: 'authenticated'
+			});
 		});
 	});
 

@@ -116,6 +116,7 @@ export type {
 	ReportingProvider,
 	ErrorHandlerOptions
 } from './errors/types';
+export type { ErrorChannelSource, ErrorReport } from '@warpkit/errors';
 
 // ============================================================================
 // Auth Adapter

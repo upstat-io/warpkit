@@ -8,6 +8,7 @@
  */
 
 import type { NavigationContext, BeforeNavigateHook, OnNavigateHook, AfterNavigateHook } from './types.js';
+import { reportError } from '@warpkit/errors';
 
 /**
  * Result of running beforeNavigate hooks.
@@ -83,9 +84,12 @@ export class NavigationLifecycle {
 					return await hook(context);
 				} catch (error) {
 					// Hook threw - treat as abort
-					if (import.meta.env?.DEV) {
-						console.error('[WarpKit] beforeNavigate hook threw:', error);
-					}
+					reportError('navigation-lifecycle', error, {
+						severity: 'warning',
+						showUI: false,
+						handledLocally: true,
+						context: { hook: 'beforeNavigate' }
+					});
 					return false;
 				}
 			})
@@ -127,9 +131,10 @@ export class NavigationLifecycle {
 			try {
 				await hook(context);
 			} catch (error) {
-				if (import.meta.env?.DEV) {
-					console.error('[WarpKit] onNavigate hook threw:', error);
-				}
+				reportError('navigation-lifecycle', error, {
+					showUI: false,
+					context: { hook: 'onNavigate' }
+				});
 			}
 		}
 	}
@@ -147,9 +152,10 @@ export class NavigationLifecycle {
 			try {
 				hook(context);
 			} catch (error) {
-				if (import.meta.env?.DEV) {
-					console.error('[WarpKit] afterNavigate hook threw:', error);
-				}
+				reportError('navigation-lifecycle', error, {
+					showUI: false,
+					context: { hook: 'afterNavigate' }
+				});
 			}
 		}
 	}

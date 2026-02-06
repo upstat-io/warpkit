@@ -31,6 +31,7 @@ import {
 import { getToken } from 'firebase/app-check';
 import type { FirebaseTokens, FirebaseUser, FirebaseSignInResult } from './types';
 import { mapFirebaseError, isFirebaseAuthError } from './error-mapping';
+import { reportError } from '@warpkit/errors';
 
 /**
  * Convert Firebase Auth User to minimal FirebaseUser type
@@ -210,7 +211,12 @@ export class FirebaseAuthAdapter<
 				const result = await getToken(this.appCheck, forceRefresh);
 				appCheckToken = result.token;
 			} catch (error) {
-				console.error('Failed to get AppCheck token:', error);
+				reportError('auth', error, {
+					severity: 'warning',
+					showUI: false,
+					handledLocally: true,
+					context: { tokenType: 'appCheck' }
+				});
 			}
 		}
 
@@ -219,7 +225,12 @@ export class FirebaseAuthAdapter<
 			try {
 				idToken = await this.auth.currentUser.getIdToken();
 			} catch (error) {
-				console.error('Failed to get ID token:', error);
+				reportError('auth', error, {
+					severity: 'warning',
+					showUI: false,
+					handledLocally: true,
+					context: { tokenType: 'idToken' }
+				});
 			}
 		}
 

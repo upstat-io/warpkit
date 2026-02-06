@@ -6,6 +6,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { StorageCache } from './StorageCache.js';
 import { createEntry, createMockStorage } from './test-utils.js';
+import { onErrorReport, _resetChannel } from '@warpkit/errors';
+import type { ErrorReport } from '@warpkit/errors';
 
 describe('StorageCache', () => {
 	let mockStorage: ReturnType<typeof createMockStorage>;
@@ -99,7 +101,11 @@ describe('StorageCache', () => {
 			expect(result?.data).toBe('value2');
 		});
 
-		it('should fail silently when quota is exceeded', () => {
+		it('should fail silently when quota is exceeded and report to error channel', () => {
+			_resetChannel();
+			const reports: ErrorReport[] = [];
+			onErrorReport((report) => reports.push(report));
+
 			const quotaStorage = createMockStorage();
 			quotaStorage.setItem = () => {
 				throw new Error('QuotaExceededError');
@@ -108,11 +114,14 @@ describe('StorageCache', () => {
 			const quotaCache = new StorageCache({ storage: quotaStorage, prefix: 'test:' });
 
 			// Should not throw
-			const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 			expect(() => quotaCache.set('key', createEntry('value'))).not.toThrow();
 
-			expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('Failed to store key'));
-			warnSpy.mockRestore();
+			// Error should be reported to channel
+			expect(reports).toHaveLength(1);
+			expect(reports[0].source).toBe('cache');
+			expect(reports[0].severity).toBe('warning');
+			expect(reports[0].error.message).toBe('QuotaExceededError');
+			expect(reports[0].context).toEqual({ operation: 'set', key: 'key' });
 		});
 
 		it('should not throw when storage is not available', () => {

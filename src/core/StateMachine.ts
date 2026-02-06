@@ -12,6 +12,7 @@
  */
 
 import type { StateTransition } from '../core/types.js';
+import { reportError } from '@warpkit/errors';
 
 /**
  * Simple finite state machine for app-level state management.
@@ -70,9 +71,10 @@ export class StateMachine<TAppState extends string> {
 			try {
 				listener(transition);
 			} catch (error) {
-				if (import.meta.env?.DEV) {
-					console.error('[WarpKit] State listener threw error:', error);
-				}
+				reportError('state-machine', error, {
+					showUI: false,
+					context: { previous, current: newState }
+				});
 			}
 		}
 

@@ -5,6 +5,7 @@
  * Uses deep proxy for transparent bind:value support.
  */
 
+import { reportError } from '@warpkit/errors';
 import type { StandardSchema } from '@warpkit/validation';
 import type {
 	FormOptions,
@@ -364,6 +365,10 @@ export function useForm<T extends object>(options: FormOptions<T>): FormState<T>
 			await onSubmit(values);
 		} catch (e) {
 			submitError = e instanceof Error ? e : new Error(String(e));
+			reportError('forms:submit', submitError, {
+				handledLocally: true,
+				showUI: false
+			});
 			throw e;
 		} finally {
 			isSubmitting = false;

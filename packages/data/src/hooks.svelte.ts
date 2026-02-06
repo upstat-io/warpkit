@@ -6,6 +6,7 @@
  */
 
 import { getDataClient } from './context';
+import { reportError } from '@warpkit/errors';
 import type { DataKey, DataRegistry, DataType, QueryState, UseQueryOptions } from './types';
 
 /**
@@ -76,6 +77,11 @@ export function useQuery<K extends DataKey>(options: UseQueryOptions<K>): QueryS
 					return;
 				}
 				error = e instanceof Error ? e : new Error(String(e));
+				reportError('data:query', error, {
+					handledLocally: true,
+					showUI: false,
+					context: { key: options.key }
+				});
 			}
 		} finally {
 			// Only update loading if this is still the current fetch
