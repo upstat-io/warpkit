@@ -172,5 +172,84 @@ describe('useData', () => {
 			await expect.element(loading).toHaveTextContent('false');
 			await expect.element(fetchCount).toHaveTextContent('2');
 		});
+
+		it('should bypass cache when invalidation event is emitted (staleTime active)', async () => {
+			// This test verifies the critical behavior: when data is cached and still
+			// within staleTime, an invalidation event MUST clear the cache and refetch
+			// from network — not return stale cached data.
+			const screen = render(UseDataTestWrapper, {
+				props: {
+					dataKey: 'monitors',
+					mockData: { data: 'initial' },
+					invalidateOn: ['query:invalidated'],
+					staleTime: 60000 // 60 seconds — data will be "fresh" in cache
+				}
+			});
+
+			// Wait for initial fetch
+			const loading = screen.getByTestId('loading');
+			await expect.element(loading).toHaveTextContent('false');
+
+			const fetchCount = screen.getByTestId('fetch-count');
+			await expect.element(fetchCount).toHaveTextContent('1');
+
+			// Data is now cached with staleTime=60s. A normal fetch would return
+			// cached data. But an invalidation event must bypass the cache.
+
+			// Emit invalidation event
+			const emitButton = screen.getByTestId('emit-invalidation');
+			await emitButton.click();
+
+			// Wait for refetch to complete
+			await expect.element(loading).toHaveTextContent('false');
+
+			// Verify fetch was called TWICE — proving cache was cleared and
+			// network request was made. Without the cache invalidation fix,
+			// fetchCount would stay at 1 (stale cache returned).
+			await expect.element(fetchCount).toHaveTextContent('2');
+		});
+
+		it('should clear cache when event fires while component is unmounted (cross-page)', async () => {
+			// Simulates: user on MonitorsPage → navigates to NewPage → creates monitor →
+			// event fires → navigates back to MonitorsPage → must show fresh data.
+			const screen = render(UseDataTestWrapper, {
+				props: {
+					dataKey: 'monitors',
+					mockData: { data: 'initial' },
+					invalidateOn: ['query:invalidated'],
+					staleTime: 60000,
+					showComponent: true
+				}
+			});
+
+			// Wait for initial fetch
+			const loading = screen.getByTestId('loading');
+			await expect.element(loading).toHaveTextContent('false');
+
+			const fetchCount = screen.getByTestId('fetch-count');
+			await expect.element(fetchCount).toHaveTextContent('1');
+
+			// Unmount (navigate away)
+			const toggleButton = screen.getByTestId('toggle-component');
+			await toggleButton.click();
+
+			// Reset fetch count
+			const resetButton = screen.getByTestId('reset-fetch-count');
+			await resetButton.click();
+			await expect.element(fetchCount).toHaveTextContent('0');
+
+			// Emit event while unmounted — DataClient clears cache
+			const emitButton = screen.getByTestId('emit-invalidation');
+			await emitButton.click();
+
+			// Remount (navigate back)
+			await toggleButton.click();
+
+			// Wait for fresh fetch
+			await expect.element(loading).toHaveTextContent('false');
+
+			// Must have fetched from network (cache was cleared)
+			await expect.element(fetchCount).toHaveTextContent('1');
+		});
 	});
 });

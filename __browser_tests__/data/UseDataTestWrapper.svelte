@@ -2,10 +2,20 @@
 	import { setContext } from 'svelte';
 	import { DATA_CLIENT_CONTEXT } from '../../packages/data/src/context.js';
 	import { DataClient } from '../../packages/data/src/DataClient.js';
-	import type { DataClientConfig, DataKey, DataKeyConfig, DataEventEmitter } from '../../packages/data/src/types.js';
+	import type { CacheEntry, CacheProvider, DataClientConfig, DataKey, DataKeyConfig, DataEventEmitter } from '../../packages/data/src/types.js';
 	import UseDataTestConsumer from './UseDataTestConsumer.svelte';
 	import { EventEmitter } from '../../src/events/EventEmitter.js';
 	import type { WarpKitEventRegistry } from '../../src/events/types.js';
+
+	/** Simple in-memory cache for testing cache + invalidation behavior */
+	class MemoryCache implements CacheProvider {
+		private store = new Map<string, CacheEntry<unknown>>();
+		async get<T>(key: string) { return this.store.get(key) as CacheEntry<T> | undefined; }
+		async set<T>(key: string, entry: CacheEntry<T>) { this.store.set(key, entry as CacheEntry<unknown>); }
+		async delete(key: string) { this.store.delete(key); }
+		async deleteByPrefix(prefix: string) { for (const k of this.store.keys()) { if (k.startsWith(prefix)) this.store.delete(k); } }
+		async clear() { this.store.clear(); }
+	}
 
 	interface Props {
 		dataKey: string;
@@ -14,6 +24,7 @@
 		mockError?: Error | null;
 		mockDelay?: number;
 		invalidateOn?: string[];
+		staleTime?: number;
 	}
 
 	let {
@@ -22,7 +33,8 @@
 		mockData = null,
 		mockError = null,
 		mockDelay = 0,
-		invalidateOn = []
+		invalidateOn = [],
+		staleTime = 0
 	}: Props = $props();
 
 	let fetchCount = $state(0);
@@ -37,20 +49,22 @@
 		}
 	};
 
-	// Create config with test key
+	// Create config with test key (include staleTime if provided)
 	const config: DataClientConfig = {
 		baseUrl: 'http://localhost/api',
 		keys: {
 			[dataKey]: {
 				key: dataKey,
 				url: `/${dataKey}`,
-				invalidateOn: invalidateOn.length > 0 ? invalidateOn : undefined
+				invalidateOn: invalidateOn.length > 0 ? invalidateOn : undefined,
+				...(staleTime > 0 ? { staleTime } : {})
 			}
 		} as Record<DataKey, DataKeyConfig<DataKey>>
 	};
 
-	// Create client
-	const client = new DataClient(config, { events: dataEventAdapter });
+	// Create client — use MemoryCache when staleTime is set to test cache behavior
+	const cache = staleTime > 0 ? new MemoryCache() : undefined;
+	const client = new DataClient(config, { events: dataEventAdapter, cache });
 
 	// Mock the fetch method
 	const originalFetch = globalThis.fetch;

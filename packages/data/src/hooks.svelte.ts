@@ -131,8 +131,14 @@ export function useQuery<K extends DataKey>(options: UseQueryOptions<K>): QueryS
 		// Only subscribe if enabled - evaluate inside $effect for reactivity
 		if (!isEnabled()) return;
 
-		// Subscribe to invalidation events
-		const unsubscribes = invalidateOn.map((event) => events.on(event, () => doFetch()));
+		// Subscribe to invalidation events — refetch when events fire.
+		// Cache is already cleared by DataClient's global subscription,
+		// so doFetch() will always hit the network.
+		const unsubscribes = invalidateOn.map((event) =>
+			events.on(event, () => {
+				doFetch();
+			})
+		);
 
 		// Cleanup: unsubscribe on unmount or re-run
 		return () => {

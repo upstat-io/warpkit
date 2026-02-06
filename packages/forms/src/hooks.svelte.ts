@@ -369,7 +369,6 @@ export function useForm<T extends object>(options: FormOptions<T>): FormState<T>
 				handledLocally: true,
 				showUI: false
 			});
-			throw e;
 		} finally {
 			isSubmitting = false;
 		}

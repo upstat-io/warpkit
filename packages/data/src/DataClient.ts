@@ -52,9 +52,16 @@ export class DataClient {
 	private cache: CacheProvider;
 	private events: DataEventEmitter | null;
 	private readonly timeout: number;
+	private eventUnsubscribes: Array<() => void> = [];
 
 	/**
 	 * Create a new DataClient.
+	 *
+	 * Automatically subscribes to invalidateOn events for all configured keys.
+	 * When an event fires, the corresponding cache entries are cleared immediately,
+	 * regardless of which components are currently mounted. This ensures that
+	 * when a component mounts and calls fetch(), it always gets fresh data
+	 * after an invalidation event.
 	 *
 	 * @param config - Data configuration with keys and base URL
 	 * @param options - Optional cache and event emitter
@@ -64,6 +71,43 @@ export class DataClient {
 		this.cache = options?.cache ?? new NoCacheProvider();
 		this.events = options?.events ?? null;
 		this.timeout = config.timeout ?? 30000;
+
+		// Subscribe to invalidation events at the DataClient level.
+		// This ensures cache is cleared even when no component is mounted.
+		this.subscribeToInvalidationEvents();
+	}
+
+	/**
+	 * Subscribe to invalidateOn events for all configured keys.
+	 * Clears cache entries when events fire so subsequent fetches
+	 * hit the network instead of returning stale data.
+	 */
+	private subscribeToInvalidationEvents(): void {
+		if (!this.events) return;
+
+		// Build a map: event → keys to invalidate
+		const eventToKeys = new Map<string, DataKey[]>();
+
+		for (const [key, keyConfig] of Object.entries(this.config.keys)) {
+			const invalidateOn = (keyConfig as DataKeyConfig<DataKey>).invalidateOn;
+			if (!invalidateOn) continue;
+
+			for (const event of invalidateOn) {
+				const existing = eventToKeys.get(event) ?? [];
+				existing.push(key as DataKey);
+				eventToKeys.set(event, existing);
+			}
+		}
+
+		// Subscribe once per event, invalidating all affected keys
+		for (const [event, keys] of eventToKeys) {
+			const unsub = this.events.on(event, async () => {
+				for (const key of keys) {
+					await this.invalidate(key);
+				}
+			});
+			this.eventUnsubscribes.push(unsub);
+		}
 	}
 
 	/**

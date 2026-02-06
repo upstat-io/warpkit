@@ -1,6 +1,9 @@
+import { resolve } from 'node:path';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { playwright } from '@vitest/browser-playwright';
 import { defineConfig } from 'vitest/config';
+
+const root = import.meta.dirname;
 
 export default defineConfig({
 	plugins: [
@@ -14,13 +17,14 @@ export default defineConfig({
 	resolve: {
 		conditions: ['browser'],
 		alias: {
-			'@warpkit/errors': './packages/errors/src/index.ts',
-			'@warpkit/data': './packages/data/src/index.ts',
-			'@warpkit/cache': './packages/cache/src/index.ts',
-			'@warpkit/state-machine': './packages/state-machine/src/index.ts',
-			'@warpkit/state-machine/svelte': './packages/state-machine/src/svelte/index.ts',
-			'@warpkit/forms': './packages/forms/src/index.ts',
-			'@warpkit/forms/testing': './packages/forms/src/testing/index.ts'
+			'@warpkit/errors': resolve(root, 'packages/errors/src/index.ts'),
+			'@warpkit/data': resolve(root, 'packages/data/src/index.ts'),
+			'@warpkit/cache': resolve(root, 'packages/cache/src/index.ts'),
+			'@warpkit/state-machine/svelte': resolve(root, 'packages/state-machine/src/svelte/index.ts'),
+			'@warpkit/state-machine': resolve(root, 'packages/state-machine/src/index.ts'),
+			'@warpkit/validation': resolve(root, 'packages/validation/src/index.ts'),
+			'@warpkit/forms/testing': resolve(root, 'packages/forms/src/testing/index.ts'),
+			'@warpkit/forms': resolve(root, 'packages/forms/src/index.ts')
 		}
 	},
 	test: {

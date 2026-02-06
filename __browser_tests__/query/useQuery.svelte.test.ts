@@ -241,6 +241,98 @@ describe('useQuery', () => {
 			// Verify fetch was called again
 			await expect.element(fetchCount).toHaveTextContent('2');
 		});
+
+		it('should bypass cache when invalidation event is emitted (staleTime active)', async () => {
+			// This test verifies the critical behavior: when data is cached and still
+			// within staleTime, an invalidation event MUST clear the cache and refetch
+			// from network — not return stale cached data.
+			const screen = render(UseQueryTestWrapper, {
+				props: {
+					queryKey: 'monitors',
+					mockData: { data: 'initial' },
+					invalidateOn: ['query:invalidated'],
+					staleTime: 60000 // 60 seconds — data will be "fresh" in cache
+				}
+			});
+
+			// Wait for initial fetch
+			const loading = screen.getByTestId('loading');
+			await expect.element(loading).toHaveTextContent('false');
+
+			const fetchCount = screen.getByTestId('fetch-count');
+			await expect.element(fetchCount).toHaveTextContent('1');
+
+			// Data is now cached with staleTime=60s. A normal fetch would return
+			// cached data. But an invalidation event must bypass the cache.
+
+			// Emit invalidation event
+			const emitButton = screen.getByTestId('emit-invalidation');
+			await emitButton.click();
+
+			// Wait for refetch to complete
+			await expect.element(loading).toHaveTextContent('false');
+
+			// Verify fetch was called TWICE — proving cache was cleared and
+			// network request was made. Without the cache invalidation fix,
+			// fetchCount would stay at 1 (stale cache returned).
+			await expect.element(fetchCount).toHaveTextContent('2');
+		});
+	});
+
+	describe('cross-page invalidation', () => {
+		it('should clear cache when event fires while component is unmounted', async () => {
+			// This test verifies the critical cross-page scenario:
+			// 1. Component mounts and fetches data (cached with staleTime)
+			// 2. Component unmounts (user navigates to another page)
+			// 3. Invalidation event fires (e.g., monitor:created on the other page)
+			// 4. Component remounts (user navigates back)
+			// 5. Data MUST be fetched from network, not stale cache
+			//
+			// This works because DataClient subscribes to invalidateOn events
+			// at construction time, clearing cache regardless of mounted components.
+			const screen = render(UseQueryTestWrapper, {
+				props: {
+					queryKey: 'monitors',
+					mockData: { data: 'initial' },
+					invalidateOn: ['query:invalidated'],
+					staleTime: 60000, // 60 seconds — data will be "fresh" in cache
+					showComponent: true
+				}
+			});
+
+			// Wait for initial fetch
+			const loading = screen.getByTestId('loading');
+			await expect.element(loading).toHaveTextContent('false');
+
+			const fetchCount = screen.getByTestId('fetch-count');
+			await expect.element(fetchCount).toHaveTextContent('1');
+
+			// Unmount the consumer component (simulates navigating away)
+			const toggleButton = screen.getByTestId('toggle-component');
+			await toggleButton.click();
+
+			// Reset fetch count so we can track the remount fetch
+			const resetButton = screen.getByTestId('reset-fetch-count');
+			await resetButton.click();
+			await expect.element(fetchCount).toHaveTextContent('0');
+
+			// Emit invalidation event WHILE component is unmounted.
+			// DataClient's global subscription should clear the cache.
+			const emitButton = screen.getByTestId('emit-invalidation');
+			await emitButton.click();
+
+			// Remount the component (simulates navigating back)
+			await toggleButton.click();
+
+			// Wait for the remount fetch to complete
+			await expect.element(loading).toHaveTextContent('false');
+
+			// Verify fetch was called — proving the cache was cleared by
+			// DataClient's global event subscription, forcing a network request.
+			// Without the DataClient-level subscription, fetchCount would be 0
+			// because stale cache (60s) would have been returned.
+			await expect.element(fetchCount).toHaveTextContent('1');
+		});
 	});
 
 	describe('cleanup', () => {
