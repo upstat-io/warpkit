@@ -136,19 +136,23 @@ export class DataClient {
 		}
 
 		const url = this.resolveUrl(keyConfig.url, params);
-		const cacheKey = this.buildCacheKey(key, params);
+		const useCache = keyConfig.cache !== false;
 
-		// Check cache first
-		const cached = await this.cache.get<unknown>(cacheKey);
+		let cached: CacheEntry<unknown> | undefined = undefined;
 
-		// If we have fresh cached data, return it immediately
-		if (cached && this.isFresh(cached)) {
-			return { data: cached.data, fromCache: true, notModified: false };
+		if (useCache) {
+			const cacheKey = this.buildCacheKey(key, params);
+			cached = await this.cache.get<unknown>(cacheKey);
+
+			// If we have fresh cached data, return it immediately
+			if (cached && this.isFresh(cached)) {
+				return { data: cached.data, fromCache: true, notModified: false };
+			}
 		}
 
 		// Build request with E-Tag if available (for stale-while-revalidate)
 		const headers: HeadersInit = {};
-		if (cached?.etag) {
+		if (useCache && cached?.etag) {
 			headers['If-None-Match'] = cached.etag;
 		}
 
@@ -168,7 +172,7 @@ export class DataClient {
 			clearTimeout(timeoutId);
 
 			// Handle 304 Not Modified
-			if (response.status === 304 && cached) {
+			if (useCache && response.status === 304 && cached) {
 				return { data: cached.data, fromCache: true, notModified: true };
 			}
 
@@ -177,15 +181,18 @@ export class DataClient {
 			}
 
 			const data = await response.json();
-			const etag = response.headers.get('etag') ?? undefined;
 
 			// Store in cache
-			await this.cache.set(cacheKey, {
-				data,
-				etag,
-				timestamp: Date.now(),
-				staleTime: keyConfig.staleTime
-			});
+			if (useCache) {
+				const cacheKey = this.buildCacheKey(key, params);
+				const etag = response.headers.get('etag') ?? undefined;
+				await this.cache.set(cacheKey, {
+					data,
+					etag,
+					timestamp: Date.now(),
+					staleTime: keyConfig.staleTime
+				});
+			}
 
 			return { data, fromCache: false, notModified: false };
 		} finally {

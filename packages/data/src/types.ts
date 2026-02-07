@@ -108,6 +108,8 @@ export interface DataKeyConfig<K extends DataKey> {
 	invalidateOn?: string[];
 	/** Default time in ms before data is considered stale. Copied to CacheEntry at cache time. */
 	staleTime?: number;
+	/** Whether to cache responses. Defaults to true. Set to false for point-in-time queries with dynamic params. */
+	cache?: boolean;
 	/** Optional ValidatedType for response validation */
 	responseSchema?: ValidatedType<DataType<K>>;
 }
@@ -381,6 +383,13 @@ export interface UseQueryOptions<K extends DataKey> {
 	 * Can be a boolean or a getter function for reactive behavior.
 	 */
 	enabled?: boolean | (() => boolean);
+	/**
+	 * Automatically refetch data on this interval (in ms).
+	 * Bypasses cache on each interval fetch to always get fresh data.
+	 * The initial fetch still uses cache for fast first paint.
+	 * Timer is cleaned up when the component unmounts or enabled becomes false.
+	 */
+	refetchInterval?: number;
 }
 
 // ============================================================================

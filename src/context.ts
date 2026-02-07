@@ -34,7 +34,7 @@ export const WARPKIT_CONTEXT: unique symbol = Symbol('warpkit-v2');
  * WarpKit instance interface (forward declaration).
  * The actual implementation is in WarpKit.svelte.ts.
  */
-export interface WarpKit<TAppState extends string = string> {
+export interface WarpKit<TAppState extends string = string, TStateData = unknown> {
 	/** Reactive page state */
 	readonly page: PageState;
 
@@ -65,6 +65,9 @@ export interface WarpKit<TAppState extends string = string> {
 
 	/** Change app state */
 	setState(state: TAppState, options?: SetStateOptions): Promise<void>;
+
+	/** Change app state with state data (for dynamic default paths) */
+	setAppState(state: TAppState, data?: TStateData | string, options?: SetStateOptions): Promise<NavigationResult>;
 
 	/** Build a URL using the browser provider's strategy */
 	buildUrl(path: string): string;

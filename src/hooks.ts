@@ -30,12 +30,12 @@ export { useEvent } from './events/useEvent.svelte.js';
  * </script>
  * ```
  */
-export function useWarpKit<TAppState extends string = string>(): WarpKit<TAppState> {
+export function useWarpKit<TAppState extends string = string, TStateData = unknown>(): WarpKit<TAppState, TStateData> {
 	const ctx = getContext<WarpKitContext>(WARPKIT_CONTEXT);
 	if (!ctx) {
 		throw new Error('[WarpKit] useWarpKit must be called within WarpKitProvider');
 	}
-	return ctx.warpkit as WarpKit<TAppState>;
+	return ctx.warpkit as WarpKit<TAppState, TStateData>;
 }
 
 /**

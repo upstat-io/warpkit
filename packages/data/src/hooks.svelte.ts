@@ -49,8 +49,11 @@ export function useQuery<K extends DataKey>(options: UseQueryOptions<K>): QueryS
 	/**
 	 * Execute fetch and update state.
 	 * Handles race conditions by checking fetchId.
+	 *
+	 * @param opts.silent - Skip setting isLoading (used by refetchInterval to avoid UI flash)
+	 * @param opts.invalidate - Clear cache before fetching (used by refetchInterval to bypass cache)
 	 */
-	async function doFetch(): Promise<void> {
+	async function doFetch(opts?: { silent?: boolean; invalidate?: boolean }): Promise<void> {
 		// Increment fetch ID to track this specific fetch
 		const currentFetchId = ++fetchId;
 
@@ -58,8 +61,15 @@ export function useQuery<K extends DataKey>(options: UseQueryOptions<K>): QueryS
 		abortController?.abort();
 		abortController = new AbortController();
 
-		isLoading = true;
+		if (!opts?.silent) {
+			isLoading = true;
+		}
 		error = null;
+
+		// Clear cache before fetching to ensure fresh data from network
+		if (opts?.invalidate) {
+			await client.invalidate(options.key, options.params);
+		}
 
 		try {
 			const result = await client.fetch(options.key, options.params);
@@ -144,6 +154,18 @@ export function useQuery<K extends DataKey>(options: UseQueryOptions<K>): QueryS
 		return () => {
 			unsubscribes.forEach((unsub) => unsub());
 		};
+	});
+
+	// Polling effect — refetch on interval while enabled, bypassing cache
+	$effect(() => {
+		const interval = options.refetchInterval;
+		if (!interval || !isEnabled()) return;
+
+		const timerId = setInterval(() => {
+			doFetch({ silent: true, invalidate: true });
+		}, interval);
+
+		return () => clearInterval(timerId);
 	});
 
 	// Return object with getters for Svelte 5 reactivity
