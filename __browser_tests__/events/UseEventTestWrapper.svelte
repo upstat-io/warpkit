@@ -27,6 +27,7 @@
 		loadedLayout: null,
 		navigate: async () => ({ success: true }),
 		setState: async () => {},
+		setAppState: async () => ({ success: true }),
 		buildUrl: (path: string) => path,
 		registerBlocker: () => ({ unregister: () => {} }),
 		getState: () => 'idle',

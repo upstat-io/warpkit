@@ -26,9 +26,10 @@
 			"@warpkit/errors": ["./packages/errors/src/index.ts"],
 			"@warpkit/auth-firebase": ["./packages/auth-firebase/src/index.ts"],
 			"@warpkit/forms": ["./packages/forms/src/index.ts"],
-			"@warpkit/forms/testing": ["./packages/forms/src/testing/index.ts"]
+			"@warpkit/forms/testing": ["./packages/forms/src/testing/index.ts"],
+			"@warpkit/vite-plugin": ["./packages/vite-plugin/src/index.ts"]
 		}
 	},
 	"include": ["src/**/*", "packages/**/*", "__browser_tests__/**/*"],
-	"exclude": ["node_modules", "dist", "src/v1"]
+	"exclude": ["node_modules", "dist", "**/dist", "src/v1"]
 }

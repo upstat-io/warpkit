@@ -390,6 +390,8 @@ export interface UseQueryOptions<K extends DataKey> {
 	 * Timer is cleaned up when the component unmounts or enabled becomes false.
 	 */
 	refetchInterval?: number;
+	/** Delay in ms before each fetch executes. Useful for previewing loading states. */
+	delay?: number;
 }
 
 // ============================================================================

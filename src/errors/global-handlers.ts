@@ -78,10 +78,23 @@ export function setupGlobalErrorHandlers(options?: { reporter?: ReportingProvide
 	setupViteErrorHandlers();
 
 	/**
+	 * Check if a Vite error is already being displayed.
+	 * When a Vite compile error occurs, both the vite:error handler AND
+	 * window.onerror/onunhandledrejection fire for the same underlying error.
+	 * Skip the generic handlers when a Vite error is already shown to avoid
+	 * overwriting the richer error message (with plugin/file/frame context).
+	 */
+	const hasActiveViteError = (): boolean => {
+		return errorStore.currentError?.context?.viteError === true;
+	};
+
+	/**
 	 * Global error handler (synchronous errors, script errors)
 	 */
 	window.onerror = (message, source, lineno, colno, error) => {
 		try {
+			if (hasActiveViteError()) return false;
+
 			const normalizedError = errorStore.setError(error ?? String(message), {
 				source: 'global',
 				severity: 'error',
@@ -109,6 +122,8 @@ export function setupGlobalErrorHandlers(options?: { reporter?: ReportingProvide
 	 */
 	window.onunhandledrejection = (event) => {
 		try {
+			if (hasActiveViteError()) return;
+
 			const reason = event.reason;
 			const error = reason instanceof Error ? reason : new Error(String(reason));
 
@@ -231,15 +246,23 @@ function setupViteErrorHandlers(): void {
 		// Type assertion needed because Vite's types use a generic callback signature
 		hot.on('vite:error', handleViteError as (data: unknown) => void);
 
-		// Also listen for beforeUpdate errors (HMR failures)
-		hot.on('vite:beforeUpdate', () => {
-			// Clear any previous Vite errors when HMR succeeds
-			// This is optional - comment out if you want to keep errors visible
-		});
+		// Clear stale Vite errors when a successful HMR update arrives
+		const handleViteUpdate = () => {
+			try {
+				const current = errorStore.currentError;
+				if (current?.context?.viteError) {
+					errorStore.clearCurrentError();
+				}
+			} catch {
+				// Never throw from error handler
+			}
+		};
+		hot.on('vite:beforeUpdate', handleViteUpdate as (data: unknown) => void);
 
 		viteCleanup = () => {
 			try {
 				hot.off('vite:error', handleViteError as (data: unknown) => void);
+				hot.off('vite:beforeUpdate', handleViteUpdate as (data: unknown) => void);
 			} catch {
 				// Ignore cleanup errors
 			}

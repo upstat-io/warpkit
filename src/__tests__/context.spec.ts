@@ -100,6 +100,7 @@ describe('WarpKit v2 Context', () => {
 				loadedLayout: null,
 				navigate: async () => ({ success: true }),
 				setState: async () => {},
+				setAppState: async () => ({ success: true }),
 				buildUrl: (path) => path,
 				registerBlocker: () => ({ unregister: () => {} }),
 				getState: () => 'test',

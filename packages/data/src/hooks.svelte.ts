@@ -72,6 +72,17 @@ export function useQuery<K extends DataKey>(options: UseQueryOptions<K>): QueryS
 		}
 
 		try {
+			// Apply delay before fetching (e.g. for previewing loading skeletons)
+			if (options.delay && options.delay > 0) {
+				await new Promise<void>((resolve, reject) => {
+					const timer = setTimeout(resolve, options.delay);
+					abortController!.signal.addEventListener('abort', () => {
+						clearTimeout(timer);
+						reject(new DOMException('Delay aborted', 'AbortError'));
+					});
+				});
+			}
+
 			const result = await client.fetch(options.key, options.params);
 
 			// Only update state if this is still the current fetch
