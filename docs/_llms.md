@@ -1,127 +1,70 @@
-# WarpKit Guide - AI Navigation Index
+# WarpKit Technical Specification -- AI Navigation Index
 
-> Quick reference for AI assistants navigating this documentation.
+> **Start here** when you need to understand WarpKit's internals. This index maps common questions to the right document and section.
 
-## Keywords & Topics
+## Document Map
 
-| Keyword | Section | Description |
-|---------|---------|-------------|
-| install, setup, init | [getting-started.md](./getting-started.md) | Installation and project setup |
-| route, navigate, push, replace | [routing.md](./routing.md) | Routes and navigation |
-| state, machine, transition | [core-concepts.md](./core-concepts.md) | State machine concepts |
-| guard, protect, auth check | [routing.md](./routing.md) | Route guards |
-| layout, nested | [routing.md](./routing.md) | Layout components |
-| fetch, data, query, cache | [data-fetching.md](./data-fetching.md) | Data fetching |
-| etag, stale, refresh | [data-fetching.md](./data-fetching.md) | Caching strategies |
-| mutation, post, put, delete | [data-fetching.md](./data-fetching.md) | Mutations |
-| form, input, validation | [forms.md](./forms.md) | Form management |
-| array, push, remove, swap | [forms.md](./forms.md) | Array field operations |
-| schema, zod, typebox | [forms.md](./forms.md) | Schema validation |
-| websocket, socket, realtime | [websockets.md](./websockets.md) | WebSocket client |
-| room, join, subscribe | [websockets.md](./websockets.md) | Room subscriptions |
-| reconnect, backoff | [websockets.md](./websockets.md) | Connection management |
-| auth, login, firebase | [authentication.md](./authentication.md) | Authentication |
-| token, session | [authentication.md](./authentication.md) | Token management |
-| test, mock, assert | [testing.md](./testing.md) | Testing utilities |
-| provider, browser, storage | [core-concepts.md](./core-concepts.md) | Provider system |
-| event, emit, subscribe | [core-concepts.md](./core-concepts.md) | Event system |
-| error, debug, fix | [troubleshooting.md](./troubleshooting.md) | Common issues |
-| config, option, setting | [configuration.md](./configuration.md) | Configuration |
-| api, method, class, hook | [api-reference.md](./api-reference.md) | API reference |
+| Document | Scope | When to Read |
+|----------|-------|-------------|
+| [Overview & Architecture](./_index.md) | High-level architecture, file inventory, dependency graph, dev setup | First read, orientation, finding files |
+| [Core Internals](./core-internals.md) | WarpKit facade, Navigator (9-phase pipeline), StateMachine, RouteCompiler, RouteMatcher, PageState, SvelteURLSearchParams, LayoutManager, NavigationLifecycle | Navigation behavior, routing, state machine, reactive state, layout resolution |
+| [Provider System](./providers.md) | Provider interfaces, BrowserProvider, ConfirmDialogProvider, StorageProvider, built-in implementations, resolution, initialization, custom providers | Browser API abstraction, history management, hash routing, testing with MemoryBrowserProvider |
+| [Events & Errors](./events-errors.md) | EventEmitter, event types, useEvent hook, error channel, error store, global handlers, ErrorOverlay, NavigationErrorCode | Event pub/sub, error handling pipeline, error codes, error UI |
+| [Components & Hooks](./components.md) | WarpKitProvider, WarpKitAppBoundary, RouterView, Link, NavLink, context system, useWarpKit, usePage, useEvent, shouldHandleClick | Svelte component layer, context bridge, hooks API, link handling |
+| [Sub-Packages](./packages.md) | @warpkit/data, @warpkit/cache, @warpkit/forms, @warpkit/validation, @warpkit/websocket, @warpkit/errors, @warpkit/auth-firebase, @warpkit/vite-plugin, @warpkit/types | Data fetching, caching, forms, validation, WebSocket, auth, Vite tooling |
+| [Testing](./testing.md) | createMockWarpKit, mock providers, event spies, navigation assertions, renderWithWarpKit, createMockDataClient | Writing tests, mock setup, assertion helpers |
 
-## Common Questions -> Sections
+## Quick Lookup
 
-| Question | Section |
-|----------|---------|
-| "How do I get started?" | [getting-started.md](./getting-started.md) |
-| "How does routing work?" | [routing.md](./routing.md) |
-| "How do I fetch data?" | [data-fetching.md](./data-fetching.md) |
-| "How do I handle forms?" | [forms.md](./forms.md) |
-| "How do I add real-time updates?" | [websockets.md](./websockets.md) |
-| "How do I add authentication?" | [authentication.md](./authentication.md) |
-| "How do I test my app?" | [testing.md](./testing.md) |
-| "What's the API for X?" | [api-reference.md](./api-reference.md) |
-| "Why isn't X working?" | [troubleshooting.md](./troubleshooting.md) |
-| "What are the configuration options?" | [configuration.md](./configuration.md) |
+### "How does navigation work?"
+Start with [Core Internals > Navigator](./core-internals.md#2-navigator----9-phase-navigation-pipeline). The 9 phases are: INITIATE, MATCH ROUTE, CHECK BLOCKERS, BEFORE NAVIGATE, DEACTIVATE CURRENT, LOAD & ACTIVATE, ON NAVIGATE, COMMIT, AFTER NAVIGATE.
 
-## Section Summaries
+### "How does route matching work?"
+[Core Internals > RouteMatcher](./core-internals.md#5-routematcher) for the 5-step matching algorithm. [Core Internals > RouteCompiler](./core-internals.md#4-routecompiler) for path-to-regex compilation and specificity scoring.
 
-### getting-started.md
-Installation, project structure, creating routes, first navigation, verifying setup works.
+### "How does state-based routing work?"
+[Core Internals > StateMachine](./core-internals.md#3-statemachine) for the FSM. Routes are scoped to app states -- a path only matches if it exists in the current state's route table. State mismatches redirect to the current state's default path.
 
-### core-concepts.md
-State machine architecture, navigation pipeline (10 phases), provider system (browser, storage, confirm), event emitter, WarpKit context.
+### "How do providers work?"
+[Provider System](./providers.md) covers all three provider interfaces (Browser, ConfirmDialog, Storage), their built-in implementations, and the resolution/initialization lifecycle.
 
-### routing.md
-createRoute(), createStateRoutes(), navigation methods (navigate, push, replace), route parameters, catch-all routes, guards, layouts, redirects, scroll restoration.
+### "How do I write a custom provider?"
+[Provider System > Writing a Custom Provider](./providers.md#writing-a-custom-provider) has examples for minimal providers, providers with dependencies, and replacing core providers.
 
-### data-fetching.md
-DataClient configuration, useData() hook, useMutation() hook, E-Tag caching, cache invalidation, optimistic updates, error handling.
+### "How does the event system work?"
+[Events & Errors > Part 1: Event System](./events-errors.md#part-1-event-system). Covers EventEmitter API, conditional rest params on emit, error isolation, mutation-safe iteration, and the useEvent Svelte hook.
 
-### forms.md
-useForm() hook, deep proxy for bind:value, schema validation (Zod/TypeBox), validation modes, array field operations (push/remove/move/swap), field-centric access.
+### "How does error handling work?"
+[Events & Errors > Part 2: Error System](./events-errors.md#part-2-error-system). Four layers: error channel (zero-dep pub/sub), error store (reactive state), global handlers (window.onerror etc.), ErrorOverlay (dev UI). Navigation errors are separate -- see [NavigationErrorCode reference](./events-errors.md#navigation-errors).
 
-### websockets.md
-SocketClient, type-safe message definitions, room subscriptions, automatic reconnection with backoff, browser offline/online handling, heartbeat keep-alive.
+### "How does data fetching work?"
+[Sub-Packages > @warpkit/data](./packages.md#warpkitdata). DataClient handles config-driven queries with URL interpolation, E-Tag caching, and event-driven invalidation. useQuery and useData are the Svelte hooks.
 
-### authentication.md
-AuthAdapter interface, Firebase adapter implementation, token management, sign-in methods, session persistence.
+### "How does caching work?"
+[Sub-Packages > @warpkit/cache](./packages.md#warpkitcache). Two-tier caching: MemoryCache (L1) + StorageCache (L2) via ETagCacheProvider. Supports scoped caches for multi-tenant apps.
 
-### testing.md
-createMockWarpKit(), mock providers, renderWithWarpKit(), assertion helpers, event spies.
+### "How do forms work?"
+[Sub-Packages > @warpkit/forms](./packages.md#warpkitforms). Schema-driven forms with deep proxy binding, 4 validation modes, array operations with error reindexing, and TypeBox default extraction.
 
-### api-reference.md
-Complete API for all packages: types, classes, hooks, components.
+### "How does validation work?"
+[Sub-Packages > @warpkit/validation](./packages.md#warpkitvalidation). Library-agnostic StandardSchema interface. Works with Zod, TypeBox, Valibot, ArkType.
 
-### configuration.md
-All configuration options for WarpKit, DataClient, forms, WebSocket client.
+### "How does the WebSocket client work?"
+[Sub-Packages > @warpkit/websocket](./packages.md#warpkitwebsocket). Full-jitter backoff reconnection, heartbeat ping/pong, room management, browser offline/visibility detection, prototype-pollution-safe JSON parsing.
 
-### troubleshooting.md
-Common errors, debugging tips, migration guides.
+### "How does auth work?"
+[Sub-Packages > @warpkit/auth-firebase](./packages.md#warpkitauth-firebase) for Firebase adapter. [Sub-Packages > @warpkit/types](./packages.md#warpkittypes) for the AuthAdapter interface contract.
 
-## Comprehensive Guide (guide/)
+### "How do I write tests?"
+[Testing](./testing.md). Start with `createMockWarpKit` for navigation tests. Use `expectations.ts` for assertion helpers. Use `createMockDataClient` for data layer tests.
 
-For in-depth explanations with real-world examples, design rationale, and framework comparisons, see the **WarpKit Guide** at `guide/README.md`:
+### "How do the Svelte components work?"
+[Components & Hooks](./components.md). WarpKitProvider sets context, RouterView renders matched routes, Link/NavLink handle click interception, hooks (useWarpKit, usePage, useEvent) provide reactive access.
 
-| Chapter | File | Topics |
-|---------|------|--------|
-| Introduction | [guide/01-introduction.md](../guide/01-introduction.md) | Philosophy, design principles, when to use WarpKit |
-| Quick Start | [guide/02-quick-start.md](../guide/02-quick-start.md) | Step-by-step app setup |
-| State-Based Routing | [guide/03-state-based-routing.md](../guide/03-state-based-routing.md) | Routes by app state, params, layouts, guards, blockers |
-| Navigation Pipeline | [guide/04-navigation-pipeline.md](../guide/04-navigation-pipeline.md) | 9-phase pipeline, cancellation, lifecycle hooks |
-| Provider System | [guide/05-provider-system.md](../guide/05-provider-system.md) | Browser, storage, confirm providers |
-| Data Fetching | [guide/06-data-fetching.md](../guide/06-data-fetching.md) | DataClient, caching, mutations, invalidation |
-| Forms | [guide/07-forms.md](../guide/07-forms.md) | Deep proxy, validation, array fields |
-| WebSockets | [guide/08-websockets.md](../guide/08-websockets.md) | SocketClient, rooms, reconnection |
-| Authentication | [guide/09-authentication.md](../guide/09-authentication.md) | AuthAdapter, Firebase, atomic sign-in |
-| Testing | [guide/10-testing.md](../guide/10-testing.md) | Mock WarpKit, assertions, strategies |
-| Architecture | [guide/11-architecture.md](../guide/11-architecture.md) | Design decisions, internals, performance |
+### "What does the Vite plugin do?"
+[Sub-Packages > @warpkit/vite-plugin](./packages.md#warpkitvite-plugin). Disables Vite's overlay (WarpKit has its own), injects `__warpkitHmrId` for component hot-swap, pre-warms route components.
 
-## Import Patterns
+## Related Documentation
 
-```typescript
-// Core
-import { createWarpKit, createRoute, createStateRoutes } from '@warpkit/core';
-import { useWarpKit, usePage } from '@warpkit/core';
-import { Link, RouterView, WarpKitProvider } from '@warpkit/core';
-import { useEvent } from '@warpkit/core';
-
-// Data
-import { DataClient, DataClientProvider, useData, useMutation } from '@warpkit/data';
-import { ETagCacheProvider } from '@warpkit/cache';
-
-// Forms
-import { useForm } from '@warpkit/forms';
-
-// Validation
-import { validate, ValidationError } from '@warpkit/validation';
-
-// WebSocket
-import { SocketClient, Connected, JoinRoom } from '@warpkit/websocket';
-
-// Firebase Auth
-import { FirebaseAuthAdapter } from '@warpkit/auth-firebase';
-
-// Testing
-import { createMockWarpKit, renderWithWarpKit, expectNavigation } from '@warpkit/core/testing';
-```
+- **User Guide**: `../guide/README.md` -- comprehensive guide for WarpKit consumers (11 chapters)
+- **Source Code**: `../src/` (core), `../packages/` (sub-packages)

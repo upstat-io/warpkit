@@ -1,45 +1,32 @@
 # WarpKit
 
+> **Alpha Software** — WarpKit is being built and used in production by [Upstat](https://upstat.io) to power their own application. While this real-world usage drives rapid improvements, the framework is still early stage. Use at your own risk. APIs and behaviors are subject to change.
+
 A standalone Svelte 5 SPA framework providing state-based routing, data fetching, forms, and real-time capabilities.
 
 ## Features
 
+- **State-Based Routing** - Routes organized by application state (unauthenticated, onboarding, authenticated)
+- **Navigation Pipeline** - Every navigation flows through 10 predictable phases with guards and middleware
 - **Auth-Provider Agnostic** - Bring your own auth adapter (Firebase, Auth0, custom)
+- **Config-Driven Data Layer** - E-Tag caching, stale-while-revalidate, automatic refetching
+- **Schema-Driven Forms** - Deep proxy binding with StandardSchema validation (TypeBox, Zod)
+- **Real-Time WebSockets** - Type-safe messages, rooms, automatic reconnection
+- **Pluggable Provider System** - Swap browser APIs for testing or custom implementations
 - **Generic Type System** - Extend with your own user and data types
-- **Modular Packages** - Use only what you need
-- **Built-in State Machine** - Simple FSM for app state management
-- **State-Based Routing** - Routes organized by application state
 
 ## Packages
 
 | Package | Description |
 | ------- | ----------- |
 | `@warpkit/core` | Router, state machine, events, components |
-| `@warpkit/data` | Data fetching, caching, E-Tag support |
+| `@warpkit/data` | Data fetching, caching, mutations |
 | `@warpkit/cache` | Cache implementations (Memory, Storage, E-Tag) |
-| `@warpkit/forms` | Form state, validation, array operations |
+| `@warpkit/forms` | Schema-driven form state management |
 | `@warpkit/validation` | StandardSchema validation (Zod, TypeBox) |
 | `@warpkit/websocket` | WebSocket client with reconnection |
 | `@warpkit/auth-firebase` | Firebase authentication adapter |
 | `@warpkit/types` | Shared TypeScript types |
-
-## What WarpKit Provides
-
-- **Router** - Path matching, navigation, guards, layouts
-- **State Machine** - Simple FSM for app state transitions
-- **Data Layer** - E-Tag caching, stale-while-revalidate
-- **Forms** - Schema-driven form state with deep proxy binding
-- **Events** - Type-safe pub/sub event emitter
-- **WebSocket** - Reconnection, rooms, type-safe messages
-- **Auth Adapter** - Generic auth provider interface
-
-## What WarpKit Does NOT Provide
-
-WarpKit is intentionally minimal. These concerns are left to consumers:
-
-- **Title Management** - Update `document.title` yourself based on route meta
-- **Focus Management** - Handle accessibility announcements yourself
-- **Error Boundary UI** - Provide your own error handling UI
 
 ## Installation
 
@@ -60,7 +47,6 @@ npm install @warpkit/auth-firebase firebase
 ### 1. Define Routes
 
 ```typescript
-// routes.ts
 import { createRoute, createStateRoutes } from '@warpkit/core';
 
 type AppState = 'authenticated' | 'unauthenticated';
@@ -97,7 +83,6 @@ export const routes = createStateRoutes<AppState>({
 ### 2. Create WarpKit Instance
 
 ```typescript
-// warpkit.ts
 import { createWarpKit } from '@warpkit/core';
 import { routes } from './routes';
 
@@ -135,7 +120,6 @@ export const warpkit = createWarpKit({
   const warpkit = useWarpKit();
 
   function handleLogin() {
-    // Transition to authenticated state
     warpkit.setState('authenticated');
   }
 </script>
@@ -144,108 +128,13 @@ export const warpkit = createWarpKit({
 <button onclick={handleLogin}>Login</button>
 ```
 
-## Data Fetching
+## What WarpKit Does NOT Provide
 
-```typescript
-import { DataClient } from '@warpkit/data';
-import { ETagCacheProvider } from '@warpkit/cache';
+WarpKit is intentionally minimal. These concerns are left to consumers:
 
-const client = new DataClient({
-  baseUrl: '/api',
-  keys: {
-    'users': { key: 'users', url: '/users' },
-    'users/:id': { key: 'users/:id', url: '/users/:id' }
-  }
-}, {
-  cache: new ETagCacheProvider()
-});
-```
-
-```svelte
-<script lang="ts">
-  import { useData } from '@warpkit/data';
-
-  const users = useData('users', { url: '/users' });
-</script>
-
-{#if users.isLoading}
-  <p>Loading...</p>
-{:else}
-  {#each users.data ?? [] as user}
-    <div>{user.name}</div>
-  {/each}
-{/if}
-```
-
-## Forms
-
-```svelte
-<script lang="ts">
-  import { useForm } from '@warpkit/forms';
-  import { Type } from '@sinclair/typebox';
-
-  const schema = Type.Object({
-    email: Type.String({ format: 'email' }),
-    password: Type.String({ minLength: 8 })
-  });
-
-  const form = useForm({
-    initialValues: { email: '', password: '' },
-    schema,
-    onSubmit: async (values) => {
-      await login(values);
-    }
-  });
-</script>
-
-<form onsubmit={form.submit}>
-  <input bind:value={form.data.email} />
-  {#if form.errors.email}<span>{form.errors.email}</span>{/if}
-
-  <input type="password" bind:value={form.data.password} />
-  {#if form.errors.password}<span>{form.errors.password}</span>{/if}
-
-  <button type="submit" disabled={form.isSubmitting}>Submit</button>
-</form>
-```
-
-## WebSocket
-
-```typescript
-import { SocketClient, Connected, ClientMessage } from '@warpkit/websocket';
-
-const client = new SocketClient('wss://api.example.com/ws');
-
-const IncidentCreated = ClientMessage.define<{ id: string; title: string }>('incident.created');
-
-client.on(Connected, () => {
-  client.joinRoom(`account:${accountId}`);
-});
-
-client.on(IncidentCreated, (data) => {
-  console.log('Incident:', data.id, data.title);
-});
-
-client.connect();
-```
-
-## Firebase Auth
-
-```typescript
-import { initializeApp } from 'firebase/app';
-import { FirebaseAuthAdapter } from '@warpkit/auth-firebase';
-
-const firebaseApp = initializeApp({ /* config */ });
-
-const authAdapter = new FirebaseAuthAdapter(firebaseApp, {
-  getInitialState: async (user) => {
-    if (!user) return { state: 'unauthenticated' };
-    return { state: 'authenticated' };
-  }
-});
-
-await warpkit.start({ authAdapter });
-```
+- **Title Management** - Update `document.title` yourself based on route meta
+- **Focus Management** - Handle accessibility announcements yourself
+- **Error Boundary UI** - Provide your own error handling UI
 
 ## Requirements
 
@@ -254,17 +143,25 @@ await warpkit.start({ authAdapter });
 
 ## Documentation
 
-See the [docs](./docs/) folder for complete documentation:
+### Guide
 
-- [Getting Started](./docs/getting-started.md)
-- [Core Concepts](./docs/core-concepts.md)
-- [Routing](./docs/routing.md)
-- [Data Fetching](./docs/data-fetching.md)
-- [Forms](./docs/forms.md)
-- [WebSockets](./docs/websockets.md)
-- [Authentication](./docs/authentication.md)
-- [Testing](./docs/testing.md)
-- [API Reference](./docs/api-reference.md)
+The [WarpKit Guide](./guide/README.md) is a comprehensive walkthrough covering everything from first setup to advanced architecture:
+
+1. [Introduction & Philosophy](./guide/01-introduction.md) — What WarpKit is, why it exists, and the design principles behind it
+2. [Quick Start](./guide/02-quick-start.md) — Get a WarpKit app running in 5 minutes
+3. [State-Based Routing](./guide/03-state-based-routing.md) — The core innovation: routes organized by application state
+4. [The Navigation Pipeline](./guide/04-navigation-pipeline.md) — How every navigation flows through 10 predictable phases
+5. [The Provider System](./guide/05-provider-system.md) — Pluggable abstractions for browser APIs
+6. [Data Fetching & Caching](./guide/06-data-fetching.md) — Config-driven data layer with E-Tag caching
+7. [Forms & Validation](./guide/07-forms.md) — Schema-driven forms with deep proxy binding
+8. [WebSockets & Real-Time](./guide/08-websockets.md) — Type-safe real-time communication
+9. [Authentication](./guide/09-authentication.md) — Pluggable auth adapter pattern
+10. [Testing](./guide/10-testing.md) — Mock providers, assertion helpers, and testing strategies
+11. [Architecture & Design Decisions](./guide/11-architecture.md) — Why WarpKit is built the way it is
+
+### API Reference
+
+The [API docs](./docs/_llms.md) cover package internals, components, providers, and testing utilities.
 
 ## License
 
