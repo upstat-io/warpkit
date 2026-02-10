@@ -37,6 +37,11 @@ WarpKit is an open-source SPA framework for Svelte 5 that provides state-based r
 - `bun run check` - TypeScript check
 - `bun run lint` - Run linter
 
+## Documentation
+
+- `docs/` - API reference, configuration, troubleshooting (`docs/_llms.md` for AI index)
+- `guide/` - Comprehensive OSS guide with real-world examples (`guide/README.md` for table of contents)
+
 ## Repository Structure
 
 - `src/` - Core framework code (@warpkit/core)

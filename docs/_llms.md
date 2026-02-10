@@ -79,6 +79,24 @@ All configuration options for WarpKit, DataClient, forms, WebSocket client.
 ### troubleshooting.md
 Common errors, debugging tips, migration guides.
 
+## Comprehensive Guide (guide/)
+
+For in-depth explanations with real-world examples, design rationale, and framework comparisons, see the **WarpKit Guide** at `guide/README.md`:
+
+| Chapter | File | Topics |
+|---------|------|--------|
+| Introduction | [guide/01-introduction.md](../guide/01-introduction.md) | Philosophy, design principles, when to use WarpKit |
+| Quick Start | [guide/02-quick-start.md](../guide/02-quick-start.md) | Step-by-step app setup |
+| State-Based Routing | [guide/03-state-based-routing.md](../guide/03-state-based-routing.md) | Routes by app state, params, layouts, guards, blockers |
+| Navigation Pipeline | [guide/04-navigation-pipeline.md](../guide/04-navigation-pipeline.md) | 9-phase pipeline, cancellation, lifecycle hooks |
+| Provider System | [guide/05-provider-system.md](../guide/05-provider-system.md) | Browser, storage, confirm providers |
+| Data Fetching | [guide/06-data-fetching.md](../guide/06-data-fetching.md) | DataClient, caching, mutations, invalidation |
+| Forms | [guide/07-forms.md](../guide/07-forms.md) | Deep proxy, validation, array fields |
+| WebSockets | [guide/08-websockets.md](../guide/08-websockets.md) | SocketClient, rooms, reconnection |
+| Authentication | [guide/09-authentication.md](../guide/09-authentication.md) | AuthAdapter, Firebase, atomic sign-in |
+| Testing | [guide/10-testing.md](../guide/10-testing.md) | Mock WarpKit, assertions, strategies |
+| Architecture | [guide/11-architecture.md](../guide/11-architecture.md) | Design decisions, internals, performance |
+
 ## Import Patterns
 
 ```typescript
