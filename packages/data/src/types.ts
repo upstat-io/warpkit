@@ -376,8 +376,12 @@ export type DataState<K extends DataKey> = {
 export interface UseQueryOptions<K extends DataKey> {
 	/** The data key to fetch */
 	key: K;
-	/** URL parameters for dynamic routes */
-	params?: Record<string, string>;
+	/**
+	 * URL parameters for dynamic routes.
+	 * Can be a static object or a getter function for reactive params (Svelte 5).
+	 * When a getter is used, the $effect tracks its dependencies and refetches on change.
+	 */
+	params?: Record<string, string> | (() => Record<string, string>);
 	/**
 	 * If false, query will not execute.
 	 * Can be a boolean or a getter function for reactive behavior.

@@ -27,6 +27,13 @@ import type { DataKey, DataRegistry, DataType, QueryState, UseQueryOptions } fro
  * const monitor = useQuery({ key: 'monitors/:id', params: { id: monitorId } });
  *
  * @example
+ * // Reactive params (re-fetches when page/order change)
+ * const monitors = useQuery({
+ *   key: 'monitors',
+ *   params: () => ({ page: String(page), order })
+ * });
+ *
+ * @example
  * // Conditional fetching
  * const monitor = useQuery({ key: 'monitors/:id', params: { id }, enabled: !!id });
  */
@@ -47,13 +54,28 @@ export function useQuery<K extends DataKey>(options: UseQueryOptions<K>): QueryS
 	let abortController: AbortController | null = null;
 
 	/**
+	 * Resolve params from either a static object or getter function.
+	 */
+	function resolveParams(): Record<string, string> | undefined {
+		const p = options.params;
+		if (typeof p === 'function') {
+			return p();
+		}
+		return p;
+	}
+
+	/**
 	 * Execute fetch and update state.
 	 * Handles race conditions by checking fetchId.
 	 *
+	 * @param resolvedParams - Pre-resolved params (resolved synchronously in $effect for tracking)
 	 * @param opts.silent - Skip setting isLoading (used by refetchInterval to avoid UI flash)
 	 * @param opts.invalidate - Clear cache before fetching (used by refetchInterval to bypass cache)
 	 */
-	async function doFetch(opts?: { silent?: boolean; invalidate?: boolean }): Promise<void> {
+	async function doFetch(
+		resolvedParams: Record<string, string> | undefined,
+		opts?: { silent?: boolean; invalidate?: boolean }
+	): Promise<void> {
 		// Increment fetch ID to track this specific fetch
 		const currentFetchId = ++fetchId;
 
@@ -68,7 +90,7 @@ export function useQuery<K extends DataKey>(options: UseQueryOptions<K>): QueryS
 
 		// Clear cache before fetching to ensure fresh data from network
 		if (opts?.invalidate) {
-			await client.invalidate(options.key, options.params);
+			await client.invalidate(options.key, resolvedParams);
 		}
 
 		try {
@@ -83,7 +105,7 @@ export function useQuery<K extends DataKey>(options: UseQueryOptions<K>): QueryS
 				});
 			}
 
-			const result = await client.fetch(options.key, options.params);
+			const result = await client.fetch(options.key, resolvedParams);
 
 			// Only update state if this is still the current fetch
 			if (currentFetchId === fetchId) {
@@ -125,6 +147,7 @@ export function useQuery<K extends DataKey>(options: UseQueryOptions<K>): QueryS
 	}
 
 	// Initial fetch effect
+	// Resolve params synchronously so $effect tracks reactive dependencies.
 	$effect(() => {
 		// Check enabled flag - evaluate inside $effect for reactivity when using getter
 		if (!isEnabled()) {
@@ -132,7 +155,9 @@ export function useQuery<K extends DataKey>(options: UseQueryOptions<K>): QueryS
 			return;
 		}
 
-		doFetch();
+		// Resolve params synchronously for Svelte 5 dependency tracking
+		const params = resolveParams();
+		doFetch(params);
 
 		// Cleanup: abort fetch on unmount or re-run
 		return () => {
@@ -157,7 +182,7 @@ export function useQuery<K extends DataKey>(options: UseQueryOptions<K>): QueryS
 		// so doFetch() will always hit the network.
 		const unsubscribes = invalidateOn.map((event) =>
 			events.on(event, () => {
-				doFetch();
+				doFetch(resolveParams());
 			})
 		);
 
@@ -173,7 +198,7 @@ export function useQuery<K extends DataKey>(options: UseQueryOptions<K>): QueryS
 		if (!interval || !isEnabled()) return;
 
 		const timerId = setInterval(() => {
-			doFetch({ silent: true, invalidate: true });
+			doFetch(resolveParams(), { silent: true, invalidate: true });
 		}, interval);
 
 		return () => clearInterval(timerId);
@@ -197,7 +222,7 @@ export function useQuery<K extends DataKey>(options: UseQueryOptions<K>): QueryS
 		get isSuccess() {
 			return isSuccess;
 		},
-		refetch: doFetch
+		refetch: () => doFetch(resolveParams())
 	};
 }
 

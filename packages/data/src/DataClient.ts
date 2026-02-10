@@ -99,11 +99,13 @@ export class DataClient {
 			}
 		}
 
-		// Subscribe once per event, invalidating all affected keys
+		// Subscribe once per event, invalidating all affected keys.
+		// Uses prefix-based invalidation to clear all parameterized variants
+		// (e.g., "monitor-detail?uuid=abc" when invalidating "monitor-detail").
 		for (const [event, keys] of eventToKeys) {
 			const unsub = this.events.on(event, async () => {
 				for (const key of keys) {
-					await this.invalidate(key);
+					await this.invalidateByPrefix(key);
 				}
 			});
 			this.eventUnsubscribes.push(unsub);
