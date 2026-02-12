@@ -274,7 +274,7 @@ The object returned by `useForm()` provides reactive getters for all form state.
 | Property | Type | Description |
 |----------|------|-------------|
 | `data` | `T` (proxied) | Current form values. Supports `bind:value` on nested paths. |
-| `errors` | `Record<string, string>` | Map of field paths to error messages. |
+| `errors` | `FormErrors<T>` | Typed map of field names to error messages. Top-level keys have autocomplete. |
 | `warnings` | `Record<string, string>` | Map of field paths to warning messages. |
 | `touched` | `Record<string, boolean>` | Map of field paths to whether they have been focused and blurred. |
 | `dirty` | `Record<string, boolean>` | Map of field paths to whether they differ from initial values. |
@@ -590,7 +590,7 @@ form.reset({ email: 'new@example.com' });
 
 Validates the entire form (schema + custom validators) and returns `true` if valid. This is called automatically by `submit()` but you can call it manually if you need to check validity without submitting.
 
-### validateField(field: string): Promise<boolean>
+### validateField(field: keyof T & string): Promise<boolean>
 
 Validates a single field and returns `true` if valid.
 
@@ -598,15 +598,15 @@ Validates a single field and returns `true` if valid.
 
 Sets a field value programmatically. Use this when you need to update a value outside of `bind:value` (for example, in response to a button click or an API response).
 
-### setError(field: string, message: string | null)
+### setError(field: keyof T & string, message: string | null)
 
 Sets or clears an error message for a field. Pass `null` to clear the error.
 
-### setWarning(field: string, message: string | null)
+### setWarning(field: keyof T & string, message: string | null)
 
 Sets or clears a warning message for a field.
 
-### touch(field: string)
+### touch(field: keyof T & string)
 
 Marks a field as touched and triggers blur validation if applicable.
 
@@ -614,17 +614,20 @@ Marks a field as touched and triggers blur validation if applicable.
 
 Clears all errors and warnings and cancels any pending error debounce timers.
 
+### resetDirty()
+
+Snapshots current form values as the new baseline for dirty tracking. After calling this, `isDirty` becomes `false` until the user makes further changes. Useful for "save and stay" flows where you want to clear the dirty state without resetting form values.
+
+```typescript
+async function handleSave(values: FormData) {
+  await api.save(values);
+  form.resetDirty(); // Clear dirty state after successful save
+}
+```
+
 ### cleanup()
 
-Cleans up internal timers (error debounce timers). Call this when the component unmounts to prevent memory leaks:
-
-```svelte
-<script>
-  import { onDestroy } from 'svelte';
-  const form = useForm({ ... });
-  onDestroy(() => form.cleanup());
-</script>
-```
+Cleans up internal timers (error debounce timers). This is called automatically when the component unmounts (via `$effect`), so you typically don't need to call it manually. It remains available for edge cases where `useForm` is called outside a component context.
 
 ## Complete Example: Registration Form
 
@@ -634,7 +637,6 @@ Here is a full registration form showing schema validation, custom validators, w
 <script lang="ts">
   import { useForm } from '@warpkit/forms';
   import { Type } from '@sinclair/typebox';
-  import { onDestroy } from 'svelte';
 
   const schema = Type.Object({
     name: Type.String({ minLength: 1 }),
@@ -679,7 +681,6 @@ Here is a full registration form showing schema validation, custom validators, w
     }
   });
 
-  onDestroy(() => form.cleanup());
 </script>
 
 <form onsubmit={form.submit}>

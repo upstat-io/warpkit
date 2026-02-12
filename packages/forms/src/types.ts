@@ -89,6 +89,40 @@ export interface FieldState<V = unknown> {
 }
 
 // ============================================================================
+// Form Errors
+// ============================================================================
+
+/**
+ * Typed error map for form fields.
+ *
+ * Top-level keys from `T` have autocomplete support.
+ * Dot-notation paths for nested fields use the index signature.
+ *
+ * @example
+ * ```typescript
+ * // Autocomplete for top-level keys:
+ * form.errors.name    // string | undefined
+ * form.errors.email   // string | undefined
+ *
+ * // Index access for nested paths:
+ * form.errors['user.address.street'] // string | undefined
+ * ```
+ */
+export type FormErrors<T> = {
+	[K in keyof T & string]?: string;
+} & {
+	[path: string]: string | undefined;
+};
+
+/**
+ * Field path type that provides autocomplete for top-level keys
+ * while still accepting arbitrary dot-notation paths for nested access.
+ *
+ * Uses the `(string & {})` TypeScript pattern to preserve autocomplete hints.
+ */
+export type FieldPath<T> = (keyof T & string) | (string & {});
+
+// ============================================================================
 // Form Options
 // ============================================================================
 
@@ -191,8 +225,8 @@ export interface FormState<T> {
 	/** Current form data (reactive, supports bind:value through proxy) */
 	get data(): T;
 
-	/** Map of field paths to error messages */
-	get errors(): Record<string, string>;
+	/** Typed map of field names to error messages. Top-level keys have autocomplete. */
+	get errors(): FormErrors<T>;
 
 	/** Map of field paths to warning messages */
 	get warnings(): Record<string, string>;
@@ -254,10 +288,10 @@ export interface FormState<T> {
 	/**
 	 * Validate a single field.
 	 *
-	 * @param field - Dot-notation path to the field
+	 * @param field - Field name to validate
 	 * @returns Promise resolving to true if valid, false if invalid
 	 */
-	validateField(field: string): Promise<boolean>;
+	validateField(field: FieldPath<T>): Promise<boolean>;
 
 	// =========================================================================
 	// Field Operations
@@ -274,25 +308,25 @@ export interface FormState<T> {
 	/**
 	 * Set or clear an error message for a field.
 	 *
-	 * @param field - Dot-notation path to the field
+	 * @param field - Field name
 	 * @param message - Error message or null to clear
 	 */
-	setError(field: string, message: string | null): void;
+	setError(field: FieldPath<T>, message: string | null): void;
 
 	/**
 	 * Set or clear a warning message for a field.
 	 *
-	 * @param field - Dot-notation path to the field
+	 * @param field - Field name
 	 * @param message - Warning message or null to clear
 	 */
-	setWarning(field: string, message: string | null): void;
+	setWarning(field: FieldPath<T>, message: string | null): void;
 
 	/**
 	 * Mark a field as touched.
 	 *
-	 * @param field - Dot-notation path to the field
+	 * @param field - Field name
 	 */
-	touch(field: string): void;
+	touch(field: FieldPath<T>): void;
 
 	/**
 	 * Clear all error messages.
@@ -306,45 +340,45 @@ export interface FormState<T> {
 	/**
 	 * Append a value to an array field.
 	 *
-	 * @param field - Dot-notation path to the array field
+	 * @param field - Array field name
 	 * @param value - Value to append
 	 */
-	push(field: string, value: unknown): void;
+	push(field: FieldPath<T>, value: unknown): void;
 
 	/**
 	 * Remove an item from an array field by index.
 	 *
-	 * @param field - Dot-notation path to the array field
+	 * @param field - Array field name
 	 * @param index - Index to remove
 	 */
-	remove(field: string, index: number): void;
+	remove(field: FieldPath<T>, index: number): void;
 
 	/**
 	 * Insert a value at a specific index in an array field.
 	 *
-	 * @param field - Dot-notation path to the array field
+	 * @param field - Array field name
 	 * @param index - Index to insert at
 	 * @param value - Value to insert
 	 */
-	insert(field: string, index: number, value: unknown): void;
+	insert(field: FieldPath<T>, index: number, value: unknown): void;
 
 	/**
 	 * Move an item from one index to another in an array field.
 	 *
-	 * @param field - Dot-notation path to the array field
+	 * @param field - Array field name
 	 * @param from - Source index
 	 * @param to - Destination index
 	 */
-	move(field: string, from: number, to: number): void;
+	move(field: FieldPath<T>, from: number, to: number): void;
 
 	/**
 	 * Swap two items in an array field.
 	 *
-	 * @param field - Dot-notation path to the array field
+	 * @param field - Array field name
 	 * @param indexA - First index
 	 * @param indexB - Second index
 	 */
-	swap(field: string, indexA: number, indexB: number): void;
+	swap(field: FieldPath<T>, indexA: number, indexB: number): void;
 
 	// =========================================================================
 	// Field-Centric Access
@@ -363,7 +397,27 @@ export interface FormState<T> {
 	 * console.log(emailField.value, emailField.error);
 	 * ```
 	 */
-	field<V = unknown>(path: string): FieldState<V>;
+	field<V = unknown>(path: FieldPath<T>): FieldState<V>;
+
+	// =========================================================================
+	// Dirty Tracking
+	// =========================================================================
+
+	/**
+	 * Snapshot current values as the new baseline for dirty tracking.
+	 * After calling this, `isDirty` becomes `false` until the user makes
+	 * further changes. Useful for "save and stay" flows where you want to
+	 * clear the dirty state without resetting form values.
+	 *
+	 * @example
+	 * ```typescript
+	 * async function handleSave(values: FormData) {
+	 *   await api.save(values);
+	 *   form.resetDirty(); // Clear dirty state after successful save
+	 * }
+	 * ```
+	 */
+	resetDirty(): void;
 
 	// =========================================================================
 	// Lifecycle
@@ -371,16 +425,9 @@ export interface FormState<T> {
 
 	/**
 	 * Clean up form resources (error timers).
-	 * Call this when the component unmounts to prevent memory leaks.
-	 *
-	 * @example
-	 * ```svelte
-	 * <script>
-	 *   import { onDestroy } from 'svelte';
-	 *   const form = useForm({ ... });
-	 *   onDestroy(() => form.cleanup());
-	 * </script>
-	 * ```
+	 * This is called automatically when the component unmounts (via `$effect`),
+	 * so you typically don't need to call it manually. It remains available
+	 * for edge cases where `useForm` is called outside a component context.
 	 */
 	cleanup(): void;
 }

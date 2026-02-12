@@ -139,7 +139,13 @@ export function setFormValues<T extends object>(form: FormState<T>, values: Part
  * ```
  */
 export function getFormErrors(form: FormState<object>): Record<string, string> {
-	return { ...form.errors };
+	const result: Record<string, string> = {};
+	for (const [key, value] of Object.entries(form.errors)) {
+		if (value !== undefined) {
+			result[key] = value;
+		}
+	}
+	return result;
 }
 
 /**

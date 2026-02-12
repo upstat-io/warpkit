@@ -10,6 +10,7 @@ import type { StandardSchema } from '@warpkit/validation';
 import type {
 	FormOptions,
 	FormState,
+	FormErrors,
 	FieldState,
 	ValidationMode,
 	RevalidateMode,
@@ -85,6 +86,7 @@ export function useForm<T extends object>(options: FormOptions<T>): FormState<T>
 	// Merge schema defaults with initial values
 	const schemaDefaults = extractDefaults<T>(schema as TypeBoxSchemaLike | undefined);
 	const initial = mergeInitialValues<T>(schemaDefaults, options.initialValues);
+	let dirtyBaseline = $state<T>(JSON.parse(JSON.stringify(initial)) as T);
 
 	// =========================================================================
 	// Core State ($state)
@@ -103,6 +105,11 @@ export function useForm<T extends object>(options: FormOptions<T>): FormState<T>
 
 	// Debounce timers for delayError
 	const errorTimers = new Map<string, ReturnType<typeof setTimeout>>();
+
+	// Auto-cleanup error timers when component unmounts
+	$effect(() => {
+		return () => clearAllErrorTimers();
+	});
 
 	// =========================================================================
 	// Path Caching (Performance Optimization)
@@ -130,7 +137,7 @@ export function useForm<T extends object>(options: FormOptions<T>): FormState<T>
 	// Dirty computation uses cached paths for better performance on large forms.
 	const dirty = $derived.by(() => {
 		const paths = getCachedPaths();
-		return calculateDirtyState(values, initial, paths, getPath);
+		return calculateDirtyState(values, dirtyBaseline, paths, getPath);
 	});
 
 	const isDirty = $derived(Object.values(dirty).some(Boolean));
@@ -322,7 +329,7 @@ export function useForm<T extends object>(options: FormOptions<T>): FormState<T>
 
 	/**
 	 * Validate a single field.
-	 * @param field - Field path to validate
+	 * @param field - Field name to validate
 	 * @returns true if valid, false if error exists
 	 */
 	async function validateField(field: string): Promise<boolean> {
@@ -403,6 +410,17 @@ export function useForm<T extends object>(options: FormOptions<T>): FormState<T>
 		isSubmitted = false;
 		submitError = null;
 		submitCount = 0;
+
+		// Reset dirty baseline to match current values
+		dirtyBaseline = JSON.parse(JSON.stringify(values)) as T;
+	}
+
+	/**
+	 * Snapshot current values as the new dirty baseline.
+	 * After calling this, isDirty becomes false until further changes.
+	 */
+	function resetDirty(): void {
+		dirtyBaseline = JSON.parse(JSON.stringify(values)) as T;
 	}
 
 	// =========================================================================
@@ -432,7 +450,7 @@ export function useForm<T extends object>(options: FormOptions<T>): FormState<T>
 
 	/**
 	 * Set an error for a field.
-	 * @param field - Field path
+	 * @param field - Field name
 	 * @param message - Error message (null to clear)
 	 */
 	function setError(field: string, message: string | null): void {
@@ -445,7 +463,7 @@ export function useForm<T extends object>(options: FormOptions<T>): FormState<T>
 
 	/**
 	 * Set a warning for a field.
-	 * @param field - Field path
+	 * @param field - Field name
 	 * @param message - Warning message (null to clear)
 	 */
 	function setWarning(field: string, message: string | null): void {
@@ -552,7 +570,7 @@ export function useForm<T extends object>(options: FormOptions<T>): FormState<T>
 
 	/**
 	 * Get a field-centric view of a specific field.
-	 * @param path - Field path
+	 * @param path - Field name
 	 * @returns FieldState with reactive getters
 	 */
 	function field<V = unknown>(path: string): FieldState<V> {
@@ -581,7 +599,8 @@ export function useForm<T extends object>(options: FormOptions<T>): FormState<T>
 
 	/**
 	 * Clean up form resources (error timers).
-	 * Call this when the component unmounts to prevent memory leaks.
+	 * This is called automatically when the component unmounts (via $effect).
+	 * Only needed if useForm is called outside a component context.
 	 */
 	function cleanup(): void {
 		clearAllErrorTimers();
@@ -592,7 +611,7 @@ export function useForm<T extends object>(options: FormOptions<T>): FormState<T>
 			return proxiedData;
 		},
 		get errors() {
-			return errors;
+			return errors as FormErrors<T>;
 		},
 		get warnings() {
 			return warnings;
@@ -639,6 +658,7 @@ export function useForm<T extends object>(options: FormOptions<T>): FormState<T>
 		move,
 		swap,
 		field,
+		resetDirty,
 		cleanup
 	};
 }

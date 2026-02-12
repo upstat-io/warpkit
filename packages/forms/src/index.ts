@@ -38,6 +38,8 @@ export { useForm } from './hooks.svelte';
 export type {
 	FormOptions,
 	FormState,
+	FormErrors,
+	FieldPath,
 	ValidationMode,
 	RevalidateMode,
 	FieldValidator,

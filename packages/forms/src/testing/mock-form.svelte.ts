@@ -5,7 +5,7 @@
  * that use @warpkit/forms. Provides configurable initial state and no-op methods.
  */
 
-import type { FormState, FieldState } from '../types';
+import type { FormState, FormErrors, FieldState } from '../types';
 
 /**
  * Options for createMockForm.
@@ -100,7 +100,7 @@ export function createMockForm<T extends object>(options: MockFormOptions<T> = {
 			return dataState;
 		},
 		get errors() {
-			return errorsState;
+			return errorsState as FormErrors<T>;
 		},
 		get warnings() {
 			return warningsState;
@@ -164,6 +164,9 @@ export function createMockForm<T extends object>(options: MockFormOptions<T> = {
 			errorsState = {};
 			warningsState = {};
 		},
+
+		// Dirty tracking
+		resetDirty: () => {},
 
 		// Lifecycle
 		cleanup: () => {},

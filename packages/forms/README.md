@@ -14,6 +14,8 @@ npm install @warpkit/forms @warpkit/validation
 - **Deep binding** - Transparent `bind:value` for nested objects
 - **Array support** - push, remove, insert, move operations
 - **Validation modes** - submit, blur, change, touched
+- **Typed errors** - Autocomplete for top-level field keys
+- **Auto-cleanup** - Timer cleanup via `$effect` (no manual `onDestroy` needed)
 
 ## Usage
 
@@ -37,7 +39,7 @@ npm install @warpkit/forms @warpkit/validation
   });
 </script>
 
-<form onsubmit={form.handleSubmit}>
+<form onsubmit={form.submit}>
   <input bind:value={form.data.name} />
   {#if form.errors.name}
     <span class="error">{form.errors.name}</span>
@@ -47,12 +49,12 @@ npm install @warpkit/forms @warpkit/validation
 
   {#each form.data.tags as _, i}
     <input bind:value={form.data.tags[i]} />
-    <button type="button" onclick={() => form.removeFromArray('tags', i)}>
+    <button type="button" onclick={() => form.remove('tags', i)}>
       Remove
     </button>
   {/each}
 
-  <button type="button" onclick={() => form.pushToArray('tags', '')}>
+  <button type="button" onclick={() => form.push('tags', '')}>
     Add Tag
   </button>
 
@@ -75,18 +77,30 @@ Options:
 
 Returns:
 - `data` - Proxied form values (use with bind:value)
-- `errors` - Field errors
+- `errors` - Typed field errors (autocomplete for top-level keys)
 - `warnings` - Field warnings
 - `touched` - Touched fields
+- `dirty` - Dirty fields
 - `isDirty` - Form has changes
 - `isValid` - No validation errors
 - `isSubmitting` - Submit in progress
-- `handleSubmit` - Form submit handler
-- `setFieldValue(path, value)` - Set field value
-- `setFieldError(path, message)` - Set field error
-- `clearFieldError(path)` - Clear field error
-- `reset()` - Reset to initial values
-- `pushToArray(path, value)` - Add to array
-- `removeFromArray(path, index)` - Remove from array
-- `insertIntoArray(path, index, value)` - Insert into array
-- `moveInArray(path, from, to)` - Reorder array
+- `isSubmitted` - Form has been submitted
+- `submitError` - Error from last submit
+- `submitCount` - Number of submit attempts
+- `submit(event?)` - Form submit handler
+- `reset(newValues?)` - Reset to initial values
+- `resetDirty()` - Snapshot current values as dirty baseline
+- `validate()` - Validate entire form
+- `validateField(field)` - Validate single field
+- `setField(field, value)` - Set field value
+- `setError(field, message)` - Set/clear field error
+- `setWarning(field, message)` - Set/clear field warning
+- `touch(field)` - Mark field as touched
+- `clearErrors()` - Clear all errors and warnings
+- `push(field, value)` - Add to array
+- `remove(field, index)` - Remove from array
+- `insert(field, index, value)` - Insert into array
+- `move(field, from, to)` - Reorder array
+- `swap(field, indexA, indexB)` - Swap array items
+- `field(path)` - Get field-centric state view
+- `cleanup()` - Clean up timers (automatic via $effect)
