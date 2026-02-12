@@ -21,7 +21,6 @@ import type { Route, StateConfig, LayoutConfig } from './types.js';
 export class LayoutManager {
 	private currentLayoutId: string | null = null;
 	private currentLayout: Component | null = null;
-	private currentLayoutHmrId: string | null = null;
 
 	/**
 	 * Resolve which layout to use for a route, loading it if necessary.
@@ -43,7 +42,6 @@ export class LayoutManager {
 			// No layout - clear cache so willLayoutChange detects the transition
 			this.currentLayoutId = null;
 			this.currentLayout = null;
-			this.currentLayoutHmrId = null;
 			return null;
 		}
 
@@ -60,7 +58,6 @@ export class LayoutManager {
 			const module = await layoutConfig.load();
 			this.currentLayout = module.default;
 			this.currentLayoutId = layoutId;
-			this.currentLayoutHmrId = (module as Record<string, unknown>).__warpkitHmrId as string ?? null;
 			return this.currentLayout;
 		} catch (error) {
 			throw this.enhanceLayoutLoadError(error, layoutId);
@@ -110,20 +107,11 @@ export class LayoutManager {
 	}
 
 	/**
-	 * Get the current layout's HMR module ID.
-	 * Returns null if no layout is active or if not running in dev mode.
-	 */
-	public getLayoutHmrId(): string | null {
-		return this.currentLayoutHmrId;
-	}
-
-	/**
 	 * Clear the layout cache.
 	 * Forces next resolveLayout to load fresh even if same ID.
 	 */
 	public clearCache(): void {
 		this.currentLayoutId = null;
 		this.currentLayout = null;
-		this.currentLayoutHmrId = null;
 	}
 }

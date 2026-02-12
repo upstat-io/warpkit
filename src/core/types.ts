@@ -490,11 +490,7 @@ export interface NavigatorConfig {
 	/** Blocker check delegated from WarpKit */
 	checkBlockers: () => Promise<{ proceed: boolean }>;
 	/** Callback to set loaded components on WarpKit's $state fields */
-	setLoadedComponents: (
-		component: Component | null,
-		layout: Component | null,
-		hmrMeta?: { componentHmrId?: string | null; layoutHmrId?: string | null }
-	) => void;
+	setLoadedComponents: (component: Component | null, layout: Component | null) => void;
 	/** Global error handler delegated from WarpKit config.onError */
 	onError?: (error: NavigationError, context: NavigationErrorContext) => void;
 	/** Callback to fire navigation complete events for WarpKitCore.onNavigationComplete */
@@ -582,7 +578,6 @@ export interface LayoutManager {
 	resolveLayout(route: Route, stateConfig?: StateConfig): Promise<Component | null>;
 	willLayoutChange(route: Route, stateConfig?: StateConfig): boolean;
 	getCurrentLayoutId(): string | null;
-	getLayoutHmrId(): string | null;
 	clearCache(): void;
 }
 

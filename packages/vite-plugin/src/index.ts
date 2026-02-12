@@ -1,4 +1,4 @@
-import type { Plugin, HmrContext, UserConfig } from 'vite';
+import type { Plugin, UserConfig } from 'vite';
 
 export interface WarpKitPluginOptions {
 	/**
@@ -44,20 +44,6 @@ export function warpkitPlugin(options: WarpKitPluginOptions = {}): Plugin {
 			// This runs after @sveltejs/vite-plugin-svelte (enforce: 'post'),
 			// so the code is already compiled JS.
 			return code + `\nexport const __warpkitHmrId = ${JSON.stringify(id)};\n`;
-		},
-
-		handleHotUpdate(ctx: HmrContext): void {
-			if (!ctx.file.endsWith('.svelte')) {
-				return;
-			}
-
-			// Send custom HMR event for WarpKit's component swap logic.
-			// Does NOT suppress default HMR — Svelte's self-accept still runs.
-			ctx.server.hot.send({
-				type: 'custom',
-				event: 'warpkit:component-update',
-				data: { file: ctx.file, timestamp: ctx.timestamp }
-			});
 		}
 	};
 }

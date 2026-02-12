@@ -62,7 +62,7 @@ Start with [Core Internals > Navigator](./core-internals.md#2-navigator----9-pha
 [Components & Hooks](./components.md). WarpKitProvider sets context, RouterView renders matched routes, Link/NavLink handle click interception, hooks (useWarpKit, usePage, useEvent) provide reactive access.
 
 ### "What does the Vite plugin do?"
-[Sub-Packages > @warpkit/vite-plugin](./packages.md#warpkitvite-plugin). Disables Vite's overlay (WarpKit has its own), injects `__warpkitHmrId` for component hot-swap, pre-warms route components.
+[Sub-Packages > @warpkit/vite-plugin](./packages.md#warpkitvite-plugin). Disables Vite's overlay (WarpKit has its own), injects `__warpkitHmrId` for debugging, pre-warms route components.
 
 ## Related Documentation
 

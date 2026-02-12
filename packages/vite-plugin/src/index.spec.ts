@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { warpkitPlugin } from './index.js';
-import type { Plugin, HmrContext, UserConfig } from 'vite';
+import type { Plugin, UserConfig } from 'vite';
 
 describe('warpkitPlugin', () => {
 	let plugin: Plugin;
@@ -14,7 +14,6 @@ describe('warpkitPlugin', () => {
 		expect(plugin.enforce).toBe('post');
 		expect(plugin.config).toBeDefined();
 		expect(plugin.transform).toBeDefined();
-		expect(plugin.handleHotUpdate).toBeDefined();
 	});
 
 	describe('config', () => {
@@ -90,59 +89,4 @@ describe('warpkitPlugin', () => {
 		});
 	});
 
-	describe('handleHotUpdate', () => {
-		it('should send custom event for .svelte files', () => {
-			const handleHotUpdate = plugin.handleHotUpdate as (ctx: HmrContext) => void;
-			const mockSend = vi.fn();
-
-			const ctx = {
-				file: '/src/pages/Dashboard.svelte',
-				timestamp: 1234567890,
-				server: {
-					hot: { send: mockSend }
-				}
-			} as unknown as HmrContext;
-
-			handleHotUpdate(ctx);
-
-			expect(mockSend).toHaveBeenCalledWith({
-				type: 'custom',
-				event: 'warpkit:component-update',
-				data: { file: '/src/pages/Dashboard.svelte', timestamp: 1234567890 }
-			});
-		});
-
-		it('should not send event for non-.svelte files', () => {
-			const handleHotUpdate = plugin.handleHotUpdate as (ctx: HmrContext) => void;
-			const mockSend = vi.fn();
-
-			const ctx = {
-				file: '/src/utils/helper.ts',
-				timestamp: 1234567890,
-				server: {
-					hot: { send: mockSend }
-				}
-			} as unknown as HmrContext;
-
-			handleHotUpdate(ctx);
-
-			expect(mockSend).not.toHaveBeenCalled();
-		});
-
-		it('should not suppress default HMR (returns undefined)', () => {
-			const handleHotUpdate = plugin.handleHotUpdate as (ctx: HmrContext) => void;
-
-			const ctx = {
-				file: '/src/pages/Dashboard.svelte',
-				timestamp: 1234567890,
-				server: {
-					hot: { send: vi.fn() }
-				}
-			} as unknown as HmrContext;
-
-			const result = handleHotUpdate(ctx);
-
-			expect(result).toBeUndefined();
-		});
-	});
 });

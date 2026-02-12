@@ -144,12 +144,6 @@ export class WarpKit<TAppState extends string, TStateData = unknown> implements 
 	/** Global error handlers cleanup function */
 	private globalErrorHandlersCleanup?: () => void;
 
-	/** HMR module ID for the current route component (dev only) */
-	private _componentHmrId: string | null = null;
-
-	/** HMR module ID for the current layout component (dev only) */
-	private _layoutHmrId: string | null = null;
-
 	/** Routes configuration (stored for retry functionality and default resolution) */
 	private readonly routes: StateRoutes<TAppState, TStateData>;
 
@@ -215,13 +209,9 @@ export class WarpKit<TAppState extends string, TStateData = unknown> implements 
 			layoutManager: this.layoutManager,
 			providers: this.providers,
 			checkBlockers: () => this.checkBlockers(),
-			setLoadedComponents: (component, layout, hmrMeta) => {
+			setLoadedComponents: (component, layout) => {
 				this.loadedComponent = component;
 				this.loadedLayout = layout;
-				if (hmrMeta) {
-					this._componentHmrId = hmrMeta.componentHmrId ?? null;
-					this._layoutHmrId = hmrMeta.layoutHmrId ?? null;
-				}
 			},
 			onError: this.onError,
 			fireNavigationComplete: (context) => this.fireNavigationComplete(context),
@@ -276,13 +266,6 @@ export class WarpKit<TAppState extends string, TStateData = unknown> implements 
 		if (import.meta.env?.DEV && typeof window !== 'undefined') {
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			(window as any).__WARPKIT_INSTANCE__ = this;
-		}
-
-		// Dev-mode HMR: listen for component updates from @warpkit/vite-plugin
-		if (import.meta.hot) {
-			import.meta.hot.on('warpkit:component-update', (data: { file: string; timestamp: number }) => {
-				void this._handleComponentHmr(data.file, data.timestamp);
-			});
 		}
 
 		// Install global error handlers FIRST (before anything else can fail)
@@ -793,38 +776,6 @@ export class WarpKit<TAppState extends string, TStateData = unknown> implements 
 	public onNavigationComplete(callback: (context: NavigationContext) => void): () => void {
 		this.navigationCompleteListeners.add(callback);
 		return () => this.navigationCompleteListeners.delete(callback);
-	}
-
-	// ============================================================================
-	// Dev-mode HMR
-	// ============================================================================
-
-	/**
-	 * Handle hot module replacement for route and layout components.
-	 * Called by the custom HMR event sent from @warpkit/vite-plugin.
-	 * Compares the changed file against tracked HMR IDs and swaps
-	 * the component/layout reactively if matched.
-	 */
-	public async _handleComponentHmr(fileId: string, timestamp: number): Promise<void> {
-		if (this._componentHmrId === fileId) {
-			try {
-				const module = await import(/* @vite-ignore */ `${fileId}?t=${timestamp}`);
-				this.loadedComponent = module.default;
-				this._componentHmrId = module.__warpkitHmrId ?? fileId;
-			} catch (error) {
-				console.warn('[WarpKit HMR] Failed to reload component:', error);
-			}
-		}
-		if (this._layoutHmrId === fileId) {
-			try {
-				const module = await import(/* @vite-ignore */ `${fileId}?t=${timestamp}`);
-				this.loadedLayout = module.default;
-				this.layoutManager.clearCache();
-				this._layoutHmrId = module.__warpkitHmrId ?? fileId;
-			} catch (error) {
-				console.warn('[WarpKit HMR] Failed to reload layout:', error);
-			}
-		}
 	}
 
 	// ============================================================================

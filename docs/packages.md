@@ -767,7 +767,7 @@ new FirebaseAuthAdapter(app: FirebaseApp, options: {
 
 **Path:** `packages/vite-plugin/`
 
-Vite plugin for WarpKit development experience. Handles error overlay delegation, route component pre-warming, HMR ID injection, and custom HMR events.
+Vite plugin for WarpKit development experience. Handles error overlay delegation, route component pre-warming, and HMR ID injection for debugging.
 
 ### warpkitPlugin (`src/index.ts`)
 
@@ -783,8 +783,7 @@ function warpkitPlugin(options?: WarpKitPluginOptions): Plugin
 | Hook | Enforce | Behavior |
 |------|---------|----------|
 | `config()` | - | Disables Vite's built-in error overlay (`server.hmr.overlay: false`). WarpKit handles errors via its own ErrorOverlay. If `routeComponents` is provided, adds to `server.warmup.clientFiles` to prevent dependency discovery reloads on first lazy-load navigation. |
-| `transform(code, id)` | `'post'` | Runs after `@sveltejs/vite-plugin-svelte`. For `.svelte` files only, appends `export const __warpkitHmrId = "<file-id>";` to the compiled output. This ID is used by WarpKit's component swap logic. |
-| `handleHotUpdate(ctx)` | - | For `.svelte` files, sends a custom HMR event `warpkit:component-update` with `{ file, timestamp }` data. Does NOT suppress default Svelte HMR -- both run in parallel. |
+| `transform(code, id)` | `'post'` | Runs after `@sveltejs/vite-plugin-svelte`. For `.svelte` files only, appends `export const __warpkitHmrId = "<file-id>";` to the compiled output. Retained for debugging; not used for component swap. |
 
 ---
 

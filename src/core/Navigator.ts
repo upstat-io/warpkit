@@ -54,11 +54,7 @@ export interface NavigatorDeps {
 	/** Blocker check delegated from WarpKit */
 	checkBlockers: () => Promise<{ proceed: boolean }>;
 	/** Callback to set loaded components on WarpKit's $state fields */
-	setLoadedComponents: (
-		component: Component | null,
-		layout: Component | null,
-		hmrMeta?: { componentHmrId?: string | null; layoutHmrId?: string | null }
-	) => void;
+	setLoadedComponents: (component: Component | null, layout: Component | null) => void;
 	/** Global error handler */
 	onError?: (error: NavigationError, context: NavigationErrorContext) => void;
 	/** Callback to fire navigation complete events */
@@ -84,11 +80,7 @@ export class Navigator {
 	private readonly layoutManager: LayoutManager;
 	private readonly providers: ResolvedProviders;
 	private readonly checkBlockers: () => Promise<{ proceed: boolean }>;
-	private readonly setLoadedComponents: (
-		component: Component | null,
-		layout: Component | null,
-		hmrMeta?: { componentHmrId?: string | null; layoutHmrId?: string | null }
-	) => void;
+	private readonly setLoadedComponents: (component: Component | null, layout: Component | null) => void;
 	private readonly onError?: (error: NavigationError, context: NavigationErrorContext) => void;
 	private readonly fireNavigationComplete?: (context: NavigationContext) => void;
 	private readonly getResolvedDefault?: (state: string) => string | null;
@@ -348,17 +340,16 @@ export class Navigator {
 			if (isCancelled()) return this.cancelledResult(request.path);
 
 			// Load component
-			const { component, hmrId: componentHmrId } = await this.loadComponent(matchedRoute);
+			const component = await this.loadComponent(matchedRoute);
 			if (isCancelled()) return this.cancelledResult(request.path);
 
 			// Load layout
 			const stateConfig = this.matcher.getStateConfig(currentState);
 			const layout = await this.layoutManager.resolveLayout(matchedRoute, stateConfig);
-			const layoutHmrId = this.layoutManager.getLayoutHmrId();
 			if (isCancelled()) return this.cancelledResult(request.path);
 
 			// Set loaded components on WarpKit's $state fields
-			this.setLoadedComponents(component, layout, { componentHmrId, layoutHmrId });
+			this.setLoadedComponents(component, layout);
 
 			// Clear any previous navigation error
 			this.pageState.clearError();
@@ -479,13 +470,10 @@ export class Navigator {
 	/**
 	 * Load route component via lazy import.
 	 */
-	private async loadComponent(route: Route): Promise<{ component: Component; hmrId: string | null }> {
+	private async loadComponent(route: Route): Promise<Component> {
 		try {
 			const module = await route.component();
-			return {
-				component: module.default,
-				hmrId: (module as Record<string, unknown>).__warpkitHmrId as string ?? null
-			};
+			return module.default;
 		} catch (error) {
 			throw this.enhanceLoadError(error, route.path, 'component');
 		}

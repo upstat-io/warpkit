@@ -72,7 +72,7 @@ Key operations:
    - `confirmDialog` -- `DefaultConfirmDialogProvider` (`window.confirm`)
    - `storage` -- `DefaultStorageProvider` (in-memory LRU)
 5. Creates `Navigator` with all dependencies, passing callbacks for:
-   - `setLoadedComponents` -- sets `$state` fields on WarpKit + tracks HMR IDs
+   - `setLoadedComponents` -- sets `$state` fields on WarpKit
    - `checkBlockers` -- delegates to WarpKit's blocker set
    - `fireNavigationComplete` -- notifies navigation complete listeners
    - `getResolvedDefault` -- delegates to WarpKit's default path cache/resolver
@@ -88,7 +88,7 @@ Must be called exactly once after construction. Throws on double-call.
 Execution order:
 
 1. Sets `started = true`.
-2. **Dev mode**: exposes `window.__WARPKIT_INSTANCE__` for debugging. Registers Vite HMR listener (`warpkit:component-update`).
+2. **Dev mode**: exposes `window.__WARPKIT_INSTANCE__` for debugging.
 3. **Global error handlers**: calls `setupGlobalErrorHandlers()` (installs `window.onerror` and `window.onunhandledrejection`).
 4. **Provider initialization**: resolves provider dependency graph and initializes in dependency order via `initializeProviders()`. Providers with `dependsOn` arrays wait for their dependencies; all others initialize in parallel.
 5. **Popstate listener**: subscribes to `browser.onPopState()`, delegates to `handlePopState()`.
@@ -160,13 +160,6 @@ Updates URL search params without triggering the full navigation pipeline. No ho
 
 - `getIntendedPath()` -- delegates to `storage.popIntendedPath()` (get-and-clear).
 - `setIntendedPath(path)` -- delegates to `storage.saveIntendedPath()`.
-
-### HMR Support
-
-`_handleComponentHmr(fileId, timestamp)`:
-- Compares `fileId` against tracked `_componentHmrId` and `_layoutHmrId`.
-- On match: re-imports the module with a cache-busting timestamp query param, updates the reactive `$state` field, extracts new HMR ID from `module.__warpkitHmrId`.
-- Layout HMR also calls `layoutManager.clearCache()`.
 
 ### `destroy()`
 
@@ -282,11 +275,11 @@ src/core/Navigator.ts:348-368
 ```
 
 1. Check `isCancelled()`.
-2. **Load component**: call `route.component()` (lazy import). Extract `module.default` as the component and `module.__warpkitHmrId` as the HMR ID. On import failure, wrap the error with route context via `enhanceLoadError()`.
+2. **Load component**: call `route.component()` (lazy import). Extract `module.default` as the component. On import failure, wrap the error with route context via `enhanceLoadError()`.
 3. Check `isCancelled()` again (import was async).
-4. **Load layout**: call `layoutManager.resolveLayout(route, stateConfig)`. Extract layout HMR ID.
+4. **Load layout**: call `layoutManager.resolveLayout(route, stateConfig)`.
 5. Check `isCancelled()` again.
-6. **Set loaded components**: call `setLoadedComponents(component, layout, { componentHmrId, layoutHmrId })` -- this updates WarpKit's `$state` fields.
+6. **Set loaded components**: call `setLoadedComponents(component, layout)` -- this updates WarpKit's `$state` fields.
 7. Clear any previous error on PageState.
 8. **Update PageState**: call `pageState.update(context.to)` -- atomically sets path, pathname, search, hash, params, route, appState, and clears error.
 
@@ -602,7 +595,6 @@ Internal state:
 |---|---|---|
 | `currentLayoutId` | `string \| null` | ID of the currently cached layout. |
 | `currentLayout` | `Component \| null` | The cached layout component. |
-| `currentLayoutHmrId` | `string \| null` | HMR module ID (dev mode only). |
 
 ### `resolveLayout(route, stateConfig?)`
 
@@ -616,7 +608,7 @@ public async resolveLayout(
 1. Determine `layoutConfig` from `route.layout ?? stateConfig?.layout`.
 2. If no layout config: clear cache, return `null`.
 3. If `layoutConfig.id === currentLayoutId` and `currentLayout` is non-null: return cached component (no re-import, no remount).
-4. Otherwise: call `layoutConfig.load()` (lazy import), extract `module.default`, cache the component and ID, extract HMR ID from `module.__warpkitHmrId`. On import failure, wrap error with layout context.
+4. Otherwise: call `layoutConfig.load()` (lazy import), extract `module.default`, cache the component and ID. On import failure, wrap error with layout context.
 
 ### `willLayoutChange(route, stateConfig?)`
 
@@ -628,7 +620,7 @@ Check-only (no loading). Compares the resolved `layoutConfig.id` against `curren
 
 ### `clearCache()`
 
-Resets `currentLayoutId`, `currentLayout`, and `currentLayoutHmrId` to `null`. Forces the next `resolveLayout()` to re-import even if the same ID is requested. Called during HMR layout updates.
+Resets `currentLayoutId` and `currentLayout` to `null`. Forces the next `resolveLayout()` to re-import even if the same ID is requested.
 
 ---
 

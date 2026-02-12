@@ -35,11 +35,7 @@ describe('Navigator', () => {
 	let mockLayoutManager: any;
 	let mockProviders: any;
 	let mockCheckBlockers: ReturnType<typeof vi.fn>;
-	let mockSetLoadedComponents: (
-		c: Component | null,
-		l: Component | null,
-		hmrMeta?: { componentHmrId?: string | null; layoutHmrId?: string | null }
-	) => void;
+	let mockSetLoadedComponents: (c: Component | null, l: Component | null) => void;
 	let mockOnError: ReturnType<typeof vi.fn>;
 	let mockFireNavigationComplete: ReturnType<typeof vi.fn>;
 	let mockGetResolvedDefault: ReturnType<typeof vi.fn>;
@@ -84,8 +80,7 @@ describe('Navigator', () => {
 
 		// Mock LayoutManager
 		mockLayoutManager = {
-			resolveLayout: vi.fn().mockResolvedValue(null),
-			getLayoutHmrId: vi.fn().mockReturnValue(null)
+			resolveLayout: vi.fn().mockResolvedValue(null)
 		};
 
 		// Mock providers
@@ -309,11 +304,7 @@ describe('Navigator', () => {
 			await navigator.navigate('/dashboard');
 
 			expect(route.component).toHaveBeenCalled();
-			expect(mockSetLoadedComponents).toHaveBeenCalledWith(
-				MockComponent,
-				null,
-				{ componentHmrId: null, layoutHmrId: null }
-			);
+			expect(mockSetLoadedComponents).toHaveBeenCalledWith(MockComponent, null);
 		});
 
 		it('should resolve layout', async () => {
@@ -328,11 +319,7 @@ describe('Navigator', () => {
 			await navigator.navigate('/dashboard');
 
 			expect(mockLayoutManager.resolveLayout).toHaveBeenCalledWith(route, expect.any(Object));
-			expect(mockSetLoadedComponents).toHaveBeenCalledWith(
-				MockComponent,
-				MockLayout,
-				{ componentHmrId: null, layoutHmrId: null }
-			);
+			expect(mockSetLoadedComponents).toHaveBeenCalledWith(MockComponent, MockLayout);
 		});
 
 		it('should update PageState on successful navigation', async () => {

@@ -125,7 +125,7 @@ The codebase is split into a core package (`src/`) and independent sub-packages 
 | `@warpkit/websocket` | WebSocket client | `client.ts`, `control-messages.ts`, `json.ts` |
 | `@warpkit/auth-firebase` | Firebase auth adapter | `adapter.ts`, `error-mapping.ts` |
 | `@warpkit/errors` | Cross-package error channel | `channel.ts` |
-| `@warpkit/vite-plugin` | Vite dev tooling + HMR | `index.ts` |
+| `@warpkit/vite-plugin` | Vite dev tooling (overlay, warmup) | `index.ts` |
 | `@warpkit/types` | Shared TypeScript types | `index.ts`, `auth.ts` |
 
 ## Section Index

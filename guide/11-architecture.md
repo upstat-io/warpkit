@@ -434,7 +434,7 @@ The core source files and their responsibilities:
 | `StateMachine.ts` | ~90 | Simple state tracker with stateId for cancellation detection. |
 | `PageState.svelte.ts` | ~80 | Reactive state container using Svelte 5 $state. |
 | `NavigationLifecycle.ts` | ~160 | Hook registration and execution (before, on, after). |
-| `LayoutManager.ts` | ~130 | Layout resolution, caching, and HMR support. |
+| `LayoutManager.ts` | ~100 | Layout resolution and caching. |
 
 Tests live alongside their source files in `__tests__/` directories. Every component has unit tests. The testing utilities in `src/testing/` are themselves tested.
 
