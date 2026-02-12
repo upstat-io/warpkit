@@ -89,41 +89,22 @@ export async function renderWithWarpKit<TAppState extends string>(
 		onError
 	});
 
-	// Create a wrapper component that provides context and renders the target
-	// We use a factory to create the wrapper with the component and props baked in
-	const TestHarness = createTestHarness(component, warpkit, props);
-
-	// Render the wrapper
-	const result = render(TestHarness);
+	// Render WarpKitTestWrapper with the target component and props
+	// WarpKitTestWrapper sets up Svelte context and renders the target via
+	// its targetComponent/targetProps props (using {@const} dynamic rendering)
+	const result = render(WarpKitTestWrapper, {
+		props: {
+			warpkit,
+			targetComponent: component,
+			targetProps: props
+		}
+	});
 
 	// Return extended result with WarpKit access
 	return {
 		...result,
 		warpkit
 	};
-}
-
-/**
- * Create a test harness component that wraps the target with WarpKit context.
- *
- * This is a factory function because Svelte components need to be defined
- * with their props known at definition time.
- *
- * @remarks
- * **Known Limitation**: This function currently returns WarpKitTestWrapper directly
- * because Svelte components cannot be dynamically composed at runtime without a build step.
- * The TargetComponent and props parameters are not used - tests should use
- * WarpKitTestWrapper directly for full control.
- */
-function createTestHarness<TAppState extends string>(
-	_targetComponent: Component,
-	_warpkit: MockWarpKit<TAppState>,
-	_props: Record<string, unknown>
-): typeof WarpKitTestWrapper {
-	// Note: Parameters prefixed with _ to indicate intentionally unused
-	// due to Svelte's compile-time component model.
-	// For full test control, use WarpKitTestWrapper directly in your test file.
-	return WarpKitTestWrapper;
 }
 
 /**

@@ -194,6 +194,16 @@ When a layout is present, RouterView uses Svelte's `{@const}` for component alia
 
 The `{@const}` assignment is necessary because Svelte's template compiler requires component references to be `PascalCase` identifiers, not arbitrary expressions.
 
+**Error boundary (`svelte:boundary`):**
+
+The component rendering block is wrapped in `<svelte:boundary>`. When a route component throws a runtime error during rendering:
+
+1. The boundary catches the error.
+2. The error is converted to a `NavigationError` with code `RENDER_ERROR` (8) via `toRenderError()`.
+3. If an `error` snippet is provided, it renders with the `NavigationError` and a `retry` function that calls both `reset()` (Svelte boundary reset) and `ctx.retryLoad()`.
+4. If no `error` snippet is provided, a plain `<p>` element displays the error message.
+5. **Importantly:** `PageState.error` is NOT set. The render error lives entirely within the `svelte:boundary`'s `{#snippet failed}` scope.
+
 ---
 
 ### Link (`src/components/Link.svelte`)
@@ -314,6 +324,7 @@ Returns the reactive `PageState` from context.
 | `hash` | `string` | Hash fragment. |
 | `params` | `Record<string, string>` | Matched route params. |
 | `route` | `Route \| null` | Matched route object (null during error). |
+| `meta` | `RouteMeta \| undefined` | Shorthand for `route?.meta`. Access route metadata like `page.meta.title`. |
 | `error` | `NavigationError \| null` | Current navigation error. |
 | `isNavigating` | `boolean` | Whether a navigation is in progress. |
 | `appState` | `string` | Current application state name. |

@@ -66,6 +66,7 @@ describe('WarpKit v2 Context', () => {
 					hash: '',
 					params: {},
 					route: null,
+					meta: undefined,
 					error: null,
 					isNavigating: false,
 					appState: 'test',

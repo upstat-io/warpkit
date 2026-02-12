@@ -554,6 +554,7 @@ export interface PageState {
 	hash: string;
 	params: Record<string, string>;
 	route: Route | null;
+	meta: RouteMeta | undefined;
 	error: NavigationError | null;
 	isNavigating: boolean;
 	appState: string;

@@ -29,8 +29,8 @@ The foundation of all WarpKit testing is `createMockWarpKit`. It creates a fully
 Here is the basic usage:
 
 ```typescript
-import { createMockWarpKit } from '@warpkit/core/testing';
-import { createRoute, createStateRoutes } from '@warpkit/core';
+import { createMockWarpKit } from '@upstat/warpkit/testing';
+import { createRoute, createStateRoutes } from '@upstat/warpkit';
 
 const routes = createStateRoutes<'authenticated' | 'unauthenticated'>({
   unauthenticated: {
@@ -98,7 +98,7 @@ Navigation is the core of any router, and WarpKit makes it straightforward to te
 
 ```typescript
 import { describe, it, expect } from 'vitest';
-import { createMockWarpKit } from '@warpkit/core/testing';
+import { createMockWarpKit } from '@upstat/warpkit/testing';
 
 describe('Navigation', () => {
   it('navigates to a new path', async () => {
@@ -280,7 +280,7 @@ describe('Navigation blockers', () => {
 
 WarpKit provides a set of expressive assertion helpers that produce better error messages than manual `expect()` calls. Instead of seeing "Expected true but received false", you get messages like "Expected path to be '/dashboard' but was '/settings'".
 
-Import them from `@warpkit/core/testing`:
+Import them from `@upstat/warpkit/testing`:
 
 ```typescript
 import {
@@ -297,7 +297,7 @@ import {
   expectNavigationError,
   expectHistoryLength,
   expectHistoryIndex
-} from '@warpkit/core/testing';
+} from '@upstat/warpkit/testing';
 ```
 
 ### Path and State Assertions
@@ -377,7 +377,7 @@ expectHistoryIndex(warpkit, 1); // Back from index 2 to 1
 WarpKit's event system is a typed pub/sub bus used for cross-component communication and cache invalidation. The `createEventSpy` utility tracks emitted events for assertions:
 
 ```typescript
-import { createMockEvents, createEventSpy } from '@warpkit/core/testing';
+import { createMockEvents, createEventSpy } from '@upstat/warpkit/testing';
 
 describe('Event handling', () => {
   it('tracks emitted events', () => {
@@ -428,7 +428,7 @@ The `createMockEvents` function returns a real `EventEmitter` instance -- it is 
 Some navigations happen asynchronously in response to user actions or external events. The `waitForNavigation` and `waitForNavigationWithTimeout` helpers let you wait for navigation completion:
 
 ```typescript
-import { waitForNavigation, waitForNavigationWithTimeout } from '@warpkit/core/testing';
+import { waitForNavigation, waitForNavigationWithTimeout } from '@upstat/warpkit/testing';
 
 describe('Async navigation', () => {
   it('waits for navigation triggered by external action', async () => {
@@ -522,7 +522,7 @@ describe('State transitions', () => {
 If your application uses `@warpkit/data` for data fetching, the `createMockDataClient` utility lets you control API responses in tests without making network requests:
 
 ```typescript
-import { createMockDataClient } from '@warpkit/core/testing';
+import { createMockDataClient } from '@upstat/warpkit/testing';
 
 describe('Data-dependent component', () => {
   it('renders fetched data', async () => {
@@ -612,7 +612,7 @@ Svelte 5 components cannot be rendered in jsdom because the `mount()` function r
 
 ```typescript
 // Dashboard.browser.spec.ts
-import { renderWithWarpKit } from '@warpkit/core/testing';
+import { renderWithWarpKit } from '@upstat/warpkit/testing';
 import Dashboard from './Dashboard.svelte';
 
 describe('Dashboard component', () => {
@@ -675,7 +675,7 @@ Without `resolve.conditions: ['browser']`, Svelte resolves to `index-server.js` 
 The `createTestRoutes` helper simplifies route creation for tests when you do not need the full `createStateRoutes` configuration:
 
 ```typescript
-import { createTestRoutes } from '@warpkit/core/testing';
+import { createTestRoutes } from '@upstat/warpkit/testing';
 
 const routes = createTestRoutes({
   authenticated: [

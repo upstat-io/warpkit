@@ -24,9 +24,9 @@ Here is what the key imports look like:
 
 ```typescript
 // Core routing and components
-import { createWarpKit, createRoute, createStateRoutes } from '@warpkit/core';
-import { useWarpKit, usePage } from '@warpkit/core';
-import { Link, RouterView, WarpKitProvider } from '@warpkit/core';
+import { createWarpKit, createRoute, createStateRoutes } from '@upstat/warpkit';
+import { useWarpKit, usePage } from '@upstat/warpkit';
+import { Link, RouterView, WarpKitProvider } from '@upstat/warpkit';
 
 // Data fetching
 import { DataClient, useData, useMutation } from '@warpkit/data';
@@ -164,13 +164,13 @@ The auth adapter is an interface you implement. The data registry is a module au
 
 ### 6. Modular
 
-WarpKit is split into focused packages. `@warpkit/core` provides routing, state management, events, and components. `@warpkit/data` provides the data layer. `@warpkit/forms` provides form management. `@warpkit/websocket` provides WebSocket support.
+WarpKit is split into focused packages. `@upstat/warpkit` provides routing, state management, events, and components. `@warpkit/data` provides the data layer. `@warpkit/forms` provides form management. `@warpkit/websocket` provides WebSocket support.
 
-Only `@warpkit/core` is required. Everything else is opt-in. If your app does not need WebSocket support, do not install `@warpkit/websocket`. If you manage forms with a different library, skip `@warpkit/forms`.
+Only `@upstat/warpkit` is required. Everything else is opt-in. If your app does not need WebSocket support, do not install `@warpkit/websocket`. If you manage forms with a different library, skip `@warpkit/forms`.
 
 | Package | Purpose | Required |
 |---------|---------|----------|
-| `@warpkit/core` | Router, state machine, events, components | Yes |
+| `@upstat/warpkit` | Router, state machine, events, components | Yes |
 | `@warpkit/data` | Data fetching, caching, mutations | No |
 | `@warpkit/cache` | MemoryCache, StorageCache, ETagCacheProvider | No (used by @warpkit/data) |
 | `@warpkit/forms` | Schema-driven form state management | No |

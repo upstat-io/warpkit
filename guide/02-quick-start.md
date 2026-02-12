@@ -8,7 +8,7 @@ WarpKit is distributed as a set of npm packages. Install the core package and th
 
 ```bash
 # Required
-npm install @warpkit/core
+npm install @upstat/warpkit
 
 # Recommended: data fetching and caching
 npm install @warpkit/data @warpkit/cache
@@ -28,7 +28,7 @@ You will also need a Svelte 5 project with a bundler. The easiest way to get one
 ```bash
 npm create vite@latest my-app -- --template svelte-ts
 cd my-app
-npm install @warpkit/core @warpkit/data @warpkit/cache @warpkit/forms @warpkit/validation
+npm install @upstat/warpkit @warpkit/data @warpkit/cache @warpkit/forms @warpkit/validation
 ```
 
 WarpKit has a peer dependency on Svelte 5. If your project uses an older version of Svelte, you will need to upgrade first.
@@ -66,7 +66,7 @@ Create `src/lib/routes.ts`:
 
 ```typescript
 // src/lib/routes.ts
-import { createRoute, createStateRoutes } from '@warpkit/core';
+import { createRoute, createStateRoutes } from '@upstat/warpkit';
 
 // Step 1: Define your application states as a union type.
 // These represent the discrete modes your app can be in.
@@ -134,7 +134,7 @@ Create `src/lib/warpkit.ts`:
 
 ```typescript
 // src/lib/warpkit.ts
-import { createWarpKit } from '@warpkit/core';
+import { createWarpKit } from '@upstat/warpkit';
 import { routes, type AppState } from './routes';
 
 export function initWarpKit() {
@@ -163,7 +163,7 @@ Replace your `src/App.svelte` with:
 ```svelte
 <!-- src/App.svelte -->
 <script lang="ts">
-  import { WarpKitProvider, RouterView } from '@warpkit/core';
+  import { WarpKitProvider, RouterView } from '@upstat/warpkit';
   import { initWarpKit } from './lib/warpkit';
 
   // Create the WarpKit instance
@@ -205,7 +205,7 @@ Create `src/routes/unauthenticated/Login.svelte`:
 ```svelte
 <!-- src/routes/unauthenticated/Login.svelte -->
 <script lang="ts">
-  import { useWarpKit } from '@warpkit/core';
+  import { useWarpKit } from '@upstat/warpkit';
 
   const warpkit = useWarpKit();
 
@@ -237,8 +237,8 @@ Create `src/routes/authenticated/Dashboard.svelte`:
 ```svelte
 <!-- src/routes/authenticated/Dashboard.svelte -->
 <script lang="ts">
-  import { useWarpKit, usePage } from '@warpkit/core';
-  import { Link } from '@warpkit/core';
+  import { useWarpKit, usePage } from '@upstat/warpkit';
+  import { Link } from '@upstat/warpkit';
 
   const warpkit = useWarpKit();
   const page = usePage();
@@ -275,8 +275,8 @@ Create `src/routes/authenticated/Settings.svelte`:
 ```svelte
 <!-- src/routes/authenticated/Settings.svelte -->
 <script lang="ts">
-  import { Link } from '@warpkit/core';
-  import { useWarpKit } from '@warpkit/core';
+  import { Link } from '@upstat/warpkit';
+  import { useWarpKit } from '@upstat/warpkit';
 
   const warpkit = useWarpKit();
 
@@ -318,7 +318,7 @@ Create `src/layouts/AppLayout.svelte`:
 <!-- src/layouts/AppLayout.svelte -->
 <script lang="ts">
   import type { Snippet } from 'svelte';
-  import { Link, usePage } from '@warpkit/core';
+  import { Link, usePage } from '@upstat/warpkit';
 
   // Layouts receive their page content as a Snippet (Svelte 5 pattern)
   interface Props {
@@ -426,7 +426,7 @@ Now use it in the dashboard. Update `src/routes/authenticated/Dashboard.svelte`:
 ```svelte
 <!-- src/routes/authenticated/Dashboard.svelte -->
 <script lang="ts">
-  import { useWarpKit, usePage, Link } from '@warpkit/core';
+  import { useWarpKit, usePage, Link } from '@upstat/warpkit';
   import { useData } from '@warpkit/data';
 
   const warpkit = useWarpKit();
@@ -482,7 +482,7 @@ Update `src/routes/unauthenticated/Login.svelte`:
 ```svelte
 <!-- src/routes/unauthenticated/Login.svelte -->
 <script lang="ts">
-  import { useWarpKit } from '@warpkit/core';
+  import { useWarpKit } from '@upstat/warpkit';
   import { useForm } from '@warpkit/forms';
   import { Type } from '@sinclair/typebox';
 
@@ -582,7 +582,7 @@ For the `DataClientProvider`, update your `App.svelte` to include it:
 ```svelte
 <!-- src/App.svelte -->
 <script lang="ts">
-  import { WarpKitProvider, RouterView } from '@warpkit/core';
+  import { WarpKitProvider, RouterView } from '@upstat/warpkit';
   import { DataClientProvider } from '@warpkit/data';
   import { initWarpKit } from './lib/warpkit';
   import { dataClient } from './lib/data/client';
@@ -644,7 +644,7 @@ Then create the page:
 ```svelte
 <!-- src/routes/authenticated/ProjectDetail.svelte -->
 <script lang="ts">
-  import { usePage, Link } from '@warpkit/core';
+  import { usePage, Link } from '@upstat/warpkit';
 
   const page = usePage();
 

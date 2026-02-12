@@ -47,8 +47,8 @@ interface AuthInitResult<TAppState, TStateData> {
 
 ## Usage
 
-These types are re-exported from `@warpkit/core` for convenience:
+These types are re-exported from `@upstat/warpkit` for convenience:
 
 ```typescript
-import type { AuthAdapter } from '@warpkit/core';
+import type { AuthAdapter } from '@upstat/warpkit';
 ```

@@ -67,7 +67,7 @@ The codebase is split into a core package (`src/`) and independent sub-packages 
 
 | File | Purpose |
 |------|---------|
-| `index.ts` | Public API exports |
+| `index.ts` | Public API exports (includes `createWarpKit`, `NavigationErrorCode`) |
 | `route.ts` | `createRoute()` and `createStateRoutes()` factories |
 | `context.ts` | Svelte context key and WarpKitContext interface |
 | `hooks.ts` | `useWarpKit()`, `usePage()`, `useWarpKitContext()` |
@@ -177,10 +177,10 @@ bun run src/core/__benchmarks__/router.bench.ts
     ↑
 @warpkit/cache           (depends on: @warpkit/data for CacheProvider type)
     ↑
-@warpkit/core (src/)     (depends on: @warpkit/errors)
+@upstat/warpkit (src/)     (depends on: @warpkit/errors)
     ↑
 @warpkit/forms           (depends on: @warpkit/validation)
 @warpkit/websocket       (depends on: @warpkit/errors)
-@warpkit/auth-firebase   (depends on: @warpkit/core for types)
+@warpkit/auth-firebase   (depends on: @upstat/warpkit for types)
 @warpkit/vite-plugin     (standalone Vite plugin)
 ```

@@ -71,9 +71,9 @@ Built-in events emitted by WarpKit internals:
 
 | Event | Payload | Emitted by |
 |-------|---------|------------|
-| `auth:signed-in` | `{ userId: string }` | Auth adapter integration |
-| `auth:signed-out` | `void` | Auth adapter integration |
-| `auth:token-refreshed` | `void` | Auth adapter integration |
+| `auth:signed-in` | `{ userId: string }` | Auto-emitted by `WarpKit.handleAuthStateChange()` when auth state transitions with `stateData` present. `userId` extracted from `stateData.uid`, `stateData.userId`, or `stateData.id`. |
+| `auth:signed-out` | `void` | Auto-emitted by `WarpKit.handleAuthStateChange()` when auth state transitions without `stateData`. |
+| `auth:token-refreshed` | `void` | Auth adapter integration (not auto-emitted; adapters emit this via the `events` context passed during `initialize()`). |
 | `app:state-changed` | `{ from: string; to: string }` | State machine transitions |
 | `app:error` | `{ error: Error; context?: string }` | Error system |
 | `query:invalidated` | `{ key: string; params?: Record<string, string> }` | `useQuery` internals |
@@ -84,7 +84,7 @@ Built-in events emitted by WarpKit internals:
 Consumers add custom events by augmenting the `WarpKitEventRegistry` interface:
 
 ```typescript
-declare module '@warpkit/core' {
+declare module '@upstat/warpkit' {
   interface WarpKitEventRegistry {
     'monitor:created': { uuid: string };
     'monitor:updated': { uuid: string };

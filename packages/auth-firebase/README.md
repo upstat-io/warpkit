@@ -132,7 +132,7 @@ async function getInitialState(user: FirebaseUser | null) {
 ### Basic Setup with WarpKit
 
 ```typescript
-import { WarpKit } from '@warpkit/core';
+import { WarpKit } from '@upstat/warpkit';
 import { FirebaseAuthAdapter } from '@warpkit/auth-firebase';
 
 const authAdapter = new FirebaseAuthAdapter(

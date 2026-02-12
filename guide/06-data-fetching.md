@@ -96,7 +96,7 @@ Before any component can use data hooks, the `DataClient` must be provided to th
 ```svelte
 <script lang="ts">
   import { DataClientProvider } from '@warpkit/data';
-  import { WarpKitProvider, RouterView } from '@warpkit/core';
+  import { WarpKitProvider, RouterView } from '@upstat/warpkit';
 
   const { warpkit, dataClient } = $props();
 </script>
@@ -178,7 +178,7 @@ When parameters come from reactive sources (like page params or component state)
 ```svelte
 <script lang="ts">
   import { useQuery } from '@warpkit/data';
-  import { usePage } from '@warpkit/core';
+  import { usePage } from '@upstat/warpkit';
 
   const page = usePage();
 
@@ -737,7 +737,7 @@ export const dataClient = new DataClient(
 <script lang="ts">
   import { useQuery } from '@warpkit/data';
   import { useMutation } from '@warpkit/data';
-  import { useWarpKit } from '@warpkit/core';
+  import { useWarpKit } from '@upstat/warpkit';
 
   const warpkit = useWarpKit();
   const monitors = useQuery({ key: 'monitors' });
@@ -792,7 +792,7 @@ export const dataClient = new DataClient(
 ```svelte
 <script lang="ts">
   import { useQuery } from '@warpkit/data';
-  import { usePage } from '@warpkit/core';
+  import { usePage } from '@upstat/warpkit';
 
   const page = usePage();
 

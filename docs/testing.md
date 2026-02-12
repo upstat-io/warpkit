@@ -69,7 +69,7 @@ async function createMockWarpKit<TAppState extends string>(
 | `componentLoadDelay` | `readonly number` | The configured delay value. |
 | `getHistory()` | `Array<{ path: string; state: unknown }>` | Returns the full history stack from `MemoryBrowserProvider`. |
 | `getCurrentIndex()` | `number` | Returns the current position in the history stack. |
-| `simulatePopState(direction)` | `void` | Triggers a popstate event on the memory browser (simulates back/forward button). |
+| `simulatePopState(direction)` | `void` | Moves the history index in the given direction and fires popstate listeners (simulates back/forward button). |
 | `setConfirmResult(result)` | `void` | Sets what the next `confirm()` call returns (delegates to `MockConfirmProvider.setNextResult()`). |
 
 ### Implementation Details
@@ -191,7 +191,7 @@ Not in `src/testing/` but critical to the testing story. Implements `BrowserProv
 | `getHistory()` | Returns a shallow copy of the full history stack. |
 | `getCurrentIndex()` | Returns `currentIndex`. |
 | `getHistoryPosition()` | Returns `historyPosition` (for direction detection assertions). |
-| `simulatePopState(direction)` | Fires all popstate listeners with the current entry's state and the specified direction, without changing the index. |
+| `simulatePopState(direction)` | Moves the history index in the given direction (if within bounds), then fires all popstate listeners with the entry's state and direction. |
 
 **History position tracking:**
 
@@ -396,7 +396,7 @@ Extends Vitest's `RenderResult` with:
 |--------|------|-------------|
 | `warpkit` | `MockWarpKit<TAppState>` | The mock WarpKit instance (with all test helpers). |
 
-**Known limitation:** The `createTestHarness` function currently returns `WarpKitTestWrapper` without incorporating the target component or props. This is because Svelte components are compile-time constructs that cannot be dynamically composed at runtime. For full control, use `WarpKitTestWrapper` directly in test files.
+**Implementation:** Renders `WarpKitTestWrapper` with the target component passed via the `targetComponent` prop. The wrapper sets up Svelte context and renders the target component with the provided props using Svelte 5's `{@const}` dynamic component pattern.
 
 ### createTestRoutes
 
@@ -419,7 +419,16 @@ Each `TestRouteConfig` has `path`, `component` (lazy loader), and optional `meta
 
 A stripped-down version of `WarpKitProvider` for test rendering. Identical behavior (creates `WarpKitContext`, calls `setContext`), but **does not** include `ErrorOverlay`. Tests should handle errors explicitly through assertions rather than relying on the overlay UI.
 
-**Props:** Same as `WarpKitProvider` (`warpkit: WarpKit`, `children: Snippet`).
+**Props:**
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `warpkit` | `WarpKit` | Yes | The WarpKit instance to provide. |
+| `children` | `Snippet` | No | Child content (manual mode). |
+| `targetComponent` | `Component<any>` | No | Target component to render inside context (used by `renderWithWarpKit`). |
+| `targetProps` | `Record<string, unknown>` | No | Props to pass to the target component. |
+
+When `targetComponent` is provided, it takes precedence over `children`.
 
 ---
 
@@ -480,7 +489,7 @@ All standard `DataClient` methods are implemented as `vi.fn()` mocks:
 ### Basic navigation test
 
 ```typescript
-import { createMockWarpKit, expectNavigation, expectState } from '@warpkit/core/testing';
+import { createMockWarpKit, expectNavigation, expectState } from '@upstat/warpkit/testing';
 
 const warpkit = await createMockWarpKit({
   routes: {
@@ -529,7 +538,7 @@ unregister();
 ### Testing events
 
 ```typescript
-import { createMockEvents, createEventSpy } from '@warpkit/core/testing';
+import { createMockEvents, createEventSpy } from '@upstat/warpkit/testing';
 
 const events = createMockEvents();
 const spy = createEventSpy();
@@ -545,7 +554,7 @@ expect(spy.calledTimes('auth:signed-out')).toBe(1);
 ### Testing async navigation (indirect trigger)
 
 ```typescript
-import { createMockWarpKit, waitForNavigationWithTimeout } from '@warpkit/core/testing';
+import { createMockWarpKit, waitForNavigationWithTimeout } from '@upstat/warpkit/testing';
 
 const warpkit = await createMockWarpKit({ /* ... */ });
 

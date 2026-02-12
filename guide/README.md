@@ -36,7 +36,7 @@ This guide is for frontend developers who want to build robust, production-ready
 
 | Package | Purpose |
 |---------|---------|
-| `@warpkit/core` | Router, state machine, events, components |
+| `@upstat/warpkit` | Router, state machine, events, components |
 | `@warpkit/data` | Data fetching, caching, mutations |
 | `@warpkit/cache` | MemoryCache, StorageCache, ETagCacheProvider |
 | `@warpkit/forms` | Schema-driven form state management |

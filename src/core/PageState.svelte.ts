@@ -4,7 +4,7 @@
  * Reactive state container for route information using Svelte 5 $state.
  * All properties are reactive and trigger component updates when changed.
  */
-import type { Route, NavigationError, ResolvedLocation } from './types';
+import type { Route, RouteMeta, NavigationError, ResolvedLocation } from './types';
 import { SvelteURLSearchParams } from './SvelteURLSearchParams.svelte';
 
 /**
@@ -32,6 +32,11 @@ export class PageState {
 
 	/** Current application state name */
 	appState = $state('');
+
+	/** Route metadata (shorthand for route?.meta) */
+	get meta(): RouteMeta | undefined {
+		return this.route?.meta;
+	}
 
 	/** True while navigation is in progress */
 	isNavigating = $state(false);

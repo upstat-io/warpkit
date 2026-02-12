@@ -15,8 +15,8 @@ This document covers provider interfaces, built-in implementations, resolution, 
 | `src/providers/browser/utils.ts` | Shared helpers: `extractHistoryState()`, `notifyListeners()` |
 | `src/providers/confirm/ConfirmDialogProvider.ts` | `DefaultConfirmDialogProvider` -- `window.confirm()` |
 | `src/providers/storage/StorageProvider.ts` | `DefaultStorageProvider` -- `sessionStorage` with LRU |
-| `src/core/resolveProviders.ts` | Standalone resolution with Kahn's topological sort (used in tests) |
-| `src/core/WarpKit.svelte.ts` | Runtime resolution via `resolveProviders()` and `initializeProviders()` private methods |
+| `src/core/resolveProviders.ts` | Standalone resolution with Kahn's topological sort, cycle detection, key validation |
+| `src/core/WarpKit.svelte.ts` | Calls standalone `resolveProviders()` during `start()` for full resolution + initialization |
 
 ## Provider Interface (`src/providers/interfaces.ts`)
 
@@ -220,7 +220,7 @@ In-memory history stack with no browser API interaction. Primary use case is tes
 - `getHistory()`: Returns a copy of the full history stack for assertions.
 - `getCurrentIndex()`: Current position in the stack.
 - `getHistoryPosition()`: The monotonic position counter (distinct from stack index).
-- `simulatePopState(direction)`: Manually fires popstate listeners with the current entry's state and the specified direction. Useful for testing popstate handling without calling `go()`.
+- `simulatePopState(direction)`: Moves the history index in the given direction (if within bounds), then fires popstate listeners with the entry's state and direction. This matches real browser behavior where back/forward changes the URL before firing popstate.
 
 **No `initialize()` or `destroy()`**: This provider has no browser globals to set up or tear down.
 
@@ -280,29 +280,31 @@ The difference is optionality: `ProviderRegistry` accepts partial input, `Resolv
 
 ### Resolution Logic
 
-There are two resolution paths in the codebase:
+`WarpKit.start()` calls the standalone `resolveProviders()` function from `src/core/resolveProviders.ts`. The provider registry from the config is stored in the constructor and resolved asynchronously during startup.
 
-**1. `WarpKit.resolveProviders()` (runtime path, `WarpKit.svelte.ts:837-844`)**
+**`resolveProviders(registry, warpkit)` (`src/core/resolveProviders.ts`)**
 
-Called synchronously in the WarpKit constructor. Applies defaults with nullish coalescing:
+Applies defaults, validates, and initializes in one pass:
 
-```
-browser:       registry.browser       ?? new DefaultBrowserProvider()
-confirmDialog: registry.confirmDialog ?? new DefaultConfirmDialogProvider()
-storage:       registry.storage       ?? new DefaultStorageProvider()
-```
+1. **Apply defaults** with nullish coalescing:
+   ```
+   browser:       registry.browser       ?? new DefaultBrowserProvider()
+   confirmDialog: registry.confirmDialog ?? new DefaultConfirmDialogProvider()
+   storage:       registry.storage       ?? new DefaultStorageProvider()
+   ```
+   The spread `...registry` is applied after defaults, so consumer-provided core providers override defaults, and custom providers are included.
 
-The spread `...registry` is applied after defaults, so any consumer-provided core providers override the defaults, and custom providers are included.
+2. **Key-ID match validation**: Iterates all registry entries and throws `ProviderKeyMismatchError` if `key !== provider.id`.
 
-**2. `resolveProviders()` standalone function (`src/core/resolveProviders.ts`)**
+3. **Dependency existence validation**: For each provider with `dependsOn`, verifies every dependency ID exists in the registry. Throws `MissingProviderError` if not.
 
-An async function that also handles initialization. Used in tests. Performs additional validation:
+4. **Topological sort**: Runs Kahn's algorithm on the dependency graph.
 
-- **Key-ID match**: Iterates all registry entries and throws `ProviderKeyMismatchError` if `key !== provider.id` (line 70-74).
-- **Dependency existence**: For each provider with `dependsOn`, verifies every dependency ID exists in the registry. Throws `MissingProviderError` if not (line 85-93).
-- **Topological sort**: Runs Kahn's algorithm on the dependency graph (line 96).
-- **Cycle detection**: If the sorted output is shorter than the provider list, a cycle exists. The `findCycle()` helper uses DFS to extract the cycle path for the error message. Throws `CircularDependencyError`.
-- **Sequential initialization**: Initializes providers in topological order, one at a time. Wraps initialize errors with provider ID context using `Error.cause`.
+5. **Cycle detection**: If the sorted output is shorter than the provider list, a cycle exists. The `findCycle()` helper uses DFS to extract the cycle path for the error message. Throws `CircularDependencyError`.
+
+6. **Sequential initialization**: Initializes providers in topological order, one at a time. Wraps initialize errors with provider ID context using `Error.cause`.
+
+The `WarpKitCore` reference passed to each provider is `this` (the WarpKit instance itself), since WarpKit implements the `WarpKitCore` interface.
 
 ### Error Types (`src/core/resolveProviders.ts`)
 
@@ -312,30 +314,16 @@ An async function that also handles initialization. Used in tests. Performs addi
 | `MissingProviderError` | A `dependsOn` references a provider ID not in the registry |
 | `ProviderKeyMismatchError` | Registry key does not match `provider.id` |
 
-## Provider Initialization (`WarpKit.start()`)
+## Initialization Order Within `start()`
 
-The runtime initialization path is `WarpKit.initializeProviders()` (`WarpKit.svelte.ts:849-875`). This is separate from the standalone `resolveProviders()` function.
-
-### Algorithm
-
-Uses recursive DFS with a `Set<string>` to track initialized providers:
-
-1. Collect all providers from `this.providers` (already resolved).
-2. For each provider, recursively initialize its `dependsOn` dependencies first.
-3. The `initialized` set prevents double-initialization (handles diamond dependencies).
-4. Independent providers (no uninitialized dependencies) run in parallel via `Promise.all`.
-
-The `WarpKitCore` reference passed to each provider is `this` (the WarpKit instance itself), since WarpKit implements the `WarpKitCore` interface.
-
-### Initialization Order Within `start()`
-
-After providers initialize, `start()` continues with:
-1. Register popstate listener on `providers.browser.onPopState()`.
-2. Set up `beforeunload` handler for navigation blockers.
-3. Initialize auth adapter (if configured).
-4. Process pre-start state change queue.
-5. Perform initial navigation from current URL.
-6. Set `ready = true`.
+After provider resolution and initialization, `start()` continues with:
+1. Create Navigator with resolved providers and all dependencies.
+2. Register popstate listener on `providers.browser.onPopState()`.
+3. Set up `beforeunload` handler for navigation blockers.
+4. Initialize auth adapter (if configured).
+5. Process pre-start state change queue.
+6. Perform initial navigation from current URL.
+7. Set `ready = true`.
 
 ## Provider Destruction (`WarpKit.destroy()`)
 

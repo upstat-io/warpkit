@@ -53,6 +53,12 @@ export type { RenderWithWarpKitOptions, RenderWithWarpKitResult } from './render
 export { default as WarpKitTestWrapper } from './WarpKitTestWrapper.svelte';
 
 // ============================================================================
+// Error Codes (re-exported for testing convenience)
+// ============================================================================
+
+export { NavigationErrorCode } from '../core/types';
+
+// ============================================================================
 // Expectations (Assertion Helpers)
 // ============================================================================
 

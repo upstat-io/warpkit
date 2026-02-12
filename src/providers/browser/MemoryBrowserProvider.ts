@@ -133,8 +133,15 @@ export class MemoryBrowserProvider implements BrowserProvider {
 
 	/**
 	 * Simulate popstate event for testing.
+	 * Moves the history index in the given direction before firing listeners,
+	 * so the location actually changes (matching real browser behavior).
 	 */
 	simulatePopState(direction: 'back' | 'forward'): void {
+		const delta = direction === 'back' ? -1 : 1;
+		const newIndex = this.currentIndex + delta;
+		if (newIndex >= 0 && newIndex < this.history.length) {
+			this.currentIndex = newIndex;
+		}
 		const state = this.history[this.currentIndex]?.state ?? null;
 		notifyListeners(this.listeners, state, direction);
 	}

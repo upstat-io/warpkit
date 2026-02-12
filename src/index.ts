@@ -41,7 +41,7 @@ export type {
 // Core Classes
 // ============================================================================
 
-export { WarpKit } from './core/WarpKit.svelte';
+export { WarpKit, createWarpKit } from './core/WarpKit.svelte';
 export { PageState } from './core/PageState.svelte';
 export { StateMachine } from './core/StateMachine';
 export { RouteMatcher } from './core/RouteMatcher';
@@ -90,10 +90,17 @@ export type {
 	WarpKitCore
 } from './providers/interfaces';
 
+export {
+	CircularDependencyError,
+	MissingProviderError,
+	ProviderKeyMismatchError
+} from './core/resolveProviders';
+
 // ============================================================================
 // Error System
 // ============================================================================
 
+export { NavigationErrorCode } from './core/types';
 export { default as ErrorOverlay } from './errors/ErrorOverlay.svelte';
 export {
 	errorStore,

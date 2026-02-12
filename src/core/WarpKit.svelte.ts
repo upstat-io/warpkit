@@ -22,6 +22,7 @@ import type {
 	ResolvedLocation,
 	RouteMatch,
 	BeforeNavigateHook,
+	OnNavigateHook,
 	AfterNavigateHook,
 	NavigationBlocker,
 	BlockerRegistration,
@@ -42,10 +43,7 @@ import { RouteMatcher } from './RouteMatcher.js';
 import { NavigationLifecycle } from './NavigationLifecycle.js';
 import { LayoutManager } from './LayoutManager.js';
 import { Navigator } from './Navigator.js';
-import { DefaultBrowserProvider } from '../providers/browser/BrowserProvider.js';
-import { DefaultConfirmDialogProvider } from '../providers/confirm/ConfirmDialogProvider.js';
-import { DefaultStorageProvider } from '../providers/storage/StorageProvider.js';
-import { errorStore } from '../errors/error-store.svelte.js';
+import { resolveProviders } from './resolveProviders.js';
 import { setupGlobalErrorHandlers } from '../errors/global-handlers.js';
 import { reportError } from '@warpkit/errors';
 
@@ -96,7 +94,7 @@ export class WarpKit<TAppState extends string, TStateData = unknown> implements 
 	private readonly matcher: RouteMatcher;
 	private readonly lifecycle: NavigationLifecycle;
 	private readonly layoutManager: LayoutManager;
-	private navigator!: Navigator; // Initialized in constructor after providers resolve
+	private navigator!: Navigator; // Initialized in start() after providers resolve
 	private providers!: ResolvedProviders;
 
 	/** Navigation blockers (unsaved changes, etc.) */
@@ -146,6 +144,9 @@ export class WarpKit<TAppState extends string, TStateData = unknown> implements 
 
 	/** Routes configuration (stored for retry functionality and default resolution) */
 	private readonly routes: StateRoutes<TAppState, TStateData>;
+
+	/** Raw provider registry from config (resolved + initialized in start()) */
+	private readonly providerRegistry: ProviderRegistry;
 
 	/** Auth adapter for handling authentication state */
 	private readonly authAdapter?: AuthAdapter<TAppState, TStateData>;
@@ -197,26 +198,8 @@ export class WarpKit<TAppState extends string, TStateData = unknown> implements 
 			// Function defaults are not cached until state data is available
 		}
 
-		// Resolve providers (apply defaults)
-		this.providers = this.resolveProviders(config.providers ?? {});
-
-		// Initialize Navigator with all dependencies
-		this.navigator = new Navigator({
-			matcher: this.matcher,
-			stateMachine: this.stateMachine,
-			pageState: this.pageState,
-			lifecycle: this.lifecycle,
-			layoutManager: this.layoutManager,
-			providers: this.providers,
-			checkBlockers: () => this.checkBlockers(),
-			setLoadedComponents: (component, layout) => {
-				this.loadedComponent = component;
-				this.loadedLayout = layout;
-			},
-			onError: this.onError,
-			fireNavigationComplete: (context) => this.fireNavigationComplete(context),
-			getResolvedDefault: (state) => this.getResolvedDefault(state as TAppState)
-		});
+		// Store provider registry for resolution in start()
+		this.providerRegistry = config.providers ?? {};
 	}
 
 	// ============================================================================
@@ -271,8 +254,27 @@ export class WarpKit<TAppState extends string, TStateData = unknown> implements 
 		// Install global error handlers FIRST (before anything else can fail)
 		this.globalErrorHandlersCleanup = setupGlobalErrorHandlers();
 
-		// Initialize providers
-		await this.initializeProviders();
+		// Resolve, validate, and initialize providers using standalone resolveProviders
+		// (Kahn's topological sort, cycle detection, key validation)
+		this.providers = await resolveProviders(this.providerRegistry, this);
+
+		// Initialize Navigator with all dependencies (deferred from constructor until providers ready)
+		this.navigator = new Navigator({
+			matcher: this.matcher,
+			stateMachine: this.stateMachine,
+			pageState: this.pageState,
+			lifecycle: this.lifecycle,
+			layoutManager: this.layoutManager,
+			providers: this.providers,
+			checkBlockers: () => this.checkBlockers(),
+			setLoadedComponents: (component, layout) => {
+				this.loadedComponent = component;
+				this.loadedLayout = layout;
+			},
+			onError: this.onError,
+			fireNavigationComplete: (context) => this.fireNavigationComplete(context),
+			getResolvedDefault: (state) => this.getResolvedDefault(state as TAppState)
+		});
 
 		// Set up popstate listener
 		this.popstateUnsubscribe = this.providers.browser.onPopState((state, direction) => {
@@ -345,6 +347,19 @@ export class WarpKit<TAppState extends string, TStateData = unknown> implements 
 		// Update state data if provided
 		if (result.stateData !== undefined) {
 			this.updateStateData(result.stateData);
+		}
+
+		// Emit auth events based on state transition direction
+		const previousState = this.stateMachine.getState();
+		if (result.state !== previousState) {
+			if (result.stateData !== undefined) {
+				// State data present indicates a signed-in user
+				const data = result.stateData as Record<string, unknown>;
+				const userId = String(data?.uid ?? data?.userId ?? data?.id ?? 'unknown');
+				this.events.emit('auth:signed-in', { userId });
+			} else {
+				this.events.emit('auth:signed-out');
+			}
 		}
 
 		// Transition app state if different
@@ -741,6 +756,17 @@ export class WarpKit<TAppState extends string, TStateData = unknown> implements 
 	}
 
 	/**
+	 * Register an onNavigate hook.
+	 * Runs sequentially (awaited). Used for View Transitions.
+	 *
+	 * @param callback - The hook function
+	 * @returns Unsubscribe function
+	 */
+	public onNavigate(callback: OnNavigateHook): () => void {
+		return this.lifecycle.registerOnNavigate(callback);
+	}
+
+	/**
 	 * Register an afterNavigate hook.
 	 * Fire-and-forget. Used for analytics, logging.
 	 *
@@ -781,49 +807,6 @@ export class WarpKit<TAppState extends string, TStateData = unknown> implements 
 	// ============================================================================
 	// Private Methods
 	// ============================================================================
-
-	/**
-	 * Resolve providers with defaults.
-	 */
-	private resolveProviders(registry: ProviderRegistry): ResolvedProviders {
-		return {
-			browser: registry.browser ?? new DefaultBrowserProvider(),
-			confirmDialog: registry.confirmDialog ?? new DefaultConfirmDialogProvider(),
-			storage: registry.storage ?? new DefaultStorageProvider(),
-			...registry
-		};
-	}
-
-	/**
-	 * Initialize all providers in dependency order.
-	 */
-	private async initializeProviders(): Promise<void> {
-		// Build dependency graph
-		const providers = Object.values(this.providers);
-		const initialized = new Set<string>();
-		const warpkitCore: WarpKitCore = this;
-
-		const initializeProvider = async (provider: Provider): Promise<void> => {
-			if (initialized.has(provider.id)) return;
-
-			// Initialize dependencies first
-			if (provider.dependsOn) {
-				for (const depId of provider.dependsOn) {
-					const dep = this.providers[depId];
-					if (dep) {
-						await initializeProvider(dep);
-					}
-				}
-			}
-
-			// Initialize this provider
-			await provider.initialize?.(warpkitCore);
-			initialized.add(provider.id);
-		};
-
-		// Initialize all providers
-		await Promise.all(providers.map((p) => initializeProvider(p)));
-	}
 
 	/**
 	 * Check all blockers and show confirm dialog if needed.

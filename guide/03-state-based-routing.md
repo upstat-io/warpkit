@@ -69,7 +69,7 @@ SvelteKit takes a different approach with `+page.server.ts` load functions and h
 WarpKit makes application state a **first-class concept in the router**. Routes are organized into states, and the router only considers routes that belong to the current state.
 
 ```typescript
-import { createWarpKit, createRoute, createStateRoutes } from '@warpkit/core';
+import { createWarpKit, createRoute, createStateRoutes } from '@upstat/warpkit';
 
 type AppState = 'unauthenticated' | 'authenticated' | 'onboarding';
 
@@ -447,7 +447,7 @@ For declarative navigation in templates:
 
 ```svelte
 <script>
-  import { Link } from '@warpkit/core';
+  import { Link } from '@upstat/warpkit';
 </script>
 
 <Link href="/projects">Projects</Link>
@@ -463,7 +463,7 @@ For declarative navigation in templates:
 
 ```svelte
 <script>
-  import { NavLink } from '@warpkit/core';
+  import { NavLink } from '@upstat/warpkit';
 </script>
 
 <nav>
@@ -781,7 +781,7 @@ The `page` object provides reactive access to the current navigation state. In S
 
 ```svelte
 <script>
-  import { usePage } from '@warpkit/core';
+  import { usePage } from '@upstat/warpkit';
   const page = usePage();
 </script>
 

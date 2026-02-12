@@ -56,6 +56,16 @@ Constructed in the constructor, in this order:
 5. **LayoutManager** -- layout resolution with ID-based caching
 6. **Navigator** -- the 9-phase pipeline executor (initialized after providers resolve)
 
+### `createWarpKit()` Factory
+
+```ts
+function createWarpKit<TAppState extends string, TStateData = unknown>(
+  config: WarpKitConfig<TAppState, TStateData>
+): WarpKit<TAppState, TStateData>
+```
+
+Preferred over direct constructor usage. Exported from both `@upstat/warpkit` and `@upstat/warpkit/testing`.
+
 ### Constructor
 
 ```ts
@@ -64,18 +74,11 @@ constructor(config: WarpKitConfig<TAppState, TStateData>)
 
 Key operations:
 
-1. Stores `routes`, `authAdapter`, `dataConfig`, `onError` from config.
-2. Instantiates all core subsystems.
+1. Stores `routes`, `authAdapter`, `dataConfig`, `onError`, `providerRegistry` from config.
+2. Instantiates core subsystems: PageState, StateMachine, RouteMatcher, NavigationLifecycle, LayoutManager.
 3. Pre-caches static default paths: iterates `config.routes` and caches any `default` value that is a `string` or `null`. Function defaults are deferred until `stateData` is available.
-4. Resolves providers via `resolveProviders()`, applying defaults:
-   - `browser` -- `DefaultBrowserProvider` (History API)
-   - `confirmDialog` -- `DefaultConfirmDialogProvider` (`window.confirm`)
-   - `storage` -- `DefaultStorageProvider` (in-memory LRU)
-5. Creates `Navigator` with all dependencies, passing callbacks for:
-   - `setLoadedComponents` -- sets `$state` fields on WarpKit
-   - `checkBlockers` -- delegates to WarpKit's blocker set
-   - `fireNavigationComplete` -- notifies navigation complete listeners
-   - `getResolvedDefault` -- delegates to WarpKit's default path cache/resolver
+
+Note: Provider resolution and Navigator creation are deferred to `start()`. The constructor stores the raw provider registry.
 
 ### `start()`
 
@@ -90,18 +93,19 @@ Execution order:
 1. Sets `started = true`.
 2. **Dev mode**: exposes `window.__WARPKIT_INSTANCE__` for debugging.
 3. **Global error handlers**: calls `setupGlobalErrorHandlers()` (installs `window.onerror` and `window.onunhandledrejection`).
-4. **Provider initialization**: resolves provider dependency graph and initializes in dependency order via `initializeProviders()`. Providers with `dependsOn` arrays wait for their dependencies; all others initialize in parallel.
-5. **Popstate listener**: subscribes to `browser.onPopState()`, delegates to `handlePopState()`.
-6. **beforeunload handler**: installs `window.beforeunload` that checks all registered blockers.
-7. **Auth adapter** (if provided):
+4. **Provider resolution + initialization**: calls standalone `resolveProviders(registry, this)` which applies defaults, validates key-ID matches, checks for missing dependencies, topologically sorts, detects cycles, and initializes all providers in dependency order. Throws `CircularDependencyError`, `MissingProviderError`, or `ProviderKeyMismatchError` on validation failure.
+5. **Navigator creation**: creates `Navigator` with resolved providers and all dependencies (matcher, stateMachine, pageState, lifecycle, layoutManager), passing callbacks for `setLoadedComponents`, `checkBlockers`, `fireNavigationComplete`, and `getResolvedDefault`.
+6. **Popstate listener**: subscribes to `browser.onPopState()`, delegates to `handlePopState()`.
+7. **beforeunload handler**: installs `window.beforeunload` that checks all registered blockers.
+8. **Auth adapter** (if provided):
    - Calls `authAdapter.initialize({ events })` -- awaited.
    - Updates `stateData` and `StateMachine` from the result.
    - Scopes data cache if `dataConfig.scopeKey` returns a value.
    - Subscribes to `authAdapter.onAuthStateChanged()` for subsequent transitions.
    - On failure: reports error via `reportError()`, falls back to `config.initialState`.
-8. **Pre-start queue**: processes queued `setAppState()` calls (these override auth adapter state). For each: updates `stateData`, sets state on `StateMachine`, resolves path, calls `navigator.navigateAfterStateChange()`.
-9. **Initial navigation**: reads current URL from `browser.getLocation()`, navigates with `replace: true`.
-10. Sets `ready = true`.
+9. **Pre-start queue**: processes queued `setAppState()` calls (these override auth adapter state). For each: updates `stateData`, sets state on `StateMachine`, resolves path, calls `navigator.navigateAfterStateChange()`.
+10. **Initial navigation**: reads current URL from `browser.getLocation()`, navigates with `replace: true`.
+11. Sets `ready = true`.
 
 ### `navigate(path, options?)`
 
@@ -150,10 +154,23 @@ Updates URL search params without triggering the full navigation pipeline. No ho
 - **Invalidation**: when `updateStateData()` detects `stateData` changed by reference, all function default entries are cleared from the cache. Static entries are preserved.
 - `getResolvedDefault(state)`: checks cache first, then resolves function defaults with current `stateData`. Returns `null` if `stateData` is undefined and the default is a function.
 
+### Lifecycle Hook Registration
+
+The facade exposes three hook registration methods that delegate to `NavigationLifecycle`:
+
+| Method | Delegates to | Phase | Execution |
+|---|---|---|---|
+| `beforeNavigate(callback)` | `lifecycle.registerBeforeNavigate()` | 4 | Parallel, can abort/redirect |
+| `onNavigate(callback)` | `lifecycle.registerOnNavigate()` | 7 | Sequential, for View Transitions |
+| `afterNavigate(callback)` | `lifecycle.registerAfterNavigate()` | 9 | Fire-and-forget |
+
+All three return an unsubscribe function.
+
 ### Auth Integration
 
 `handleAuthStateChange(result)`:
 - Updates `stateData` if provided.
+- **Auto-emits auth events** when the state transitions: emits `auth:signed-in` (with `userId` extracted from `stateData.uid`, `.userId`, or `.id`) when `stateData` is present, or `auth:signed-out` when `stateData` is absent.
 - If state differs from current: clears data cache (`dataConfig.client.clearCache()`), re-scopes cache via `dataConfig.scopeKey`, then calls `setAppState()`.
 
 ### Deep Links
@@ -518,6 +535,7 @@ Reactive state container. Every field is a Svelte 5 `$state` property, so compon
 | `hash` | `string` | `''` | URL fragment (e.g., `#section`). |
 | `params` | `Record<string, string>` | `{}` | Route parameters extracted from path matching. |
 | `route` | `Route \| null` | `null` | Currently matched route definition, or `null` before first navigation. |
+| `meta` | `RouteMeta \| undefined` | `undefined` | Shorthand getter for `route?.meta`. Returns the matched route's metadata or `undefined` if no route is matched. |
 | `appState` | `string` | `''` | Current app state name. |
 | `isNavigating` | `boolean` | `false` | `true` while the navigation pipeline is running. |
 | `error` | `NavigationError \| null` | `null` | Set on navigation errors (`NOT_FOUND`, `LOAD_FAILED`, etc.). |
