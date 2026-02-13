@@ -23,6 +23,7 @@
 </script>
 
 <div data-testid="loading">{queryResult.isLoading}</div>
+<div data-testid="is-revalidating">{queryResult.isRevalidating}</div>
 <div data-testid="data">{JSON.stringify(queryResult.data)}</div>
 <div data-testid="error">{queryResult.error?.message ?? ''}</div>
 <div data-testid="is-error">{queryResult.isError}</div>

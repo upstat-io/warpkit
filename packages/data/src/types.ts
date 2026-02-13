@@ -112,6 +112,8 @@ export interface DataKeyConfig<K extends DataKey> {
 	cache?: boolean;
 	/** Optional ValidatedType for response validation */
 	responseSchema?: ValidatedType<DataType<K>>;
+	/** Enable stale-while-revalidate: show cached data instantly while fetching fresh data in background. Default: true. */
+	staleWhileRevalidate?: boolean;
 }
 
 /**
@@ -256,6 +258,8 @@ export interface QueryState<T> {
 	readonly error: Error | null;
 	/** True while initial fetch is in progress */
 	readonly isLoading: boolean;
+	/** True when showing stale cached data while fetching fresh data in background */
+	readonly isRevalidating: boolean;
 	/** True if fetch resulted in error */
 	readonly isError: boolean;
 	/** True if data was fetched successfully */
@@ -335,6 +339,8 @@ export type DataState<K extends DataKey> = {
 	readonly data: DataType<K> | undefined;
 	/** True while initial fetch is in progress */
 	readonly isLoading: boolean;
+	/** True when showing stale cached data while fetching fresh data in background */
+	readonly isRevalidating: boolean;
 	/** Error if fetch failed, null otherwise */
 	readonly error: Error | null;
 	/** True if data was fetched successfully */

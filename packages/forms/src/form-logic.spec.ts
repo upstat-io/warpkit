@@ -11,6 +11,7 @@ import {
 	removeKey,
 	setKey
 } from './form-logic';
+import { getPath } from './paths';
 
 describe('shouldValidateField', () => {
 	describe('when field has existing error (revalidation)', () => {
@@ -438,6 +439,70 @@ describe('calculateDirtyState', () => {
 	it('should handle empty paths array', () => {
 		const result = calculateDirtyState({ a: 1 }, { a: 2 }, [], mockGetPath);
 		expect(result).toEqual({});
+	});
+
+	describe('empty array and object leaf comparison', () => {
+		it('should not mark empty arrays as dirty when both are empty', () => {
+			const current = { tags: [] as string[] };
+			const initial = { tags: [] as string[] };
+
+			const result = calculateDirtyState(current, initial, ['tags'], mockGetPath);
+
+			expect(result.tags).toBe(false);
+		});
+
+		it('should not mark empty objects as dirty when both are empty', () => {
+			const current = { meta: {} };
+			const initial = { meta: {} };
+
+			const result = calculateDirtyState(current, initial, ['meta'], mockGetPath);
+
+			expect(result.meta).toBe(false);
+		});
+
+		it('should mark arrays as dirty when lengths differ', () => {
+			const current = { tags: ['a'] };
+			const initial = { tags: [] as string[] };
+
+			const result = calculateDirtyState(current, initial, ['tags'], mockGetPath);
+
+			expect(result.tags).toBe(true);
+		});
+
+		it('should mark objects as dirty when keys differ', () => {
+			const current = { meta: { key: 'val' } };
+			const initial = { meta: {} };
+
+			const result = calculateDirtyState(current, initial, ['meta'], mockGetPath);
+
+			expect(result.meta).toBe(true);
+		});
+
+		it('should not mark form with empty arrays as dirty after JSON clone (real-world scenario)', () => {
+			const source = {
+				name: '',
+				regionIds: [] as number[],
+				httpConfig: {
+					method: 'GET',
+					headers: [] as { key: string; value: string }[],
+					timeout: 30
+				}
+			};
+
+			const values = JSON.parse(JSON.stringify(source));
+			const baseline = JSON.parse(JSON.stringify(source));
+
+			const paths = ['name', 'regionIds', 'httpConfig.method', 'httpConfig.headers', 'httpConfig.timeout'];
+			const result = calculateDirtyState(values, baseline, paths, getPath);
+
+			expect(result).toEqual({
+				name: false,
+				regionIds: false,
+				'httpConfig.method': false,
+				'httpConfig.headers': false,
+				'httpConfig.timeout': false
+			});
+		});
 	});
 });
 

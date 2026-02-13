@@ -94,12 +94,12 @@ declare module '@warpkit/data' {
 | `DataKey` | `keyof DataRegistry & string` | Union of all registered keys |
 | `DataType<K>` | Extracts `data` field from registry entry, or entry itself | Query return type |
 | `MutationsConfig<K>` | Extracts `mutations` field, or `never` | Mutation type map |
-| `DataKeyConfig<K>` | `{ key, url, invalidateOn?, staleTime?, cache?, responseSchema? }` | Per-key configuration |
+| `DataKeyConfig<K>` | `{ key, url, invalidateOn?, staleTime?, cache?, staleWhileRevalidate?, responseSchema? }` | Per-key configuration |
 | `DataClientConfig` | `{ keys, baseUrl?, timeout?, onRequest? }` | Client-level configuration |
 | `CacheProvider` | `{ get, set, delete, deleteByPrefix, clear, createScoped? }` | Pluggable cache interface (async) |
 | `CacheEntry<T>` | `{ data: T, etag?, timestamp: number, staleTime? }` | Cached data envelope |
 | `FetchResult<T>` | `{ data: T, fromCache: boolean, notModified: boolean }` | Fetch response metadata |
-| `QueryState<T>` | `{ data, error, isLoading, isError, isSuccess, refetch }` | Reactive query state |
+| `QueryState<T>` | `{ data, error, isLoading, isRevalidating, isError, isSuccess, refetch }` | Reactive query state |
 | `UseDataConfig<K>` | `{ url, staleTime?, invalidateOn?, mutations?, enabled? }` | useData hook config |
 | `DataState<K>` | `QueryState` intersected with mutation handles | Combined query+mutation state |
 | `MutationHandle<TInput, TOutput>` | Callable `(input) => Promise<output>` with `isPending`, `error`, `data`, `reset` | Mutation callable with attached state |
@@ -138,6 +138,8 @@ function useQuery<K extends DataKey>(options: UseQueryOptions<K>): QueryState<Da
 **Delay support:** `options.delay` adds a pre-fetch delay (useful for testing loading states). Delay is abortable via the `AbortController`.
 
 **Error reporting:** Errors are reported via `reportError('data:query', error, { handledLocally: true, showUI: false })`.
+
+**Stale-while-revalidate (SWR):** Enabled by default. On initial fetch, checks cache via `client.getQueryData()` before network request. If stale cached data exists, immediately sets `data` and `isLoading = false`, sets `isRevalidating = true`, then fetches fresh data silently. On network success, updates `data` and sets `isRevalidating = false`. On network failure with stale data showing, suppresses error and keeps stale data. Opt out per-key with `staleWhileRevalidate: false` on `DataKeyConfig`. SWR only applies to initial/param-change fetches -- not to event invalidation, polling, or manual refetch.
 
 ### useData Hook (`src/useData.svelte.ts`)
 

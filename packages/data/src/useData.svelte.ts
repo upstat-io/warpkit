@@ -72,6 +72,7 @@ export function useData<K extends DataKey>(key: K, config: UseDataConfig<K>): Da
 	let data = $state<DataType<K> | undefined>(undefined);
 	let error = $state<Error | null>(null);
 	let isLoading = $state(true);
+	let isRevalidating = $state(false);
 
 	// Derived state using $derived rune (same as useQuery)
 	const isError = $derived(error !== null);
@@ -97,8 +98,10 @@ export function useData<K extends DataKey>(key: K, config: UseDataConfig<K>): Da
 	 * Execute fetch and update state.
 	 * Handles race conditions by checking fetchId.
 	 * (Same implementation pattern as useQuery)
+	 *
+	 * @param opts.swr - Pre-populate from cache before network fetch (stale-while-revalidate)
 	 */
-	async function doFetch(): Promise<void> {
+	async function doFetch(opts?: { swr?: boolean }): Promise<void> {
 		// Increment fetch ID to track this specific fetch
 		const currentFetchId = ++fetchId;
 
@@ -108,6 +111,23 @@ export function useData<K extends DataKey>(key: K, config: UseDataConfig<K>): Da
 
 		isLoading = true;
 		error = null;
+
+		// SWR: pre-populate from cache before network fetch
+		let hasStaleData = false;
+		if (opts?.swr) {
+			try {
+				const cachedData = await client.getQueryData(key);
+				if (currentFetchId !== fetchId) return;
+				if (cachedData !== undefined) {
+					data = cachedData;
+					isLoading = false;
+					isRevalidating = true;
+					hasStaleData = true;
+				}
+			} catch {
+				// Cache read failed, continue with normal fetch
+			}
+		}
 
 		try {
 			// Use client.fetch with the key (same as useQuery)
@@ -125,12 +145,17 @@ export function useData<K extends DataKey>(key: K, config: UseDataConfig<K>): Da
 					// Ignore abort errors - component unmounted or new fetch started
 					return;
 				}
+				// SWR: if we have stale data showing, suppress the error
+				if (hasStaleData) {
+					return;
+				}
 				error = e instanceof Error ? e : new Error(String(e));
 			}
 		} finally {
 			// Only update loading if this is still the current fetch
 			if (currentFetchId === fetchId) {
 				isLoading = false;
+				isRevalidating = false;
 			}
 		}
 	}
@@ -143,7 +168,11 @@ export function useData<K extends DataKey>(key: K, config: UseDataConfig<K>): Da
 			return;
 		}
 
-		doFetch();
+		// Check if SWR is enabled for this key (default: true)
+		const keyConfig = client.getKeyConfig(key);
+		const swrEnabled = keyConfig?.staleWhileRevalidate !== false;
+
+		doFetch(swrEnabled ? { swr: true } : undefined);
 
 		// Cleanup: abort fetch on unmount or re-run
 		return () => {
@@ -191,13 +220,16 @@ export function useData<K extends DataKey>(key: K, config: UseDataConfig<K>): Da
 		get isLoading() {
 			return isLoading;
 		},
+		get isRevalidating() {
+			return isRevalidating;
+		},
 		get isError() {
 			return isError;
 		},
 		get isSuccess() {
 			return isSuccess;
 		},
-		refetch: doFetch
+		refetch: () => doFetch()
 	};
 
 	// Add mutation handles

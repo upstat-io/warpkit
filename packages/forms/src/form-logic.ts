@@ -106,6 +106,17 @@ export function reindexArrayErrors(
 	return newErrors;
 }
 
+function isEmptyPlainObject(v: unknown): boolean {
+	return v !== null && typeof v === 'object' && !Array.isArray(v) && Object.keys(v).length === 0;
+}
+
+function isLeafEqual(a: unknown, b: unknown): boolean {
+	if (Object.is(a, b)) return true;
+	if (Array.isArray(a) && Array.isArray(b) && a.length === 0 && b.length === 0) return true;
+	if (isEmptyPlainObject(a) && isEmptyPlainObject(b)) return true;
+	return false;
+}
+
 /**
  * Calculate dirty state for all paths by comparing current values to initial.
  *
@@ -125,7 +136,7 @@ export function calculateDirtyState<T>(
 	for (const path of paths) {
 		const currentValue = getPath(current, path);
 		const initialValue = getPath(initial, path);
-		result[path] = !Object.is(currentValue, initialValue);
+		result[path] = !isLeafEqual(currentValue, initialValue);
 	}
 	return result;
 }

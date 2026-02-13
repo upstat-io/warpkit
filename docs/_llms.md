@@ -40,6 +40,9 @@ Start with [Core Internals > Navigator](./core-internals.md#2-navigator----9-pha
 ### "How does data fetching work?"
 [Sub-Packages > @warpkit/data](./packages.md#warpkitdata). DataClient handles config-driven queries with URL interpolation, E-Tag caching, and event-driven invalidation. useQuery and useData are the Svelte hooks.
 
+### "How does stale-while-revalidate work?"
+[Sub-Packages > @warpkit/data](./packages.md#warpkitdata). SWR is enabled by default. The useQuery and useData hooks check cache before network fetch -- if stale data exists, it's shown immediately while fresh data loads in the background. Opt out per-key with `staleWhileRevalidate: false`. See also [Data Fetching Guide > Stale-While-Revalidate](../guide/06-data-fetching.md#stale-while-revalidate).
+
 ### "How does caching work?"
 [Sub-Packages > @warpkit/cache](./packages.md#warpkitcache). Two-tier caching: MemoryCache (L1) + StorageCache (L2) via ETagCacheProvider. Supports scoped caches for multi-tenant apps.
 

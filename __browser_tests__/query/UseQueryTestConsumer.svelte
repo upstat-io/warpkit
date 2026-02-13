@@ -24,6 +24,7 @@
 </script>
 
 <div data-testid="loading">{state.isLoading}</div>
+<div data-testid="is-revalidating">{state.isRevalidating}</div>
 <div data-testid="data">{JSON.stringify(state.data)}</div>
 <div data-testid="error">{state.error?.message ?? ''}</div>
 <div data-testid="is-error">{state.isError}</div>

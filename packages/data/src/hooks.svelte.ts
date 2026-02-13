@@ -44,6 +44,7 @@ export function useQuery<K extends DataKey>(options: UseQueryOptions<K>): QueryS
 	let data = $state<DataType<K> | undefined>(undefined);
 	let error = $state<Error | null>(null);
 	let isLoading = $state(true);
+	let isRevalidating = $state(false);
 
 	// Derived state using $derived rune
 	const isError = $derived(error !== null);
@@ -71,10 +72,11 @@ export function useQuery<K extends DataKey>(options: UseQueryOptions<K>): QueryS
 	 * @param resolvedParams - Pre-resolved params (resolved synchronously in $effect for tracking)
 	 * @param opts.silent - Skip setting isLoading (used by refetchInterval to avoid UI flash)
 	 * @param opts.invalidate - Clear cache before fetching (used by refetchInterval to bypass cache)
+	 * @param opts.swr - Pre-populate from cache before network fetch (stale-while-revalidate)
 	 */
 	async function doFetch(
 		resolvedParams: Record<string, string> | undefined,
-		opts?: { silent?: boolean; invalidate?: boolean }
+		opts?: { silent?: boolean; invalidate?: boolean; swr?: boolean }
 	): Promise<void> {
 		// Increment fetch ID to track this specific fetch
 		const currentFetchId = ++fetchId;
@@ -87,6 +89,23 @@ export function useQuery<K extends DataKey>(options: UseQueryOptions<K>): QueryS
 			isLoading = true;
 		}
 		error = null;
+
+		// SWR: pre-populate from cache before network fetch
+		let hasStaleData = false;
+		if (opts?.swr) {
+			try {
+				const cachedData = await client.getQueryData(options.key, resolvedParams);
+				if (currentFetchId !== fetchId) return;
+				if (cachedData !== undefined) {
+					data = cachedData;
+					isLoading = false;
+					isRevalidating = true;
+					hasStaleData = true;
+				}
+			} catch {
+				// Cache read failed, continue with normal fetch
+			}
+		}
 
 		// Clear cache before fetching to ensure fresh data from network
 		if (opts?.invalidate) {
@@ -119,6 +138,10 @@ export function useQuery<K extends DataKey>(options: UseQueryOptions<K>): QueryS
 					// Ignore abort errors - component unmounted or new fetch started
 					return;
 				}
+				// SWR: if we have stale data showing, suppress the error
+				if (hasStaleData) {
+					return;
+				}
 				error = e instanceof Error ? e : new Error(String(e));
 				reportError('data:query', error, {
 					handledLocally: true,
@@ -130,6 +153,7 @@ export function useQuery<K extends DataKey>(options: UseQueryOptions<K>): QueryS
 			// Only update loading if this is still the current fetch
 			if (currentFetchId === fetchId) {
 				isLoading = false;
+				isRevalidating = false;
 			}
 		}
 	}
@@ -157,7 +181,12 @@ export function useQuery<K extends DataKey>(options: UseQueryOptions<K>): QueryS
 
 		// Resolve params synchronously for Svelte 5 dependency tracking
 		const params = resolveParams();
-		doFetch(params);
+
+		// Check if SWR is enabled for this key (default: true)
+		const keyConfig = client.getKeyConfig(options.key);
+		const swrEnabled = keyConfig?.staleWhileRevalidate !== false;
+
+		doFetch(params, swrEnabled ? { swr: true } : undefined);
 
 		// Cleanup: abort fetch on unmount or re-run
 		return () => {
@@ -215,6 +244,9 @@ export function useQuery<K extends DataKey>(options: UseQueryOptions<K>): QueryS
 		},
 		get isLoading() {
 			return isLoading;
+		},
+		get isRevalidating() {
+			return isRevalidating;
 		},
 		get isError() {
 			return isError;

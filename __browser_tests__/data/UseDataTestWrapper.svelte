@@ -25,6 +25,8 @@
 		mockDelay?: number;
 		invalidateOn?: string[];
 		staleTime?: number;
+		staleWhileRevalidate?: boolean;
+		preSeedCache?: unknown;
 	}
 
 	let {
@@ -34,7 +36,9 @@
 		mockError = null,
 		mockDelay = 0,
 		invalidateOn = [],
-		staleTime = 0
+		staleTime = 0,
+		staleWhileRevalidate,
+		preSeedCache
 	}: Props = $props();
 
 	let fetchCount = $state(0);
@@ -49,7 +53,7 @@
 		}
 	};
 
-	// Create config with test key (include staleTime if provided)
+	// Create config with test key (include staleTime and staleWhileRevalidate if provided)
 	const config: DataClientConfig = {
 		baseUrl: 'http://localhost/api',
 		keys: {
@@ -57,14 +61,25 @@
 				key: dataKey,
 				url: `/${dataKey}`,
 				invalidateOn: invalidateOn.length > 0 ? invalidateOn : undefined,
-				...(staleTime > 0 ? { staleTime } : {})
+				...(staleTime > 0 ? { staleTime } : {}),
+				...(staleWhileRevalidate !== undefined ? { staleWhileRevalidate } : {})
 			}
 		} as Record<DataKey, DataKeyConfig<DataKey>>
 	};
 
-	// Create client — use MemoryCache when staleTime is set to test cache behavior
-	const cache = staleTime > 0 ? new MemoryCache() : undefined;
+	// Create client — use MemoryCache when staleTime is set or preSeedCache is provided
+	const useCache = staleTime > 0 || preSeedCache !== undefined;
+	const cache = useCache ? new MemoryCache() : undefined;
 	const client = new DataClient(config, { events: dataEventAdapter, cache });
+
+	// Pre-seed cache with stale data for SWR testing
+	if (preSeedCache !== undefined && cache) {
+		cache.set(dataKey, {
+			data: preSeedCache,
+			timestamp: Date.now() - 10000, // 10 seconds ago (stale)
+			staleTime: 5000 // Stale after 5 seconds
+		});
+	}
 
 	// Mock the fetch method
 	const originalFetch = globalThis.fetch;

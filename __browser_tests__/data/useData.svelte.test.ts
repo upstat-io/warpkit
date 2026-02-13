@@ -150,6 +150,115 @@ describe('useData', () => {
 		});
 	});
 
+	describe('stale-while-revalidate', () => {
+		it('should show stale cached data immediately then update with fresh data', async () => {
+			const staleData = [{ id: '1', name: 'Stale Monitor' }];
+			const freshData = [{ id: '1', name: 'Fresh Monitor' }];
+
+			const screen = render(UseDataTestWrapper, {
+				props: {
+					dataKey: 'monitors',
+					mockData: freshData,
+					mockDelay: 100,
+					preSeedCache: staleData,
+					staleTime: 5000
+				}
+			});
+
+			// Should immediately show stale data (not loading)
+			const loading = screen.getByTestId('loading');
+			const data = screen.getByTestId('data');
+			const isRevalidating = screen.getByTestId('is-revalidating');
+
+			await expect.element(loading).toHaveTextContent('false');
+			await expect.element(data).toHaveTextContent(JSON.stringify(staleData));
+			await expect.element(isRevalidating).toHaveTextContent('true');
+
+			// Wait for fresh data to arrive
+			await expect.element(data).toHaveTextContent(JSON.stringify(freshData));
+			await expect.element(isRevalidating).toHaveTextContent('false');
+		});
+
+		it('should suppress error when stale data is showing', async () => {
+			const staleData = [{ id: '1', name: 'Stale Monitor' }];
+
+			const screen = render(UseDataTestWrapper, {
+				props: {
+					dataKey: 'monitors',
+					mockError: new Error('Network error'),
+					preSeedCache: staleData,
+					staleTime: 5000
+				}
+			});
+
+			// Wait for fetch attempt to complete
+			const loading = screen.getByTestId('loading');
+			await expect.element(loading).toHaveTextContent('false');
+
+			// Should still show stale data, no error
+			const data = screen.getByTestId('data');
+			const error = screen.getByTestId('error');
+			const isError = screen.getByTestId('is-error');
+
+			await expect.element(data).toHaveTextContent(JSON.stringify(staleData));
+			await expect.element(error).toHaveTextContent('');
+			await expect.element(isError).toHaveTextContent('false');
+		});
+
+		it('should show normal loading when staleWhileRevalidate is false', async () => {
+			const staleData = [{ id: '1', name: 'Stale Monitor' }];
+			const freshData = [{ id: '1', name: 'Fresh Monitor' }];
+
+			const screen = render(UseDataTestWrapper, {
+				props: {
+					dataKey: 'monitors',
+					mockData: freshData,
+					mockDelay: 100,
+					preSeedCache: staleData,
+					staleTime: 5000,
+					staleWhileRevalidate: false
+				}
+			});
+
+			// Should show loading state (not stale data) because SWR is disabled
+			const loading = screen.getByTestId('loading');
+			await expect.element(loading).toHaveTextContent('true');
+
+			// isRevalidating should be false (SWR disabled)
+			const isRevalidating = screen.getByTestId('is-revalidating');
+			await expect.element(isRevalidating).toHaveTextContent('false');
+
+			// Eventually should show fresh data
+			await expect.element(loading).toHaveTextContent('false');
+			const data = screen.getByTestId('data');
+			await expect.element(data).toHaveTextContent(JSON.stringify(freshData));
+		});
+
+		it('should show normal loading when no cached data exists', async () => {
+			const freshData = [{ id: '1', name: 'Fresh Monitor' }];
+
+			const screen = render(UseDataTestWrapper, {
+				props: {
+					dataKey: 'monitors',
+					mockData: freshData,
+					mockDelay: 100
+				}
+			});
+
+			// No cache → normal loading behavior
+			const loading = screen.getByTestId('loading');
+			await expect.element(loading).toHaveTextContent('true');
+
+			const isRevalidating = screen.getByTestId('is-revalidating');
+			await expect.element(isRevalidating).toHaveTextContent('false');
+
+			// Wait for data
+			await expect.element(loading).toHaveTextContent('false');
+			const data = screen.getByTestId('data');
+			await expect.element(data).toHaveTextContent(JSON.stringify(freshData));
+		});
+	});
+
 	describe('event invalidation', () => {
 		it('should refetch when invalidation event is emitted', async () => {
 			const screen = render(UseDataTestWrapper, {

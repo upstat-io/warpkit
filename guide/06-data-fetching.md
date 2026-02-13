@@ -138,6 +138,7 @@ The returned object has these properties:
 |----------|------|-------------|
 | `data` | `T \| undefined` | The fetched data. `undefined` while loading. |
 | `isLoading` | `boolean` | `true` while the initial fetch is in progress |
+| `isRevalidating` | `boolean` | `true` when showing stale cached data while fetching fresh data in background |
 | `isError` | `boolean` | `true` if the fetch resulted in an error |
 | `isSuccess` | `boolean` | `true` if data was fetched successfully |
 | `error` | `Error \| null` | The error object if fetch failed, `null` otherwise |
@@ -438,6 +439,61 @@ keys: {
 - **`staleTime: 30000`**: Data is served from cache without a network request for 30 seconds after being fetched. After that, the next fetch goes to the network.
 
 Choose `staleTime` based on how frequently your data changes. Project lists that rarely change can have a long stale time. Monitor status data that changes every few seconds should have a short stale time or no stale time at all.
+
+### Stale-While-Revalidate
+
+By default, WarpKit uses a stale-while-revalidate strategy for all cached data. When a component mounts and stale cached data exists, WarpKit immediately shows the cached data while fetching fresh data in the background. When the fresh data arrives, it silently replaces the stale data -- no loading skeleton, no flash.
+
+This means page navigations feel instant when cached data is available, even if that data is stale. The user sees content immediately rather than waiting for the network.
+
+**How it works:**
+
+1. Component mounts, `useQuery` runs
+2. WarpKit checks the cache -- finds stale data from a previous visit
+3. Immediately sets `data` to the cached value, `isLoading` stays `false`
+4. Fetches fresh data from the network in the background
+5. When fresh data arrives, `data` updates silently
+6. If the network request fails, the stale data stays visible (no error flash)
+
+You can detect background revalidation with `isRevalidating`:
+
+```svelte
+<script lang="ts">
+  const monitors = useQuery({ key: 'monitors' });
+</script>
+
+{#if monitors.isLoading}
+  <LoadingSkeleton />
+{:else}
+  {#if monitors.isRevalidating}
+    <SubtleRefreshIndicator />
+  {/if}
+  {#each monitors.data ?? [] as monitor}
+    <MonitorCard {monitor} />
+  {/each}
+{/if}
+```
+
+**Disabling SWR for specific keys:**
+
+Some data should always show a loading state rather than stale data -- for example, billing information or security-sensitive data where showing outdated values could be misleading:
+
+```typescript
+keys: {
+  'billing/usage': {
+    key: 'billing/usage',
+    url: '/billing/usage',
+    staleWhileRevalidate: false  // Always show loading, never stale data
+  }
+}
+```
+
+**When SWR applies:**
+- Initial page load with existing cache -- **yes**
+- Parameter changes (e.g., navigating between monitor details) -- **yes**
+- Event-driven invalidation (cache is cleared first) -- **no** (no stale data to show)
+- Polling via `refetchInterval` -- **no** (already silent)
+- Manual `refetch()` -- **no** (explicit user action)
 
 ### Disabling Cache for Specific Keys
 
@@ -826,11 +882,14 @@ TanStack Query is the closest analog to WarpKit's data layer. Both provide hooks
 
 ### SWR (React)
 
-SWR popularized the stale-while-revalidate pattern. WarpKit shares the philosophy but differs in implementation:
+SWR popularized the stale-while-revalidate pattern. WarpKit implements the same core philosophy -- show stale data instantly, revalidate in the background -- as a built-in default behavior. Key differences:
 
-- **No TypeScript registry.** SWR uses string keys with manual type annotations.
-- **No built-in mutation support.** SWR focuses on fetching; mutations are your problem.
-- **React-only.** No Svelte adapter.
+- **Built-in, not the whole library.** WarpKit's SWR is one feature of a comprehensive data layer. The SWR library is focused solely on the fetching pattern.
+- **On by default.** WarpKit enables SWR automatically for all cached keys. SWR (the library) requires explicit configuration per hook.
+- **TypeScript registry.** WarpKit uses module augmentation for full type inference. SWR uses string keys with manual type annotations.
+- **Integrated mutations.** WarpKit's `useData` combines queries and mutations. SWR focuses on fetching; mutations are your problem.
+- **Event-driven invalidation.** WarpKit clears cache and refetches when named events fire. SWR uses manual `mutate()` calls.
+- **Svelte 5 native.** Built on `$state` and `$effect`. No React dependency.
 
 ### Apollo Client
 
