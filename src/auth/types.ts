@@ -11,11 +11,26 @@
 import type { EventEmitterAPI, WarpKitEventRegistry } from '../events/types';
 
 /**
+ * Simple key-value storage interface for auth adapters.
+ * Mirrors the Web Storage API subset for familiarity.
+ *
+ * In production, WarpKit provides a localStorage-backed implementation.
+ * In tests, WarpKit provides an in-memory implementation via createMockWarpKit.
+ */
+export interface AuthStorage {
+	getItem(key: string): string | null;
+	setItem(key: string, value: string): void;
+	removeItem(key: string): void;
+}
+
+/**
  * Context passed to auth adapter during initialization.
  */
 export interface AuthAdapterContext {
 	/** WarpKit's event emitter for auth events */
 	events: EventEmitterAPI<WarpKitEventRegistry>;
+	/** Key-value storage for session persistence (localStorage in production, in-memory in tests) */
+	storage: AuthStorage;
 }
 
 /**

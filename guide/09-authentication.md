@@ -46,6 +46,36 @@ The generics give you full type safety:
 - **`TStateData`**: Data associated with the state (e.g., `{ projectAlias: string }` for dynamic route defaults).
 - **`TTokens`**: The shape of your auth tokens (`{ idToken: string | null }` for simple JWT, or `{ idToken: string | null; appCheckToken: string | null }` for Firebase with AppCheck).
 
+### AuthAdapterContext and AuthStorage
+
+When WarpKit calls `initialize()`, it passes an `AuthAdapterContext` with two properties:
+
+```typescript
+interface AuthAdapterContext {
+  events: EventEmitterAPI<WarpKitEventRegistry>;  // Event emitter for auth events
+  storage: AuthStorage;                            // Key-value storage for session persistence
+}
+
+interface AuthStorage {
+  getItem(key: string): string | null;
+  setItem(key: string, value: string): void;
+  removeItem(key: string): void;
+}
+```
+
+**Always use `context.storage` instead of accessing `localStorage` directly.** The `AuthStorage` interface mirrors the Web Storage API, so the migration is straightforward. In production, WarpKit provides a localStorage-backed implementation by default. In tests, WarpKit provides an in-memory implementation (`MemoryAuthStorage`) so that auth sessions do not leak between tests when running with `isolate: false`.
+
+You can also provide a custom `AuthStorage` via the `authStorage` option in the WarpKit constructor:
+
+```typescript
+const warpkit = new WarpKit({
+  routes,
+  initialState: 'unauthenticated',
+  authAdapter,
+  authStorage: myCustomStorage  // Optional: defaults to localStorage
+});
+```
+
 ## Writing a Custom AuthAdapter
 
 If you are using a custom JWT backend, Auth0, Supabase, or any provider without a built-in WarpKit adapter, you implement the interface yourself. Here is a complete example for a custom JWT-based backend:
@@ -59,12 +89,16 @@ type Tokens = { idToken: string | null };
 
 class JwtAuthAdapter implements AuthAdapter<unknown, AppState, StateData, Tokens> {
   private token: string | null = null;
+  private storage: AuthStorage | null = null;
   private refreshTimer: ReturnType<typeof setTimeout> | null = null;
   private changeCallback: ((result: AuthInitResult<AppState, StateData> | undefined) => void) | null = null;
 
-  async initialize(): Promise<AuthInitResult<AppState, StateData>> {
-    // Check for existing session
-    const storedToken = localStorage.getItem('auth_token');
+  async initialize(context: AuthAdapterContext): Promise<AuthInitResult<AppState, StateData>> {
+    // Store the context storage for later use (sign-in, sign-out, token refresh)
+    this.storage = context.storage;
+
+    // Check for existing session using context.storage (NOT raw localStorage)
+    const storedToken = context.storage.getItem('auth_token');
 
     if (!storedToken) {
       return { state: 'unauthenticated' };
@@ -77,7 +111,7 @@ class JwtAuthAdapter implements AuthAdapter<unknown, AppState, StateData, Tokens
       });
 
       if (!response.ok) {
-        localStorage.removeItem('auth_token');
+        context.storage.removeItem('auth_token');
         return { state: 'unauthenticated' };
       }
 
@@ -95,7 +129,7 @@ class JwtAuthAdapter implements AuthAdapter<unknown, AppState, StateData, Tokens
         stateData: { orgAlias: userData.orgAlias }
       };
     } catch {
-      localStorage.removeItem('auth_token');
+      context.storage.removeItem('auth_token');
       return { state: 'unauthenticated' };
     }
   }
@@ -117,7 +151,7 @@ class JwtAuthAdapter implements AuthAdapter<unknown, AppState, StateData, Tokens
 
   async signOut(): Promise<void> {
     this.token = null;
-    localStorage.removeItem('auth_token');
+    this.storage?.removeItem('auth_token');
     if (this.refreshTimer) clearTimeout(this.refreshTimer);
 
     // Notify WarpKit of state change
@@ -127,7 +161,7 @@ class JwtAuthAdapter implements AuthAdapter<unknown, AppState, StateData, Tokens
   // Called by your login component after successful sign-in
   async handleSignIn(token: string, userData: { orgAlias: string; isOnboarded: boolean }): Promise<void> {
     this.token = token;
-    localStorage.setItem('auth_token', token);
+    this.storage?.setItem('auth_token', token);
     this.scheduleRefresh();
 
     const state = userData.isOnboarded ? 'authenticated' : 'onboarding';
@@ -146,7 +180,7 @@ class JwtAuthAdapter implements AuthAdapter<unknown, AppState, StateData, Tokens
         });
         const { token } = await response.json();
         this.token = token;
-        localStorage.setItem('auth_token', token);
+        this.storage?.setItem('auth_token', token);
         this.scheduleRefresh();
       } catch {
         // Refresh failed -- sign out

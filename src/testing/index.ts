@@ -13,6 +13,8 @@ export type { MockConfirmProviderOptions } from './MockConfirmProvider';
 
 export { NoOpStorageProvider } from './NoOpStorageProvider';
 
+export { MemoryAuthStorage } from './MemoryAuthStorage';
+
 // ============================================================================
 // Factory Functions
 // ============================================================================

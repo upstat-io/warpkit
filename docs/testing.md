@@ -6,6 +6,7 @@ Source files covered:
 - `src/testing/createMockWarpKit.ts`
 - `src/testing/MockConfirmProvider.ts`
 - `src/testing/NoOpStorageProvider.ts`
+- `src/testing/MemoryAuthStorage.ts`
 - `src/testing/createMockEvents.ts`
 - `src/testing/createEventSpy.ts`
 - `src/testing/expectations.ts`
@@ -27,6 +28,7 @@ Production:                          Testing:
 BrowserBrowserProvider      -->      MemoryBrowserProvider
 BrowserConfirmProvider      -->      MockConfirmProvider
 SessionStorageProvider      -->      NoOpStorageProvider
+localStorage (auth)        -->      MemoryAuthStorage
 ```
 
 The core navigation engine (`Navigator`, `RouteMatcher`, `PageState`, lifecycle hooks) runs unmodified in tests. Only the browser-facing providers are swapped. This means tests exercise the real navigation pipeline, not a mocked version of it.
@@ -164,6 +166,33 @@ Implements `StorageProvider` as a complete no-op. All writes are silently ignore
 | `popIntendedPath()` | Returns `null`. |
 
 Use this when tests do not need to verify scroll restoration or intended path persistence. If a test does need to verify storage behavior, create a custom `StorageProvider` implementation instead of extending `NoOpStorageProvider`.
+
+### MemoryAuthStorage
+
+**Source:** `src/testing/MemoryAuthStorage.ts`
+
+Implements `AuthStorage` with an in-memory `Map`. Prevents auth adapters from touching `localStorage`, eliminating cross-test contamination when running with `isolate: false`.
+
+**Constructor:** `new MemoryAuthStorage()`
+
+| Method | Behavior |
+|--------|----------|
+| `getItem(key)` | Returns stored value or `null`. |
+| `setItem(key, value)` | Stores value in memory. |
+| `removeItem(key)` | Deletes stored value. |
+
+Pass via the `authStorage` config option when creating a WarpKit instance with an auth adapter:
+
+```typescript
+import { MemoryAuthStorage } from '@upstat/warpkit/testing';
+
+const warpkit = new WarpKit({
+  routes,
+  initialState: 'unauthenticated',
+  authAdapter,
+  authStorage: new MemoryAuthStorage()
+});
+```
 
 ### MemoryBrowserProvider (from `src/providers/browser/`)
 

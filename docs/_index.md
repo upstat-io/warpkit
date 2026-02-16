@@ -96,7 +96,7 @@ The codebase is split into a core package (`src/`) and independent sub-packages 
 | `errors/ErrorOverlay.svelte` | Dev-mode error overlay component |
 | `errors/types.ts` | Error types and severity |
 | `auth/index.ts` | Auth adapter exports |
-| `auth/types.ts` | AuthAdapter interface |
+| `auth/types.ts` | AuthAdapter, AuthAdapterContext, AuthStorage interfaces |
 | `shared/shouldHandleClick.ts` | Link click handling utility |
 | `components/WarpKitProvider.svelte` | Root context provider |
 | `components/WarpKitAppBoundary.svelte` | Ready-state wrapper |
@@ -106,6 +106,7 @@ The codebase is split into a core package (`src/`) and independent sub-packages 
 | `testing/createMockWarpKit.ts` | Mock WarpKit factory |
 | `testing/MockConfirmProvider.ts` | Configurable confirm mock |
 | `testing/NoOpStorageProvider.ts` | Silent storage mock |
+| `testing/MemoryAuthStorage.ts` | In-memory auth storage mock |
 | `testing/createMockEvents.ts` | Mock event emitter factory |
 | `testing/createEventSpy.ts` | Event spy for assertions |
 | `testing/expectations.ts` | Navigation assertion helpers |

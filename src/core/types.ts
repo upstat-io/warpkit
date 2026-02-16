@@ -14,7 +14,7 @@ import type {
 	WarpKitCore
 } from '../providers/interfaces';
 import type { SvelteURLSearchParams } from './SvelteURLSearchParams.svelte';
-import type { AuthAdapter } from '../auth/types';
+import type { AuthAdapter, AuthStorage } from '../auth/types';
 
 // ============================================================================
 // Route Types
@@ -446,6 +446,11 @@ export interface WarpKitConfig<TAppState extends string, TStateData = unknown> {
 	 */
 	authAdapter?: AuthAdapter<TAppState, TStateData>;
 	/**
+	 * Storage for auth adapter session persistence.
+	 * Defaults to localStorage. Pass an in-memory implementation for tests.
+	 */
+	authStorage?: AuthStorage;
+	/**
 	 * Data client integration for automatic cache management.
 	 * When provided, WarpKit will:
 	 * - Clear cache on auth state transitions
@@ -608,4 +613,4 @@ export type {
 } from '../providers/interfaces';
 
 // Re-export auth types
-export type { AuthAdapter, AuthAdapterContext, AuthInitResult } from '../auth/types';
+export type { AuthAdapter, AuthAdapterContext, AuthInitResult, AuthStorage } from '../auth/types';

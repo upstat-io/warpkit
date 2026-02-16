@@ -25,6 +25,7 @@ The foundation of all WarpKit testing is `createMockWarpKit`. It creates a fully
 - **MemoryBrowserProvider** -- An in-memory history stack. Maintains push/replace/back/forward behavior without `window.history`.
 - **MockConfirmProvider** -- A configurable confirmation mock. You control whether the "confirm" dialog returns true or false, and you can inspect which messages were shown.
 - **NoOpStorageProvider** -- A silent no-op for scroll positions and intended paths. All writes are ignored, all reads return null.
+- **MemoryAuthStorage** -- An in-memory key-value store for auth session persistence. Prevents auth adapters from touching `localStorage`, eliminating cross-test contamination when running with `isolate: false`.
 
 Here is the basic usage:
 
@@ -773,6 +774,45 @@ describe('Lifecycle hooks', () => {
     ]);
   });
 });
+```
+
+## Testing with Auth Adapters
+
+When your tests use a WarpKit instance with an auth adapter, the adapter's `initialize()` method receives an `AuthAdapterContext` with a `storage` property. In production, this is backed by `localStorage`. In tests, you should use `MemoryAuthStorage` to prevent auth sessions from leaking between tests:
+
+```typescript
+import { MemoryAuthStorage, MemoryBrowserProvider, NoOpStorageProvider } from '@upstat/warpkit/testing';
+
+// Create mock providers
+const memoryBrowser = new MemoryBrowserProvider('/login');
+const noOpStorage = new NoOpStorageProvider();
+const authStorage = new MemoryAuthStorage();
+
+const warpkit = new WarpKit({
+  routes,
+  initialState: 'unauthenticated',
+  authAdapter: myAuthAdapter,
+  authStorage,  // In-memory -- no localStorage pollution
+  providers: {
+    browser: memoryBrowser,
+    storage: noOpStorage
+  }
+});
+
+await warpkit.start();
+```
+
+This is critical when running tests with `isolate: false` (shared browser context). Without `MemoryAuthStorage`, a test that signs in would leave a session in `localStorage`, causing the next test's auth adapter to find an existing session and behave unexpectedly.
+
+The `MemoryAuthStorage` API mirrors `localStorage` exactly:
+
+```typescript
+const storage = new MemoryAuthStorage();
+
+storage.setItem('auth_token', 'abc123');
+storage.getItem('auth_token');     // 'abc123'
+storage.removeItem('auth_token');
+storage.getItem('auth_token');     // null
 ```
 
 ## Testing Strategies

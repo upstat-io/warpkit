@@ -28,6 +28,7 @@ import type {
 	BlockerRegistration,
 	AuthAdapter
 } from './types.js';
+import type { AuthStorage } from '../auth/types.js';
 import type {
 	WarpKitCore,
 	Provider,
@@ -151,6 +152,9 @@ export class WarpKit<TAppState extends string, TStateData = unknown> implements 
 	/** Auth adapter for handling authentication state */
 	private readonly authAdapter?: AuthAdapter<TAppState, TStateData>;
 
+	/** Storage for auth adapter session persistence */
+	private readonly authStorage: AuthStorage;
+
 	/** Auth state change unsubscribe function */
 	private authUnsubscribe?: () => void;
 
@@ -170,6 +174,11 @@ export class WarpKit<TAppState extends string, TStateData = unknown> implements 
 	public constructor(config: WarpKitConfig<TAppState, TStateData>) {
 		this.routes = config.routes;
 		this.authAdapter = config.authAdapter;
+		this.authStorage = config.authStorage ?? {
+			getItem: (key) => localStorage.getItem(key),
+			setItem: (key, value) => localStorage.setItem(key, value),
+			removeItem: (key) => localStorage.removeItem(key)
+		};
 		this.dataConfig = config.data;
 
 		// Navigation errors are already displayed by RouterView via page.error.
@@ -287,7 +296,7 @@ export class WarpKit<TAppState extends string, TStateData = unknown> implements 
 		// Initialize auth adapter if provided
 		if (this.authAdapter) {
 			try {
-				const result = await this.authAdapter.initialize({ events: this.events });
+				const result = await this.authAdapter.initialize({ events: this.events, storage: this.authStorage });
 
 				// Update state and state data from auth initialization
 				if (result.stateData !== undefined) {

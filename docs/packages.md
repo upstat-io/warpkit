@@ -810,18 +810,29 @@ interface AuthAdapter<TContext, TAppState extends string, TStateData, TTokens> {
 - `state: TAppState` -- the app state to transition to
 - `stateData?: TStateData` -- optional data for state transition (e.g., project alias for dynamic route defaults)
 
+**`AuthAdapterContext`:**
+- `events: EventEmitterAPI<WarpKitEventRegistry>` -- event emitter for auth events
+- `storage: AuthStorage` -- key-value storage for session persistence
+
+**`AuthStorage`:**
+- `getItem(key: string): string | null`
+- `setItem(key: string, value: string): void`
+- `removeItem(key: string): void`
+
+Mirrors the Web Storage API. In production, backed by `localStorage` (default). In tests, use `MemoryAuthStorage` from `@upstat/warpkit/testing`. Custom implementations can be passed via `WarpKitConfig.authStorage`.
+
 **Type parameters:**
-- `TContext`: Context passed to `initialize()` (WarpKit provides event emitter)
+- `TContext`: Context passed to `initialize()` (WarpKit provides `AuthAdapterContext`)
 - `TAppState`: Union of valid state names (e.g., `'authenticated' | 'unauthenticated' | 'onboarding'`)
 - `TStateData`: Data associated with state transitions
 - `TTokens`: Token shape (default: `{ idToken: string | null }`)
 
 **Contract:**
-1. `initialize()` is called once during app startup. WarpKit waits for it before rendering.
+1. `initialize()` is called once during app startup. WarpKit waits for it before rendering. Use `context.storage` for session persistence (never raw `localStorage`).
 2. `onAuthStateChanged()` is called after `initialize()` completes. Subsequent auth events are forwarded.
 3. `getTokens()` is called by WebSocket client and API interceptors for authenticated requests.
 4. `signOut()` is optional -- only needed for programmatic sign out.
 
 ### Exports (`src/index.ts`)
 
-Type-only exports: `AuthAdapter`, `AuthInitResult`.
+Type-only exports: `AuthAdapter`, `AuthAdapterContext`, `AuthInitResult`, `AuthStorage`.

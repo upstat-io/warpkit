@@ -12,7 +12,7 @@
 | [Events & Errors](./events-errors.md) | EventEmitter, event types, useEvent hook, error channel, error store, global handlers, ErrorOverlay, NavigationErrorCode | Event pub/sub, error handling pipeline, error codes, error UI |
 | [Components & Hooks](./components.md) | WarpKitProvider, WarpKitAppBoundary, RouterView, Link, NavLink, context system, useWarpKit, usePage, useEvent, shouldHandleClick | Svelte component layer, context bridge, hooks API, link handling |
 | [Sub-Packages](./packages.md) | @warpkit/data, @warpkit/cache, @warpkit/forms, @warpkit/validation, @warpkit/websocket, @warpkit/errors, @warpkit/auth-firebase, @warpkit/vite-plugin, @warpkit/types | Data fetching, caching, forms, validation, WebSocket, auth, Vite tooling |
-| [Testing](./testing.md) | createMockWarpKit, mock providers, event spies, navigation assertions, renderWithWarpKit, createMockDataClient | Writing tests, mock setup, assertion helpers |
+| [Testing](./testing.md) | createMockWarpKit, mock providers, MemoryAuthStorage, event spies, navigation assertions, renderWithWarpKit, createMockDataClient | Writing tests, mock setup, auth testing, assertion helpers |
 
 ## Quick Lookup
 
@@ -56,7 +56,7 @@ Start with [Core Internals > Navigator](./core-internals.md#2-navigator----9-pha
 [Sub-Packages > @warpkit/websocket](./packages.md#warpkitwebsocket). Full-jitter backoff reconnection, heartbeat ping/pong, room management, browser offline/visibility detection, prototype-pollution-safe JSON parsing.
 
 ### "How does auth work?"
-[Sub-Packages > @warpkit/auth-firebase](./packages.md#warpkitauth-firebase) for Firebase adapter. [Sub-Packages > @warpkit/types](./packages.md#warpkittypes) for the AuthAdapter interface contract.
+[Sub-Packages > @warpkit/auth-firebase](./packages.md#warpkitauth-firebase) for Firebase adapter. [Sub-Packages > @warpkit/types](./packages.md#warpkittypes) for the AuthAdapter interface contract. Auth adapters receive `AuthAdapterContext.storage` (an `AuthStorage` interface) for session persistence -- use this instead of raw `localStorage`. In tests, use `MemoryAuthStorage` from the testing module.
 
 ### "How do I write tests?"
 [Testing](./testing.md). Start with `createMockWarpKit` for navigation tests. Use `expectations.ts` for assertion helpers. Use `createMockDataClient` for data layer tests.

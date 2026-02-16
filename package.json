@@ -3,6 +3,11 @@
 	"version": "0.0.1",
 	"type": "module",
 	"module": "src/index.ts",
+	"exports": {
+		".": "./src/index.ts",
+		"./testing": "./src/testing/index.ts",
+		"./testing/providers": "./src/testing/providers.ts"
+	},
 	"scripts": {
 		"test": "bun test src",
 		"test:packages": "bunx vitest run --config vitest.config.ts",

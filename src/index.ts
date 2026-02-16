@@ -129,7 +129,7 @@ export type { ErrorChannelSource, ErrorReport } from '@warpkit/errors';
 // Auth Adapter
 // ============================================================================
 
-export type { AuthAdapter, AuthAdapterContext, AuthInitResult } from './auth';
+export type { AuthAdapter, AuthAdapterContext, AuthInitResult, AuthStorage } from './auth';
 
 // ============================================================================
 // Types
