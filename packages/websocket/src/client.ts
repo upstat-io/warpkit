@@ -18,16 +18,17 @@
  * // Define your message types
  * const IncidentCreated = { name: 'incident.created', _data: undefined as { uuid: string; title: string } };
  *
- * const client = new SocketClient('wss://api.example.com/ws');
+ * const client = new SocketClient(() => 'wss://api.example.com/ws');
+ *
+ * // With auth token refresh on every connect/reconnect:
+ * const client = new SocketClient(async () => {
+ *   const token = await getAuthToken();
+ *   return `wss://api.example.com/ws?token=${token}`;
+ * });
  *
  * // Type-safe message handlers
  * client.on(IncidentCreated, (data) => {
  *   console.log('Incident created:', data.uuid, data.title);
- * });
- *
- * // Connection lifecycle
- * client.on(Connected, () => {
- *   client.joinRoom(`account:${accountUuid}`);
  * });
  *
  * client.connect();
@@ -41,7 +42,8 @@ import type {
 	ConnectionState,
 	SocketClientOptions,
 	ConnectionStateHandler,
-	ErrorHandler
+	ErrorHandler,
+	UrlFactory
 } from './types';
 import { JoinRoom, LeaveRoom } from './control-messages';
 import { Json } from './json';
@@ -168,11 +170,12 @@ export class SocketClient {
 	/**
 	 * Creates a new SocketClient.
 	 *
-	 * @param url - WebSocket server URL (ws:// or wss://)
+	 * @param createUrl - Factory that returns the WebSocket URL. Called on every
+	 *   connect/reconnect, so it can return fresh auth tokens each time.
 	 * @param options - Connection options
 	 */
 	constructor(
-		private readonly url: string,
+		private readonly createUrl: UrlFactory,
 		options: SocketClientOptions = {}
 	) {
 		this.options = {
@@ -218,6 +221,9 @@ export class SocketClient {
 	/**
 	 * Connect to the WebSocket server.
 	 * If already connected or connecting, this is a no-op.
+	 *
+	 * Resolves the URL from the factory on each call, so reconnections
+	 * always use a fresh URL (e.g., with a refreshed auth token).
 	 */
 	connect(): void {
 		if (this.state === 'connected' || this.state === 'connecting') {
@@ -228,7 +234,48 @@ export class SocketClient {
 		this.deviceWentOffline = false;
 		this.setState('connecting');
 
-		this.ws = new WebSocket(this.url);
+		this.resolveUrlAndConnect();
+	}
+
+	/**
+	 * Resolve the URL from the factory and open the WebSocket.
+	 * Handles both sync and async URL factories.
+	 */
+	private resolveUrlAndConnect(): void {
+		let result: string | Promise<string>;
+		try {
+			result = this.createUrl();
+		} catch (error) {
+			this.notifyError(error instanceof Error ? error : new Error(String(error)));
+			this.setState('disconnected');
+			this.maybeReconnect();
+			return;
+		}
+
+		if (typeof result === 'string') {
+			this.openSocket(result);
+		} else {
+			result.then(
+				(url) => {
+					// Guard: state may have changed while awaiting
+					if (this.state !== 'connecting') return;
+					this.openSocket(url);
+				},
+				(error) => {
+					if (this.state !== 'connecting') return;
+					this.notifyError(error instanceof Error ? error : new Error(String(error)));
+					this.setState('disconnected');
+					this.maybeReconnect();
+				}
+			);
+		}
+	}
+
+	/**
+	 * Open the WebSocket connection to the resolved URL.
+	 */
+	private openSocket(url: string): void {
+		this.ws = new WebSocket(url);
 
 		// Connection timeout - fail fast if server doesn't respond
 		if (this.options.connectionTimeout > 0) {
@@ -304,7 +351,7 @@ export class SocketClient {
 			severity: 'warning',
 			showUI: false,
 			handledLocally: this.errorHandlers.size > 0,
-			context: { url: this.url, state: this.state }
+			context: { state: this.state }
 		});
 		for (const handler of this.errorHandlers) {
 			try {

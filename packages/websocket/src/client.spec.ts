@@ -146,7 +146,7 @@ describe('SocketClient', () => {
 	}
 
 	function createClient(options?: SocketClientOptions): SocketClient {
-		return new SocketClient('wss://example.com/ws', options);
+		return new SocketClient(() => 'wss://example.com/ws', options);
 	}
 
 	describe('constructor', () => {

@@ -166,7 +166,7 @@ describe('SocketClient with Real WebSocket', () => {
 	});
 
 	function createClient(options?: SocketClientOptions): SocketClient {
-		const client = new SocketClient(`ws://localhost:${serverPort}/ws`, options);
+		const client = new SocketClient(() => `ws://localhost:${serverPort}/ws`, options);
 		allClients.push(client);
 		return client;
 	}

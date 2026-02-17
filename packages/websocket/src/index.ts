@@ -17,7 +17,7 @@
  * import { ValidatedType } from '@warpkit/validation';
  * import { z } from 'zod';
  *
- * const client = new SocketClient('wss://api.example.com/ws');
+ * const client = new SocketClient(() => 'wss://api.example.com/ws');
  *
  * // Define your message types (without validation)
  * const IncidentCreated = ClientMessage.define<{ uuid: string; title: string }>('incident.created');
@@ -73,7 +73,8 @@ export type {
 	ConnectionState,
 	SocketClientOptions,
 	ConnectionStateHandler,
-	ErrorHandler
+	ErrorHandler,
+	UrlFactory
 } from './types';
 
 // Protocol constants (for server implementations)

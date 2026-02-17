@@ -166,3 +166,9 @@ export type ConnectionStateHandler = (state: ConnectionState) => void;
  * Event handler for connection errors.
  */
 export type ErrorHandler = (error: Error) => void;
+
+/**
+ * Factory function that produces a WebSocket URL.
+ * Called on every connect/reconnect, allowing fresh auth tokens.
+ */
+export type UrlFactory = () => string | Promise<string>;
