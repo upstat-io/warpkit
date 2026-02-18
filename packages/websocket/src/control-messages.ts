@@ -8,7 +8,7 @@
  * ```typescript
  * import { SocketClient, JoinRoom, LeaveRoom } from '@warpkit/websocket';
  *
- * const client = new SocketClient('wss://api.example.com/ws');
+ * const client = new SocketClient(() => 'wss://api.example.com/ws');
  *
  * // Type-safe message emission
  * client.emit(JoinRoom, { room: 'account:123' });
