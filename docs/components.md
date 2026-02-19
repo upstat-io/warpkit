@@ -63,7 +63,7 @@ Properties and methods:
 | `loadedLayout` | `readonly Component \| null` | Currently loaded layout component. `null` if the route has no layout. |
 | `navigate(path, options?)` | `Promise<NavigationResult>` | Navigate to a path. Options: `replace`, `state`, `scrollPosition`. |
 | `setState(state, options?)` | `Promise<void>` | Change app state. |
-| `setAppState(state, data?, options?)` | `Promise<NavigationResult>` | Change app state with optional state data (for dynamic default paths). |
+| `setAppState(state, data?, options?)` | `Promise<NavigationResult>` | Change app state with optional state data (for dynamic default paths). Options: `replace`, `state`, `path` (explicit navigation target). |
 | `buildUrl(path)` | `string` | Build a URL using the browser provider's strategy (hash vs path). |
 | `registerBlocker(blocker)` | `BlockerRegistration` | Register a navigation blocker. Returns `{ unregister() }`. |
 | `getState()` | `TAppState` | Get current app state. |

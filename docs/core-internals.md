@@ -129,7 +129,7 @@ public async setAppState(
 
 - Second argument is polymorphic: `string` is treated as an explicit target path, anything else as `TStateData`.
 - If called before `start()`, the request is queued in `preStartQueue` and processed during `start()`.
-- After start: updates `stateData` (if provided), calls `stateMachine.setState()`, resolves path (explicit path > function/static default from cache), delegates to `navigator.navigateAfterStateChange()`.
+- After start: updates `stateData` (if provided), calls `stateMachine.setState()`, resolves path (explicit string arg > `options.path` > function/static default from cache), delegates to `navigator.navigateAfterStateChange()`.
 
 ### `updateSearch(params, options?)`
 

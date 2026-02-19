@@ -347,6 +347,11 @@ await warpkit.setAppState('authenticated', { orgAlias: 'acme' });
 // With an explicit path (overrides the default)
 await warpkit.setAppState('authenticated', '/settings');
 // Navigates to '/settings' instead of the default
+
+// With state data AND an explicit path
+await warpkit.setAppState('authenticated', { orgAlias: 'acme' }, { path: '/acme/settings' });
+// Updates state data to { orgAlias: 'acme' } AND navigates to '/acme/settings'
+// Useful when switching context (e.g., project switch) and navigating in one call
 ```
 
 ### What Happens During a State Transition
