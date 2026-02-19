@@ -520,7 +520,7 @@ export class WarpKit<TAppState extends string, TStateData = unknown> implements 
 		// Determine if second arg is data or path
 		const isPath = typeof dataOrPath === 'string';
 		const data = isPath ? undefined : dataOrPath;
-		const explicitPath = isPath ? dataOrPath : undefined;
+		const explicitPath = isPath ? dataOrPath : options?.path;
 
 		// Update state data if provided
 		if (data !== undefined) {

@@ -159,6 +159,8 @@ export interface SetStateOptions {
 	replace?: boolean;
 	/** Consumer-provided state data to attach to history entry */
 	state?: Record<string, unknown>;
+	/** Explicit navigation path (overrides state's dynamic default) */
+	path?: string;
 }
 
 /**
