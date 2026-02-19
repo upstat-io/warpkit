@@ -352,6 +352,13 @@ await warpkit.setAppState('authenticated', '/settings');
 await warpkit.setAppState('authenticated', { orgAlias: 'acme' }, { path: '/acme/settings' });
 // Updates state data to { orgAlias: 'acme' } AND navigates to '/acme/settings'
 // Useful when switching context (e.g., project switch) and navigating in one call
+
+// With cache invalidation (for same-state data boundary changes)
+await warpkit.setAppState('authenticated',
+  { orgAlias: 'newcorp' },
+  { invalidate: true, path: '/newcorp/dashboard' }
+);
+// Clears stale cache, re-scopes to new boundary, then navigates
 ```
 
 ### What Happens During a State Transition
@@ -360,11 +367,13 @@ When you call `setAppState('authenticated')`, WarpKit does the following:
 
 1. **Updates the state machine.** The internal state changes to `'authenticated'`. This increments the state ID, which is used by the navigation pipeline to detect stale navigations.
 
-2. **Resolves the default path.** For string defaults, this is immediate. For function defaults, the function is called with the current state data. The result is cached.
+2. **Invalidates cache (if requested).** When `options.invalidate` is `true`, the DataClient cache is cleared, re-scoped using the updated state data, and a `data:cache-invalidated` event is emitted. All active `useQuery` hooks subscribe to this event and refetch automatically.
 
-3. **Runs the navigation pipeline.** The resolved path (or the explicit path you provided) goes through the full 9-phase navigation pipeline as a `state-change` navigation type. This means blockers, guards, and hooks all run normally.
+3. **Resolves the default path.** For string defaults, this is immediate. For function defaults, the function is called with the current state data. The result is cached.
 
-4. **Updates the URL and renders.** The matched route's component is loaded, the URL is updated, and the `RouterView` renders the new page.
+4. **Runs the navigation pipeline.** The resolved path (or the explicit path you provided) goes through the full 9-phase navigation pipeline as a `state-change` navigation type. This means blockers, guards, and hooks all run normally.
+
+5. **Updates the URL and renders.** The matched route's component is loaded, the URL is updated, and the `RouterView` renders the new page.
 
 ### Pre-Start Queuing
 

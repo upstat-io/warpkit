@@ -57,24 +57,18 @@ export class DataClient {
 	/**
 	 * Create a new DataClient.
 	 *
-	 * Automatically subscribes to invalidateOn events for all configured keys.
-	 * When an event fires, the corresponding cache entries are cleared immediately,
-	 * regardless of which components are currently mounted. This ensures that
-	 * when a component mounts and calls fetch(), it always gets fresh data
-	 * after an invalidation event.
+	 * Events are not configured in the constructor. Call setEvents() to wire
+	 * up event-driven cache invalidation. WarpKit does this automatically
+	 * when a DataClient is provided in the data config.
 	 *
 	 * @param config - Data configuration with keys and base URL
-	 * @param options - Optional cache and event emitter
+	 * @param options - Optional cache provider
 	 */
 	public constructor(config: DataClientConfig, options?: DataClientOptions) {
 		this.config = config;
 		this.cache = options?.cache ?? new NoCacheProvider();
-		this.events = options?.events ?? null;
+		this.events = null;
 		this.timeout = config.timeout ?? 30000;
-
-		// Subscribe to invalidation events at the DataClient level.
-		// This ensures cache is cleared even when no component is mounted.
-		this.subscribeToInvalidationEvents();
 	}
 
 	/**
@@ -398,12 +392,20 @@ export class DataClient {
 	}
 
 	/**
-	 * Set the event emitter (for late injection).
+	 * Set the event emitter and subscribe to invalidation events.
+	 *
+	 * Cleans up any previous event subscriptions before re-subscribing.
+	 * WarpKit calls this automatically during construction to share its
+	 * EventEmitter with the DataClient.
 	 *
 	 * @param events - The event emitter to use
 	 */
 	public setEvents(events: DataEventEmitter): void {
+		for (const unsub of this.eventUnsubscribes) unsub();
+		this.eventUnsubscribes = [];
+
 		this.events = events;
+		this.subscribeToInvalidationEvents();
 	}
 
 	/**

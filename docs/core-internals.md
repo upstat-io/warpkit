@@ -77,6 +77,7 @@ Key operations:
 1. Stores `routes`, `authAdapter`, `dataConfig`, `onError`, `providerRegistry` from config.
 2. Instantiates core subsystems: PageState, StateMachine, RouteMatcher, NavigationLifecycle, LayoutManager.
 3. Pre-caches static default paths: iterates `config.routes` and caches any `default` value that is a `string` or `null`. Function defaults are deferred until `stateData` is available.
+4. If `dataConfig.client` is provided, calls `client.setEvents(this.events)` to share WarpKit's EventEmitter with the DataClient. This ensures all events (auth, data invalidation, consumer events) flow through one instance.
 
 Note: Provider resolution and Navigator creation are deferred to `start()`. The constructor stores the raw provider registry.
 
@@ -129,6 +130,7 @@ public async setAppState(
 
 - Second argument is polymorphic: `string` is treated as an explicit target path, anything else as `TStateData`.
 - If called before `start()`, the request is queued in `preStartQueue` and processed during `start()`.
+- If `options.invalidate` is `true`, clears the DataClient cache, re-scopes it using the current `stateData` via the configured `scopeKey` callback, and emits `data:cache-invalidated`. All active `useQuery` hooks subscribe to this event and refetch automatically. This enables cache invalidation on same-state transitions where the data boundary changes (e.g., switching between tenants/organizations within the same auth state).
 - After start: updates `stateData` (if provided), calls `stateMachine.setState()`, resolves path (explicit string arg > `options.path` > function/static default from cache), delegates to `navigator.navigateAfterStateChange()`.
 
 ### `updateSearch(params, options?)`
@@ -171,7 +173,7 @@ All three return an unsubscribe function.
 `handleAuthStateChange(result)`:
 - Updates `stateData` if provided.
 - **Auto-emits auth events** when the state transitions: emits `auth:signed-in` (with `userId` extracted from `stateData.uid`, `.userId`, or `.id`) when `stateData` is present, or `auth:signed-out` when `stateData` is absent.
-- If state differs from current: clears data cache (`dataConfig.client.clearCache()`), re-scopes cache via `dataConfig.scopeKey`, then calls `setAppState()`.
+- If state differs from current: calls `invalidateCache()` (clears data cache, re-scopes via `scopeKey`, emits `data:cache-invalidated`), then calls `setAppState()`.
 
 ### Deep Links
 

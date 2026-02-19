@@ -122,10 +122,11 @@ describe('DataClient', () => {
 			expect(cache.set).toHaveBeenCalled();
 		});
 
-		it('should accept custom event emitter', () => {
+		it('should accept event emitter via setEvents', () => {
 			const config = createTestConfig();
 			const events: DataEventEmitter = { on: vi.fn() };
-			const client = new DataClient(config, { events });
+			const client = new DataClient(config);
+			client.setEvents(events);
 
 			expect(client.getEvents()).toBe(events);
 		});
@@ -520,10 +521,11 @@ describe('DataClient', () => {
 			expect(client.getEvents()).toBeNull();
 		});
 
-		it('should return event emitter when configured', () => {
+		it('should return event emitter when configured via setEvents', () => {
 			const config = createTestConfig();
 			const events: DataEventEmitter = { on: vi.fn() };
-			const client = new DataClient(config, { events });
+			const client = new DataClient(config);
+			client.setEvents(events);
 
 			expect(client.getEvents()).toBe(events);
 		});

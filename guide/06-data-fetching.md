@@ -601,7 +601,8 @@ new DataClient(config: DataClientConfig, options?: DataClientOptions)
 | Property | Type | Description |
 |----------|------|-------------|
 | `cache` | `CacheProvider` | Cache implementation (default: `NoCacheProvider`) |
-| `events` | `DataEventEmitter` | Event emitter for invalidation subscriptions |
+
+**Event wiring:** Events are not configured in the constructor. Call `setEvents(events)` to wire up event-driven cache invalidation. WarpKit does this automatically — it shares its own EventEmitter with the DataClient so all events (auth, data invalidation, consumer events) flow through one instance.
 
 ### Methods
 
@@ -615,6 +616,7 @@ new DataClient(config: DataClientConfig, options?: DataClientOptions)
 | `invalidateByPrefix` | `invalidateByPrefix(prefix): Promise<void>` | Invalidate all entries matching a prefix |
 | `clearCache` | `clearCache(): Promise<void>` | Clear all cached data |
 | `scopeCache` | `scopeCache(scope): void` | Scope cache to a key (requires ETagCacheProvider) |
+| `setEvents` | `setEvents(events): void` | Set event emitter and subscribe to invalidation events. WarpKit calls this automatically. |
 | `resolveUrl` | `resolveUrl(template, params?): string` | Resolve a URL template with parameters |
 
 ### Direct DataClient Usage
@@ -781,8 +783,7 @@ export const dataClient = new DataClient(
     cache: new ETagCacheProvider({
       memory: { maxEntries: 200 },
       storage: { prefix: 'myapp:' }
-    }),
-    events: warpkitEvents
+    })
   }
 );
 ```

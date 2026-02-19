@@ -70,7 +70,8 @@
 	// Create client — use MemoryCache when staleTime is set or preSeedCache is provided
 	const useCache = staleTime > 0 || preSeedCache !== undefined;
 	const cache = useCache ? new MemoryCache() : undefined;
-	const client = new DataClient(config, { events: dataEventAdapter, cache });
+	const client = new DataClient(config, { cache });
+	client.setEvents(dataEventAdapter);
 
 	// Pre-seed cache with stale data for SWR testing
 	if (preSeedCache !== undefined && cache) {

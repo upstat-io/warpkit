@@ -483,8 +483,6 @@ export type QueryEventEmitter = DataEventEmitter;
 export interface DataClientOptions {
 	/** Cache provider for storing fetched data */
 	cache?: CacheProvider;
-	/** Event emitter for invalidation subscriptions */
-	events?: DataEventEmitter;
 }
 
 /**

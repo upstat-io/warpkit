@@ -76,6 +76,7 @@ Built-in events emitted by WarpKit internals:
 | `auth:token-refreshed` | `void` | Auth adapter integration (not auto-emitted; adapters emit this via the `events` context passed during `initialize()`). |
 | `app:state-changed` | `{ from: string; to: string }` | State machine transitions |
 | `app:error` | `{ error: Error; context?: string }` | Error system |
+| `data:cache-invalidated` | `void` | `WarpKit.invalidateCache()` when `setAppState()` is called with `invalidate: true`. All active `useQuery` hooks refetch in response. |
 | `query:invalidated` | `{ key: string; params?: Record<string, string> }` | `useQuery` internals |
 | `query:fetched` | `{ key: string; fromCache: boolean }` | `useQuery` internals |
 

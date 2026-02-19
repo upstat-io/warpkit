@@ -161,6 +161,8 @@ export interface SetStateOptions {
 	state?: Record<string, unknown>;
 	/** Explicit navigation path (overrides state's dynamic default) */
 	path?: string;
+	/** Clear and re-scope DataClient cache (for same-state data boundary changes) */
+	invalidate?: boolean;
 }
 
 /**
@@ -459,8 +461,12 @@ export interface WarpKitConfig<TAppState extends string, TStateData = unknown> {
 	 * - Scope cache via scopeKey callback (if provided)
 	 */
 	data?: {
-		/** Data client with cache management support */
-		client: { clearCache(): Promise<void>; scopeCache(scope: string): void };
+		/** Data client with cache management and event wiring support */
+		client: {
+			clearCache(): Promise<void>;
+			scopeCache(scope: string): void;
+			setEvents(events: { on(event: string, handler: () => void | Promise<void>): () => void }): void;
+		};
 		/** Derive cache scope from state data. Return undefined to skip scoping. */
 		scopeKey?: (stateData: TStateData | undefined) => string | undefined;
 	};

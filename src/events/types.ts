@@ -47,6 +47,9 @@ export interface WarpKitEventRegistry extends EventRegistry {
 	'app:state-changed': { from: string; to: string };
 	'app:error': { error: Error; context?: string };
 
+	// Data events
+	'data:cache-invalidated': void;
+
 	// Query events (emitted by useQuery internally)
 	'query:invalidated': { key: string; params?: Record<string, string> };
 	'query:fetched': { key: string; fromCache: boolean };

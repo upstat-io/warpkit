@@ -41,9 +41,8 @@ new DataClient(config: DataClientConfig, options?: DataClientOptions)
   - `onRequest?: (request: Request) => Request | Promise<Request>` -- request interceptor for auth headers, etc.
 - `DataClientOptions` fields:
   - `cache?: CacheProvider` -- pluggable cache (default: `NoCacheProvider`)
-  - `events?: DataEventEmitter` -- event emitter for invalidation subscriptions
 
-**Construction side effect:** On construction, iterates all configured keys and subscribes to their `invalidateOn` events. Builds an internal `Map<event, DataKey[]>` and calls `invalidateByPrefix()` for affected keys when events fire. This ensures cache is cleared even when no component is mounted. Unsubscribe handles are stored in `eventUnsubscribes`.
+**Event wiring:** Events are NOT configured in the constructor. Call `setEvents()` to wire up event-driven cache invalidation. WarpKit does this automatically during construction when a DataClient is provided in the `data` config — sharing its own EventEmitter so all events (auth, data invalidation, consumer events) flow through one instance.
 
 **Public methods:**
 
@@ -58,7 +57,7 @@ new DataClient(config: DataClientConfig, options?: DataClientOptions)
 | `clearCache` | `clearCache() => Promise<void>` | Clears entire cache. |
 | `scopeCache` | `scopeCache(scope: string) => void` | Calls `cache.createScoped(scope)` if supported. Replaces internal cache reference. Used for per-user cache scoping. |
 | `setCache` | `setCache(cache: CacheProvider) => void` | Late injection of cache provider. |
-| `setEvents` | `setEvents(events: DataEventEmitter) => void` | Late injection of event emitter. |
+| `setEvents` | `setEvents(events: DataEventEmitter) => void` | Set event emitter and subscribe to invalidation events. Cleans up previous subscriptions before re-subscribing. WarpKit calls this automatically. |
 | `resolveUrl` | `resolveUrl(urlTemplate, params?) => string` | Supports string templates with `:param` placeholders (auto-encodes values via `encodeURIComponent`) and function URLs `(params) => string` (consumer handles encoding). Prepends `baseUrl`. Throws if required param is missing. |
 | `getKeyConfig` | `getKeyConfig<K>(key) => DataKeyConfig<K> \| undefined` | Returns config for hooks to inspect. |
 | `getEvents` | `getEvents() => DataEventEmitter \| null` | Returns event emitter for hooks. |
@@ -129,7 +128,7 @@ function useQuery<K extends DataKey>(options: UseQueryOptions<K>): QueryState<Da
 
 1. **Initial fetch effect** (`$effect`): Resolves `enabled` (supports getter functions for reactive behavior) and `params` synchronously inside the effect body for Svelte 5 dependency tracking. Calls `doFetch(resolvedParams)`. Cleanup aborts in-flight request.
 
-2. **Event subscription effect** (`$effect`): Subscribes to `invalidateOn` events from key config. When events fire, calls `doFetch(resolveParams())`. Cache is already cleared by DataClient's global subscription, so fetch will hit network. Cleanup unsubscribes all.
+2. **Event subscription effect** (`$effect`): Always subscribes to the global `data:cache-invalidated` event (for data boundary changes like tenant switching). Also subscribes to key-specific `invalidateOn` events from key config. When any event fires, calls `doFetch(resolveParams())`. Cleanup unsubscribes all.
 
 3. **Polling effect** (`$effect`): If `refetchInterval` is set and enabled, runs `setInterval` calling `doFetch` with `{ silent: true, invalidate: true }`. Silent mode skips setting `isLoading` (avoids UI flash). Invalidate mode clears cache before fetch. Cleanup clears interval.
 

@@ -209,6 +209,12 @@ export class WarpKit<TAppState extends string, TStateData = unknown> implements 
 
 		// Store provider registry for resolution in start()
 		this.providerRegistry = config.providers ?? {};
+
+		// Wire WarpKit's EventEmitter into the DataClient so all events
+		// (auth, data invalidation, consumer events) flow through one instance.
+		if (this.dataConfig?.client) {
+			this.dataConfig.client.setEvents(this.events);
+		}
 	}
 
 	// ============================================================================
@@ -373,21 +379,26 @@ export class WarpKit<TAppState extends string, TStateData = unknown> implements 
 
 		// Transition app state if different
 		if (this.stateMachine.getState() !== result.state) {
-			// Clear data cache on auth state transition (sign-out, user switch)
-			if (this.dataConfig?.client) {
-				await this.dataConfig.client.clearCache();
-			}
-
-			// Scope cache if callback provided and returns a value
-			if (this.dataConfig?.client && this.dataConfig.scopeKey) {
-				const scope = this.dataConfig.scopeKey(result.stateData ?? this.stateData);
-				if (scope) {
-					this.dataConfig.client.scopeCache(scope);
-				}
-			}
+			await this.invalidateCache();
 
 			await this.setAppState(result.state, result.stateData);
 		}
+	}
+
+	/**
+	 * Clear the DataClient cache and re-scope it using the current state data.
+	 */
+	private async invalidateCache(): Promise<void> {
+		if (!this.dataConfig?.client) return;
+
+		await this.dataConfig.client.clearCache();
+
+		const scope = this.dataConfig.scopeKey?.(this.stateData);
+		if (scope) {
+			this.dataConfig.client.scopeCache(scope);
+		}
+
+		this.events.emit('data:cache-invalidated');
 	}
 
 	/**
@@ -525,6 +536,11 @@ export class WarpKit<TAppState extends string, TStateData = unknown> implements 
 		// Update state data if provided
 		if (data !== undefined) {
 			this.updateStateData(data);
+		}
+
+		// Invalidate and re-scope cache when requested (same-state data boundary changes)
+		if (options?.invalidate) {
+			await this.invalidateCache();
 		}
 
 		// Queue if called before start()

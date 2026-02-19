@@ -199,21 +199,26 @@ export function useQuery<K extends DataKey>(options: UseQueryOptions<K>): QueryS
 		const events = client.getEvents();
 		if (!events) return;
 
-		const keyConfig = client.getKeyConfig(options.key);
-		const invalidateOn = keyConfig?.invalidateOn ?? [];
-		if (invalidateOn.length === 0) return;
-
 		// Only subscribe if enabled - evaluate inside $effect for reactivity
 		if (!isEnabled()) return;
 
-		// Subscribe to invalidation events — refetch when events fire.
-		// Cache is already cleared by DataClient's global subscription,
-		// so doFetch() will always hit the network.
-		const unsubscribes = invalidateOn.map((event) =>
-			events.on(event, () => {
+		// Always listen for global cache invalidation (e.g., data boundary change)
+		const unsubscribes: Array<() => void> = [
+			events.on('data:cache-invalidated', () => {
 				doFetch(resolveParams());
 			})
-		);
+		];
+
+		// Key-specific invalidation events
+		const keyConfig = client.getKeyConfig(options.key);
+		const invalidateOn = keyConfig?.invalidateOn ?? [];
+		for (const event of invalidateOn) {
+			unsubscribes.push(
+				events.on(event, () => {
+					doFetch(resolveParams());
+				})
+			);
+		}
 
 		// Cleanup: unsubscribe on unmount or re-run
 		return () => {
