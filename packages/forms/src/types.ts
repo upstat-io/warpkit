@@ -419,6 +419,18 @@ export interface FormState<T> {
 	 */
 	resetDirty(): void;
 
+	/**
+	 * Replace form values with a new entity.
+	 * Sets new initial values and current values, clears all errors,
+	 * warnings, touched, and dirty state. Use when the form component
+	 * stays mounted but the underlying entity changes (e.g., route
+	 * param change, list selection change).
+	 *
+	 * Unlike `reset()` which returns to the original initial values,
+	 * `replace()` establishes a new baseline entirely.
+	 */
+	replace(values: T): void;
+
 	// =========================================================================
 	// Lifecycle
 	// =========================================================================

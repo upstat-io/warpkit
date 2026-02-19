@@ -136,6 +136,7 @@ export function createMockForm<T extends object>(options: MockFormOptions<T> = {
 		// Form operations (no-ops by default)
 		submit: async () => {},
 		reset: () => {},
+		replace: () => {},
 		validate: async () => true,
 		validateField: async () => true,
 

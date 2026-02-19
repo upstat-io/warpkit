@@ -423,6 +423,41 @@ export function useForm<T extends object>(options: FormOptions<T>): FormState<T>
 		dirtyBaseline = JSON.parse(JSON.stringify(values)) as T;
 	}
 
+	/**
+	 * Replace form with a new entity's values.
+	 * Resets initial baseline, current values, and all state.
+	 */
+	function replace(newValues: T): void {
+		clearAllErrorTimers();
+
+		const cloned = JSON.parse(JSON.stringify(newValues)) as T;
+
+		// Update initial baseline (mutate in place)
+		for (const key of Object.keys(initial)) {
+			delete (initial as Record<string, unknown>)[key];
+		}
+		Object.assign(initial, cloned);
+
+		// Update current values (mutate in place to keep proxy valid)
+		for (const key of Object.keys(values)) {
+			delete (values as Record<string, unknown>)[key];
+		}
+		Object.assign(values, JSON.parse(JSON.stringify(newValues)) as T);
+
+		// Reset all state
+		errors = {};
+		warnings = {};
+		touched = {};
+		isSubmitting = false;
+		isValidating = false;
+		isSubmitted = false;
+		submitError = null;
+		submitCount = 0;
+
+		// Reset dirty baseline to match new values
+		dirtyBaseline = JSON.parse(JSON.stringify(values)) as T;
+	}
+
 	// =========================================================================
 	// Field Operations
 	// =========================================================================
@@ -645,6 +680,7 @@ export function useForm<T extends object>(options: FormOptions<T>): FormState<T>
 		},
 		submit,
 		reset,
+		replace,
 		validate,
 		validateField,
 		setField,

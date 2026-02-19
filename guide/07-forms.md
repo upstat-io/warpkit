@@ -625,6 +625,26 @@ async function handleSave(values: FormData) {
 }
 ```
 
+### replace(values: T)
+
+Replaces the form's initial values and current values entirely. Use when the form component stays mounted but the underlying entity changes — for example, when a route parameter changes and the same form should now edit a different record.
+
+Unlike `reset()` which returns to the original initial values, `replace()` establishes a new baseline. After calling `replace()`, subsequent `reset()` calls will return to the *replaced* values.
+
+```typescript
+// React to entity prop changes
+$effect(() => {
+  if (project && project.uuid !== lastProjectUuid) {
+    lastProjectUuid = project.uuid;
+    form.replace({
+      name: project.name,
+      alias: project.alias,
+      description: project.description,
+    });
+  }
+});
+```
+
 ### cleanup()
 
 Cleans up internal timers (error debounce timers). This is called automatically when the component unmounts (via `$effect`), so you typically don't need to call it manually. It remains available for edge cases where `useForm` is called outside a component context.
