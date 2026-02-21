@@ -147,6 +147,10 @@ export interface DataClientConfig {
 	timeout?: number;
 	/** Request interceptor for adding headers, auth, etc. */
 	onRequest?: (request: Request) => Request | Promise<Request>;
+	/** Auto-retry on HTTP 429 (Too Many Requests). Default: true. */
+	retryOn429?: boolean;
+	/** Max retry attempts for 429 responses. Default: 3. */
+	maxRetries?: number;
 }
 
 /**

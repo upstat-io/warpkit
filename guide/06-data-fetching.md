@@ -595,6 +595,8 @@ new DataClient(config: DataClientConfig, options?: DataClientOptions)
 | `baseUrl` | `string` | No | Base URL prepended to all data URLs |
 | `timeout` | `number` | No | Request timeout in ms (default: 30000) |
 | `onRequest` | `(request: Request) => Request \| Promise<Request>` | No | Request interceptor |
+| `retryOn429` | `boolean` | No | Auto-retry on HTTP 429 (default: `true`) |
+| `maxRetries` | `number` | No | Max retry attempts for 429 responses (default: `3`) |
 
 **DataClientOptions:**
 
@@ -692,9 +694,71 @@ interface CacheEntry<T = unknown> {
 
 Your cache implementation does not need to understand ETags or stale time -- it just stores and retrieves `CacheEntry` objects. The DataClient handles all the freshness and E-Tag logic internally.
 
-## Global Error Handling
+## Error Handling
 
-Handle errors globally through the `onRequest` interceptor or by wrapping the DataClient:
+### HttpError
+
+When a request fails (non-2xx response), DataClient throws an `HttpError` with the status code, status text, and parsed response body:
+
+```typescript
+import { HttpError } from '@warpkit/data';
+
+try {
+  await client.mutate('/monitors', { method: 'POST', body: input });
+} catch (error) {
+  if (error instanceof HttpError) {
+    console.log(error.status);       // 422
+    console.log(error.statusText);   // "Unprocessable Entity"
+    console.log(error.body);         // { message: "Validation failed", errors: [...] }
+    console.log(error.isRateLimited); // false
+  }
+}
+```
+
+In mutation callbacks:
+
+```typescript
+const createMonitor = useMutation({
+  mutationFn: (input) => client.mutate('/monitors', { method: 'POST', body: input }),
+  onError: (error) => {
+    if (error instanceof HttpError && error.isRateLimited) {
+      toast.error('Rate limited', 'Too many requests. Please try again later.');
+    } else {
+      toast.error('Failed', error.message);
+    }
+  }
+});
+```
+
+### Rate Limit Handling (429)
+
+DataClient automatically retries requests that receive HTTP 429 (Too Many Requests) responses. This is enabled by default.
+
+- Reads the `Retry-After` header to determine delay (supports seconds and HTTP-date formats)
+- Falls back to exponential backoff if no header: 1s, 2s, 4s (capped at 30s)
+- Retries up to 3 times by default
+- If all retries are exhausted, throws an `HttpError` with `status: 429`
+- Works for both queries (`fetch()`) and mutations (`mutate()`)
+
+```typescript
+// Disable 429 retry (not recommended)
+const client = new DataClient({
+  retryOn429: false,
+  // ...
+});
+
+// Custom max retries
+const client = new DataClient({
+  maxRetries: 5,
+  // ...
+});
+```
+
+During retry, mutations remain in `isPending` state, so UI buttons bound to `isPending` are automatically disabled.
+
+### Global Error Handling
+
+Handle errors globally through the `onRequest` interceptor:
 
 ```typescript
 const dataClient = new DataClient({
@@ -718,15 +782,13 @@ For 401 handling specifically, you can check for auth errors in mutation callbac
 ```typescript
 const updateMonitor = useMutation({
   mutationFn: async (input) => {
-    const response = await fetch(`/api/monitors/${input.id}`, {
-      method: 'PUT',
-      body: JSON.stringify(input)
-    });
-    if (response.status === 401) {
+    const client = getDataClient();
+    return client.mutate(`/monitors/${input.id}`, { method: 'PUT', body: input });
+  },
+  onError: (error) => {
+    if (error instanceof HttpError && error.status === 401) {
       warpkit.setState('unauthenticated');
-      throw new Error('Session expired');
     }
-    return response.json();
   }
 });
 ```

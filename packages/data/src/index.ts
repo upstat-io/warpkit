@@ -42,7 +42,7 @@ export type {
 export { DATA_CLIENT_CONTEXT, getDataClient } from './context.js';
 
 // Classes
-export { DataClient } from './DataClient.js';
+export { DataClient, HttpError } from './DataClient.js';
 export { NoCacheProvider } from './NoCacheProvider.js';
 
 // Components

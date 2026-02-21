@@ -20,6 +20,28 @@ import type {
 import { NoCacheProvider } from './NoCacheProvider';
 
 /**
+ * Error thrown when an HTTP request fails.
+ * Carries the status code and response body for programmatic handling.
+ */
+export class HttpError extends Error {
+	public readonly status: number;
+	public readonly statusText: string;
+	public readonly body: unknown;
+
+	constructor(status: number, statusText: string, body?: unknown) {
+		super(`HTTP ${status}: ${statusText}`);
+		this.name = 'HttpError';
+		this.status = status;
+		this.statusText = statusText;
+		this.body = body;
+	}
+
+	public get isRateLimited(): boolean {
+		return this.status === 429;
+	}
+}
+
+/**
  * Options for mutation execution.
  */
 export interface MutateOptions {
@@ -52,6 +74,8 @@ export class DataClient {
 	private cache: CacheProvider;
 	private events: DataEventEmitter | null;
 	private readonly timeout: number;
+	private readonly retryOn429: boolean;
+	private readonly maxRetries: number;
 	private eventUnsubscribes: Array<() => void> = [];
 
 	/**
@@ -69,6 +93,8 @@ export class DataClient {
 		this.cache = options?.cache ?? new NoCacheProvider();
 		this.events = null;
 		this.timeout = config.timeout ?? 30000;
+		this.retryOn429 = config.retryOn429 ?? true;
+		this.maxRetries = config.maxRetries ?? 3;
 	}
 
 	/**
@@ -164,7 +190,7 @@ export class DataClient {
 				request = await this.config.onRequest(request);
 			}
 
-			const response = await fetch(request);
+			const response = await this.fetchWithRetry(request);
 			clearTimeout(timeoutId);
 
 			// Handle 304 Not Modified
@@ -173,7 +199,8 @@ export class DataClient {
 			}
 
 			if (!response.ok) {
-				throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+				const body = await response.json().catch(() => undefined);
+				throw new HttpError(response.status, response.statusText, body);
 			}
 
 			const data = await response.json();
@@ -245,11 +272,12 @@ export class DataClient {
 				request = await this.config.onRequest(request);
 			}
 
-			const response = await fetch(request);
+			const response = await this.fetchWithRetry(request);
 			clearTimeout(timeoutId);
 
 			if (!response.ok) {
-				throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+				const body = await response.json().catch(() => undefined);
+				throw new HttpError(response.status, response.statusText, body);
 			}
 
 			// Handle 204 No Content
@@ -439,6 +467,50 @@ export class DataClient {
 		}
 
 		return (this.config.baseUrl ?? '') + url;
+	}
+
+	/**
+	 * Fetch with automatic retry on 429 (Too Many Requests).
+	 * Reads Retry-After header for delay, falls back to exponential backoff.
+	 */
+	private async fetchWithRetry(request: Request): Promise<Response> {
+		const maxAttempts = this.retryOn429 ? this.maxRetries : 0;
+
+		for (let attempt = 0; attempt <= maxAttempts; attempt++) {
+			const response = await fetch(attempt === 0 ? request : request.clone());
+
+			if (response.status !== 429 || attempt === maxAttempts) {
+				return response;
+			}
+
+			const retryAfter = this.parseRetryAfter(response.headers.get('Retry-After'));
+			const delay = retryAfter ?? Math.min(1000 * 2 ** attempt, 30_000);
+			await new Promise((resolve) => setTimeout(resolve, delay));
+		}
+
+		// Unreachable — loop always returns
+		throw new Error('Retry loop exhausted');
+	}
+
+	/**
+	 * Parse Retry-After header value.
+	 * Supports seconds (integer) and HTTP-date formats.
+	 * Returns delay in milliseconds, or undefined if unparseable.
+	 */
+	private parseRetryAfter(value: string | null): number | undefined {
+		if (!value) return undefined;
+
+		const seconds = Number(value);
+		if (!Number.isNaN(seconds)) {
+			return Math.max(0, seconds * 1000);
+		}
+
+		const date = Date.parse(value);
+		if (!Number.isNaN(date)) {
+			return Math.max(0, date - Date.now());
+		}
+
+		return undefined;
 	}
 
 	/**

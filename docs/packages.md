@@ -39,6 +39,8 @@ new DataClient(config: DataClientConfig, options?: DataClientOptions)
   - `baseUrl?: string` -- prepended to all URLs
   - `timeout?: number` -- fetch timeout in ms (default: 30000)
   - `onRequest?: (request: Request) => Request | Promise<Request>` -- request interceptor for auth headers, etc.
+  - `retryOn429?: boolean` -- auto-retry on HTTP 429 (default: `true`)
+  - `maxRetries?: number` -- max retry attempts for 429 responses (default: `3`)
 - `DataClientOptions` fields:
   - `cache?: CacheProvider` -- pluggable cache (default: `NoCacheProvider`)
 
@@ -48,8 +50,8 @@ new DataClient(config: DataClientConfig, options?: DataClientOptions)
 
 | Method | Signature | Behavior |
 |--------|-----------|----------|
-| `fetch` | `fetch<K>(key, params?) => Promise<FetchResult<unknown>>` | Resolves URL from config, checks cache freshness via `isFresh()` (compares `Date.now() - timestamp < staleTime`). If fresh, returns immediately. If stale with E-Tag, sends `If-None-Match` header. Handles 304 Not Modified by returning cached data. Stores response with E-Tag and `staleTime` from config. Uses `AbortController` with timeout. Applies `onRequest` interceptor. |
-| `mutate` | `mutate<T>(url, options: MutateOptions) => Promise<T>` | Sends POST/PUT/PATCH/DELETE with JSON body. Prepends `baseUrl`. Applies `onRequest` interceptor. Handles 204 No Content (returns `undefined`). Uses `AbortController` with timeout. |
+| `fetch` | `fetch<K>(key, params?) => Promise<FetchResult<unknown>>` | Resolves URL from config, checks cache freshness via `isFresh()` (compares `Date.now() - timestamp < staleTime`). If fresh, returns immediately. If stale with E-Tag, sends `If-None-Match` header. Handles 304 Not Modified by returning cached data. Stores response with E-Tag and `staleTime` from config. Uses `AbortController` with timeout. Applies `onRequest` interceptor. Auto-retries on 429 with `Retry-After` header or exponential backoff. Throws `HttpError` on failure. |
+| `mutate` | `mutate<T>(url, options: MutateOptions) => Promise<T>` | Sends POST/PUT/PATCH/DELETE with JSON body. Prepends `baseUrl`. Applies `onRequest` interceptor. Handles 204 No Content (returns `undefined`). Uses `AbortController` with timeout. Auto-retries on 429 with `Retry-After` header or exponential backoff. Throws `HttpError` on failure. |
 | `getQueryData` | `getQueryData<K>(key, params?) => Promise<DataType<K> \| undefined>` | Direct cache read for optimistic updates. |
 | `setQueryData` | `setQueryData<K>(key, data, params?) => Promise<void>` | Direct cache write for optimistic updates. Sets `timestamp: Date.now()` and copies `staleTime` from key config. |
 | `invalidate` | `invalidate(key, params?) => Promise<void>` | Deletes specific cache entry by exact key. |
@@ -94,7 +96,8 @@ declare module '@warpkit/data' {
 | `DataType<K>` | Extracts `data` field from registry entry, or entry itself | Query return type |
 | `MutationsConfig<K>` | Extracts `mutations` field, or `never` | Mutation type map |
 | `DataKeyConfig<K>` | `{ key, url, invalidateOn?, staleTime?, cache?, staleWhileRevalidate?, responseSchema? }` | Per-key configuration |
-| `DataClientConfig` | `{ keys, baseUrl?, timeout?, onRequest? }` | Client-level configuration |
+| `DataClientConfig` | `{ keys, baseUrl?, timeout?, onRequest?, retryOn429?, maxRetries? }` | Client-level configuration |
+| `HttpError` | `extends Error` with `status: number`, `statusText: string`, `body: unknown`, `isRateLimited: boolean` | Thrown on non-2xx responses. `isRateLimited` is `true` when `status === 429`. |
 | `CacheProvider` | `{ get, set, delete, deleteByPrefix, clear, createScoped? }` | Pluggable cache interface (async) |
 | `CacheEntry<T>` | `{ data: T, etag?, timestamp: number, staleTime? }` | Cached data envelope |
 | `FetchResult<T>` | `{ data: T, fromCache: boolean, notModified: boolean }` | Fetch response metadata |
@@ -179,7 +182,7 @@ Default no-op `CacheProvider` implementation. All methods are async no-ops. `get
 
 ### Exports (`src/index.ts`)
 
-Primary exports: all types, `DATA_CLIENT_CONTEXT`, `getDataClient`, `DataClient`, `NoCacheProvider`, `DataClientProvider`, `useData`, `useMutation`, `useQuery`.
+Primary exports: all types, `DATA_CLIENT_CONTEXT`, `getDataClient`, `DataClient`, `HttpError`, `NoCacheProvider`, `DataClientProvider`, `useData`, `useMutation`, `useQuery`.
 
 Deprecated re-exports: `QueryClient`, `QueryClientProvider`, all `Query*` type aliases.
 
