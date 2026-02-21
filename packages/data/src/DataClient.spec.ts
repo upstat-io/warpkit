@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach, afterAll } from 'vitest';
-import { DataClient } from './DataClient';
+import { DataClient, HttpError } from './DataClient';
 import type { CacheEntry, CacheProvider, DataClientConfig, DataEventEmitter } from './types';
 
 // Augment DataRegistry for tests
@@ -595,6 +595,186 @@ describe('DataClient', () => {
 				'monitors/:id?id=special%2Fvalue%26chars%3Dtest',
 				expect.any(Object)
 			);
+		});
+	});
+
+	describe('429 retry handling', () => {
+		const create429Response = (retryAfter?: string) => {
+			const headers = new Headers();
+			if (retryAfter !== undefined) {
+				headers.set('Retry-After', retryAfter);
+			}
+			return new Response(JSON.stringify({ message: 'Too Many Requests' }), {
+				status: 429,
+				statusText: 'Too Many Requests',
+				headers
+			});
+		};
+
+		it('should retry on 429 with Retry-After header', async () => {
+			const config = createTestConfig();
+			const client = new DataClient(config);
+
+			mockFetch
+				.mockResolvedValueOnce(create429Response('2'))
+				.mockResolvedValueOnce(createMockResponse([{ id: 1 }]));
+
+			const promise = client.fetch('monitors');
+			await vi.advanceTimersByTimeAsync(2000);
+			const result = await promise;
+
+			expect(result.data).toEqual([{ id: 1 }]);
+			expect(mockFetch).toHaveBeenCalledTimes(2);
+		});
+
+		it('should use exponential backoff when no Retry-After header', async () => {
+			const config = createTestConfig();
+			const client = new DataClient(config);
+
+			mockFetch
+				.mockResolvedValueOnce(create429Response())
+				.mockResolvedValueOnce(create429Response())
+				.mockResolvedValueOnce(createMockResponse([{ id: 1 }]));
+
+			const promise = client.fetch('monitors');
+			await vi.advanceTimersByTimeAsync(1000); // 1000 * 2^0 = 1000ms
+			await vi.advanceTimersByTimeAsync(2000); // 1000 * 2^1 = 2000ms
+			const result = await promise;
+
+			expect(result.data).toEqual([{ id: 1 }]);
+			expect(mockFetch).toHaveBeenCalledTimes(3);
+		});
+
+		it('should throw HttpError with isRateLimited after max retries exhausted', async () => {
+			const config = createTestConfig({ maxRetries: 2 });
+			const client = new DataClient(config);
+
+			mockFetch
+				.mockResolvedValueOnce(create429Response('1'))
+				.mockResolvedValueOnce(create429Response('1'))
+				.mockResolvedValueOnce(create429Response('1'));
+
+			const promise = client.fetch('monitors');
+			promise.catch(() => {}); // Prevent unhandled rejection warning during timer advancement
+
+			await vi.advanceTimersByTimeAsync(1000);
+			await vi.advanceTimersByTimeAsync(1000);
+
+			try {
+				await promise;
+				expect.unreachable('Should have thrown');
+			} catch (error) {
+				expect(error).toBeInstanceOf(HttpError);
+				expect((error as HttpError).isRateLimited).toBe(true);
+			}
+		});
+
+		it('should not retry when retryOn429 is false', async () => {
+			const config = createTestConfig({ retryOn429: false });
+			const client = new DataClient(config);
+
+			mockFetch.mockResolvedValueOnce(create429Response('1'));
+
+			await expect(client.fetch('monitors')).rejects.toThrow('HTTP 429: Too Many Requests');
+			expect(mockFetch).toHaveBeenCalledTimes(1);
+		});
+	});
+
+	describe('Retry-After parsing', () => {
+		const create429Response = (retryAfter?: string) => {
+			const headers = new Headers();
+			if (retryAfter !== undefined) {
+				headers.set('Retry-After', retryAfter);
+			}
+			return new Response(JSON.stringify({ message: 'Too Many Requests' }), {
+				status: 429,
+				statusText: 'Too Many Requests',
+				headers
+			});
+		};
+
+		it('should parse seconds format', async () => {
+			const config = createTestConfig();
+			const client = new DataClient(config);
+
+			mockFetch
+				.mockResolvedValueOnce(create429Response('5'))
+				.mockResolvedValueOnce(createMockResponse({ ok: true }));
+
+			const promise = client.fetch('monitors');
+			await vi.advanceTimersByTimeAsync(4999);
+			expect(mockFetch).toHaveBeenCalledTimes(1);
+			await vi.advanceTimersByTimeAsync(1);
+			const result = await promise;
+
+			expect(result.data).toEqual({ ok: true });
+			expect(mockFetch).toHaveBeenCalledTimes(2);
+		});
+
+		it('should parse HTTP-date format', async () => {
+			const config = createTestConfig();
+			const client = new DataClient(config);
+
+			const futureDate = new Date(Date.now() + 3000);
+			mockFetch
+				.mockResolvedValueOnce(create429Response(futureDate.toUTCString()))
+				.mockResolvedValueOnce(createMockResponse({ ok: true }));
+
+			const promise = client.fetch('monitors');
+			await vi.advanceTimersByTimeAsync(3000);
+			const result = await promise;
+
+			expect(result.data).toEqual({ ok: true });
+			expect(mockFetch).toHaveBeenCalledTimes(2);
+		});
+	});
+
+	describe('HttpError', () => {
+		it('should carry status, statusText, and body', async () => {
+			const config = createTestConfig({ retryOn429: false });
+			const client = new DataClient(config);
+			const errorBody = { message: 'Rate limit exceeded', retryAfter: 30 };
+
+			mockFetch.mockResolvedValueOnce(
+				new Response(JSON.stringify(errorBody), {
+					status: 429,
+					statusText: 'Too Many Requests'
+				})
+			);
+
+			try {
+				await client.fetch('monitors');
+				expect.unreachable('Should have thrown');
+			} catch (error) {
+				expect(error).toBeInstanceOf(HttpError);
+				const httpError = error as HttpError;
+				expect(httpError.status).toBe(429);
+				expect(httpError.statusText).toBe('Too Many Requests');
+				expect(httpError.body).toEqual(errorBody);
+			}
+		});
+
+		it('should return isRateLimited true for 429, false for others', async () => {
+			const config = createTestConfig({ retryOn429: false });
+			const client = new DataClient(config);
+
+			mockFetch.mockResolvedValueOnce(
+				new Response('{}', { status: 429, statusText: 'Too Many Requests' })
+			);
+			try {
+				await client.fetch('monitors');
+			} catch (error) {
+				expect((error as HttpError).isRateLimited).toBe(true);
+			}
+
+			mockFetch.mockResolvedValueOnce(
+				new Response('Server Error', { status: 500, statusText: 'Internal Server Error' })
+			);
+			try {
+				await client.fetch('monitors');
+			} catch (error) {
+				expect((error as HttpError).isRateLimited).toBe(false);
+			}
 		});
 	});
 
