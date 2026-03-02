@@ -34,6 +34,7 @@ import type { Snippet } from 'svelte';
 import type { WarpKit } from '../context';
 import WarpKitProvider from './WarpKitProvider.svelte';
 import ErrorOverlay from '../errors/ErrorOverlay.svelte';
+import { errorStore } from '../errors/error-store.svelte.js';
 
 interface Props {
 	/** The WarpKit instance to provide */
@@ -48,15 +49,33 @@ interface Props {
 }
 
 let { warpkit, children, loading }: Props = $props();
+
+/**
+ * Handle errors caught by svelte:boundary.
+ * Catches Svelte 5 internal errors (effect_update_depth_exceeded, render errors,
+ * $derived failures) that are swallowed by Svelte's runtime and never reach
+ * window.onerror or window.onunhandledrejection.
+ */
+function handleBoundaryError(error: unknown) {
+	const err = error instanceof Error ? error : new Error(String(error));
+	errorStore.setError(err, {
+		source: 'global',
+		severity: 'error',
+		context: { svelteBoundary: true },
+		showUI: true
+	});
+}
 </script>
 
 <!-- ErrorOverlay outside WarpKitProvider for resilience -->
 <ErrorOverlay />
 
-{#if warpkit.ready}
-	<WarpKitProvider {warpkit}>
-		{@render children()}
-	</WarpKitProvider>
-{:else if loading}
-	{@render loading()}
-{/if}
+<svelte:boundary onerror={handleBoundaryError}>
+	{#if warpkit.ready}
+		<WarpKitProvider {warpkit}>
+			{@render children()}
+		</WarpKitProvider>
+	{:else if loading}
+		{@render loading()}
+	{/if}
+</svelte:boundary>
