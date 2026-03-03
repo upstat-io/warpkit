@@ -280,14 +280,8 @@ export interface QueryState<T> {
  * Configuration for useData hook.
  */
 export interface UseDataConfig<K extends DataKey> {
-	/** URL or function that builds URL from params */
-	url: string | ((params: Record<string, string>) => string);
-	/** Time in ms before data is considered stale */
-	staleTime?: number;
 	/** Event names that trigger cache invalidation */
 	invalidateOn?: string[];
-	/** Mutation configurations keyed by mutation name */
-	mutations?: Record<string, MutationConfig>;
 	/** Whether the query is enabled (default: true). Can be boolean or getter function. */
 	enabled?: boolean | (() => boolean);
 }
@@ -322,23 +316,9 @@ export interface MutationHandle<TInput, TOutput> {
 }
 
 /**
- * Return type of useData hook - combines query state with typed mutations.
- *
- * @example
- * const monitors = useData('monitors', config);
- *
- * // Query state at root level
- * monitors.data              // Monitor[]
- * monitors.isLoading         // boolean
- * monitors.error             // Error | null
- * monitors.refetch()         // manual refetch
- *
- * // Mutations as callable handles
- * monitors.create(input)     // Promise<Monitor>
- * monitors.create.isPending  // boolean
- * monitors.create.error      // Error | null
+ * Reactive query state returned by useData (same shape as QueryState).
  */
-export type DataState<K extends DataKey> = {
+export interface DataState<K extends DataKey> {
 	/** The fetched data, undefined while loading */
 	readonly data: DataType<K> | undefined;
 	/** True while initial fetch is in progress */
@@ -353,12 +333,7 @@ export type DataState<K extends DataKey> = {
 	readonly isError: boolean;
 	/** Manually trigger a refetch */
 	refetch: () => Promise<void>;
-} & {
-	/** Mutations as typed callable handles */
-	[M in keyof MutationsConfig<K>]: MutationsConfig<K>[M] extends MutationDef<infer TInput, infer TOutput>
-		? MutationHandle<TInput, TOutput>
-		: never;
-};
+}
 
 // ============================================================================
 // Hook Options

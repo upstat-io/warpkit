@@ -1,7 +1,7 @@
 import { resolve } from 'node:path';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { playwright } from '@vitest/browser-playwright';
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 
 const root = import.meta.dirname;
 
@@ -29,6 +29,7 @@ export default defineConfig({
 	},
 	test: {
 		include: ['__browser_tests__/**/*.svelte.test.ts', 'packages/**/*.svelte.test.ts'],
+		exclude: [...configDefaults.exclude],
 		testTimeout: 1000,
 		browser: {
 			enabled: true,

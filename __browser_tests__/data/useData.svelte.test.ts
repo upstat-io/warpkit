@@ -259,6 +259,85 @@ describe('useData', () => {
 		});
 	});
 
+	describe('3-layer event invalidation', () => {
+		it('should refetch when data:cache-invalidated is emitted', async () => {
+			const screen = render(UseDataTestWrapper, {
+				props: { dataKey: 'monitors', mockData: [{ id: '1' }] }
+				// no invalidateOn at all
+			});
+			await expect.element(screen.getByTestId('loading')).toHaveTextContent('false');
+			await expect.element(screen.getByTestId('fetch-count')).toHaveTextContent('1');
+
+			await screen.getByTestId('emit-global-invalidation').click();
+
+			await expect.element(screen.getByTestId('fetch-count')).toHaveTextContent('2');
+		});
+
+		it('should refetch when key-config invalidateOn event fires', async () => {
+			const screen = render(UseDataTestWrapper, {
+				props: {
+					dataKey: 'monitors',
+					mockData: [{ id: '1' }],
+					keyConfigInvalidateOn: ['monitor:created']
+					// no call-site invalidateOn
+				}
+			});
+			await expect.element(screen.getByTestId('loading')).toHaveTextContent('false');
+			await expect.element(screen.getByTestId('fetch-count')).toHaveTextContent('1');
+
+			await screen.getByTestId('emit-invalidation').click(); // emits monitor:created
+
+			await expect.element(screen.getByTestId('fetch-count')).toHaveTextContent('2');
+		});
+
+		it('should clear fresh cache when call-site invalidateOn event fires', async () => {
+			const screen = render(UseDataTestWrapper, {
+				props: {
+					dataKey: 'monitors',
+					mockData: [{ id: '1' }],
+					staleTime: 60000, // cache stays "fresh"
+					callSiteInvalidateOn: ['refresh'] // NOT in key config
+				}
+			});
+			await expect.element(screen.getByTestId('loading')).toHaveTextContent('false');
+			await expect.element(screen.getByTestId('fetch-count')).toHaveTextContent('1');
+
+			await screen.getByTestId('emit-invalidation').click(); // emits 'refresh'
+
+			// Must be 2 — proving cache was invalidated and network was hit
+			await expect.element(screen.getByTestId('fetch-count')).toHaveTextContent('2');
+		});
+
+		it('should report fetch errors to the error channel', async () => {
+			const screen = render(UseDataTestWrapper, {
+				props: {
+					dataKey: 'monitors',
+					mockError: new Error('Server error')
+				}
+			});
+			await expect.element(screen.getByTestId('error')).toHaveTextContent('Server error');
+			// Error channel assertion via wrapper's error-reported testid
+			await expect.element(screen.getByTestId('error-reported')).toHaveTextContent('true');
+		});
+
+		it('should not double-refetch when event is in both key-config and call-site', async () => {
+			const screen = render(UseDataTestWrapper, {
+				props: {
+					dataKey: 'monitors',
+					mockData: [{ id: '1' }],
+					invalidateOn: ['monitor:created'] // puts event in BOTH key-config and call-site
+				}
+			});
+			await expect.element(screen.getByTestId('loading')).toHaveTextContent('false');
+			await expect.element(screen.getByTestId('fetch-count')).toHaveTextContent('1');
+
+			await screen.getByTestId('emit-invalidation').click(); // emits monitor:created
+
+			// Should be exactly 2 (initial + one refetch), NOT 3
+			await expect.element(screen.getByTestId('fetch-count')).toHaveTextContent('2');
+		});
+	});
+
 	describe('event invalidation', () => {
 		it('should refetch when invalidation event is emitted', async () => {
 			const screen = render(UseDataTestWrapper, {

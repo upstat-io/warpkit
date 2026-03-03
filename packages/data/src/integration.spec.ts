@@ -136,6 +136,37 @@ describe('DataClient + ETagCacheProvider Integration', () => {
 			expect(request.headers.get('If-None-Match')).toBe('"abc123"');
 		});
 
+		it('should refresh cache timestamp on 304 so entry stays fresh', async () => {
+			const testData = [{ id: '1', name: 'Monitor 1' }];
+
+			// Pre-populate cache with stale data (timestamp in past, staleTime expired)
+			await cache.set('test:monitors', {
+				data: testData,
+				etag: '"abc123"',
+				timestamp: Date.now() - 10000, // 10 seconds ago
+				staleTime: 5000 // Stale after 5 seconds
+			});
+
+			// Server returns 304 Not Modified
+			mockFetch.mockResolvedValueOnce({
+				ok: true,
+				status: 304,
+				headers: new Headers()
+			});
+
+			// First fetch — revalidates with server, gets 304
+			const result = await client.fetch('test:monitors');
+			expect(result.fromCache).toBe(true);
+			expect(result.notModified).toBe(true);
+			expect(mockFetch).toHaveBeenCalledTimes(1);
+
+			// Second fetch — should hit cache (not network) because timestamp was refreshed
+			const result2 = await client.fetch('test:monitors');
+			expect(result2.data).toEqual(testData);
+			expect(result2.fromCache).toBe(true);
+			expect(mockFetch).toHaveBeenCalledTimes(1); // No additional network call
+		});
+
 		it('should update cache when server returns new data', async () => {
 			const oldData = [{ id: '1', name: 'Old Name' }];
 			const newData = [{ id: '1', name: 'New Name' }];
@@ -246,11 +277,9 @@ describe('DataClient + ETagCacheProvider Integration', () => {
 
 	describe('error handling', () => {
 		it('should not cache failed responses', async () => {
-			mockFetch.mockResolvedValueOnce({
-				ok: false,
-				status: 500,
-				statusText: 'Internal Server Error'
-			});
+			mockFetch.mockResolvedValueOnce(
+				new Response('Internal Server Error', { status: 500, statusText: 'Internal Server Error' })
+			);
 
 			// Fetch should throw
 			await expect(client.fetch('test:monitors')).rejects.toThrow('HTTP 500');

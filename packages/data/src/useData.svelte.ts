@@ -6,61 +6,35 @@
  */
 
 import { getDataClient } from './context';
+import { reportError } from '@warpkit/errors';
 import type {
 	DataKey,
 	DataState,
 	DataType,
-	MutationConfig,
-	MutationHandle,
-	MutationsConfig,
 	UseDataConfig
 } from './types';
 
 /**
- * Combined query and mutations hook for Svelte 5.
+ * Query hook with call-site invalidation and enabled config for Svelte 5.
  *
- * Fetches data via DataClient and provides type-safe mutations.
- * Mutations automatically invalidate the query after success.
+ * Fetches data via DataClient with optional call-site `invalidateOn` events
+ * and `enabled` flag on top of the key config.
+ *
+ * For mutations, use `useMutation` instead.
  *
  * @param key - The data key for the query
- * @param config - Configuration including URL, staleTime, and mutations
- * @returns Combined query state with typed mutation handles
+ * @param config - Call-site configuration (invalidateOn, enabled)
+ * @returns Reactive query state
  *
  * @example
- * // Define registry types
- * declare module '@warpkit/data' {
- *   interface DataRegistry {
- *     monitors: {
- *       data: Monitor[];
- *       mutations: {
- *         create: { input: CreateMonitorInput; output: Monitor };
- *         update: { input: UpdateMonitorInput; output: Monitor };
- *         remove: { input: string; output: void };
- *       };
- *     };
- *   }
- * }
- *
- * // Create the hook
- * export const useMonitors = () => useData('monitors', {
- *   url: '/monitors',
- *   mutations: {
- *     create: { method: 'POST' },
- *     update: { method: 'PUT', url: (input) => `/monitors/${input.id}` },
- *     remove: { method: 'DELETE', url: (input) => `/monitors/${input}` }
- *   }
+ * const monitors = useData('monitors', {
+ *   invalidateOn: ['monitor:created'],
+ *   enabled: () => !!userId
  * });
  *
- * // Use in component
- * const monitors = useMonitors();
- *
- * // Query state
- * monitors.data              // Monitor[]
- * monitors.isLoading         // boolean
- *
- * // Mutations
- * await monitors.create({ name: 'New Monitor' });
- * monitors.create.isPending  // boolean
+ * monitors.data       // Monitor[]
+ * monitors.isLoading  // boolean
+ * monitors.refetch()  // manual refetch
  */
 export function useData<K extends DataKey>(key: K, config: UseDataConfig<K>): DataState<K> {
 	const client = getDataClient();
@@ -101,7 +75,7 @@ export function useData<K extends DataKey>(key: K, config: UseDataConfig<K>): Da
 	 *
 	 * @param opts.swr - Pre-populate from cache before network fetch (stale-while-revalidate)
 	 */
-	async function doFetch(opts?: { swr?: boolean }): Promise<void> {
+	async function doFetch(opts?: { swr?: boolean; invalidate?: boolean }): Promise<void> {
 		// Increment fetch ID to track this specific fetch
 		const currentFetchId = ++fetchId;
 
@@ -129,13 +103,18 @@ export function useData<K extends DataKey>(key: K, config: UseDataConfig<K>): Da
 			}
 		}
 
+		// Clear cache before fetching to ensure fresh data from network
+		if (opts?.invalidate) {
+			await client.invalidate(key);
+		}
+
 		try {
 			// Use client.fetch with the key (same as useQuery)
 			const result = await client.fetch(key);
 
 			// Only update state if this is still the current fetch
 			if (currentFetchId === fetchId) {
-				data = result.data as DataType<K>;
+				data = result.data;
 			}
 		} catch (e) {
 			// Only update error if this is still the current fetch
@@ -150,6 +129,11 @@ export function useData<K extends DataKey>(key: K, config: UseDataConfig<K>): Da
 					return;
 				}
 				error = e instanceof Error ? e : new Error(String(e));
+				reportError('data:query', error, {
+					handledLocally: true,
+					showUI: false,
+					context: { key }
+				});
 			}
 		} finally {
 			// Only update loading if this is still the current fetch
@@ -180,37 +164,49 @@ export function useData<K extends DataKey>(key: K, config: UseDataConfig<K>): Da
 		};
 	});
 
-	// Event subscription effect (same as useQuery but uses captured config)
+	// Event subscription effect (matches useQuery's 3-layer pattern)
 	$effect(() => {
 		const events = client.getEvents();
 		if (!events) return;
-
-		if (configInvalidateOn.length === 0) return;
-
-		// Only subscribe if enabled - evaluate inside $effect for reactivity
 		if (!isEnabled()) return;
 
-		// Subscribe to invalidation events — refetch when events fire.
-		// Cache is already cleared by DataClient's global subscription,
-		// so doFetch() will always hit the network.
-		const unsubscribes = configInvalidateOn.map((event) =>
-			events.on(event, () => {
+		// Layer 1: Global cache invalidation (e.g., data boundary change)
+		const unsubscribes: Array<() => void> = [
+			events.on('data:cache-invalidated', () => {
 				doFetch();
 			})
-		);
+		];
 
-		// Cleanup: unsubscribe on unmount or re-run
+		// Layer 2: Key-config invalidation events
+		const keyConfig = client.getKeyConfig(key);
+		const keyInvalidateOn = keyConfig?.invalidateOn ?? [];
+		for (const event of keyInvalidateOn) {
+			unsubscribes.push(
+				events.on(event, () => {
+					doFetch();
+				})
+			);
+		}
+
+		// Layer 3: Call-site invalidation events (additive, deduped against key-config)
+		const keyEventSet = new Set(keyInvalidateOn);
+		for (const event of configInvalidateOn) {
+			if (keyEventSet.has(event)) continue; // already subscribed via key-config
+			unsubscribes.push(
+				events.on(event, () => {
+					doFetch({ invalidate: true });
+				})
+			);
+		}
+
 		return () => {
 			unsubscribes.forEach((unsub) => unsub());
 		};
 	});
 
-	// Mutations are disabled for now - will add back after basic tests pass
-	const mutations: Record<string, MutationHandle<unknown, unknown>> = {};
-
 	// Return object with getters for Svelte 5 reactivity (same as useQuery)
 	// IMPORTANT: Do NOT destructure $state - use getters to maintain reactivity
-	const result = {
+	return {
 		get data() {
 			return data;
 		},
@@ -230,17 +226,5 @@ export function useData<K extends DataKey>(key: K, config: UseDataConfig<K>): Da
 			return isSuccess;
 		},
 		refetch: () => doFetch()
-	};
-
-	// Add mutation handles
-	for (const [name, handle] of Object.entries(mutations)) {
-		Object.defineProperty(result, name, {
-			get() {
-				return handle;
-			},
-			enumerable: true
-		});
-	}
-
-	return result as DataState<K>;
+	} satisfies DataState<K>;
 }

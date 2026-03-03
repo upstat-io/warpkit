@@ -151,7 +151,7 @@ export class DataClient {
 	public async fetch<K extends DataKey>(
 		key: K,
 		params?: Record<string, string>
-	): Promise<FetchResult<unknown>> {
+	): Promise<FetchResult<DataType<K>>> {
 		const keyConfig = this.config.keys[key];
 		if (!keyConfig) {
 			throw new Error(`Unknown data key: ${key}`);
@@ -160,11 +160,11 @@ export class DataClient {
 		const url = this.resolveUrl(keyConfig.url, params);
 		const useCache = keyConfig.cache !== false;
 
-		let cached: CacheEntry<unknown> | undefined = undefined;
+		let cached: CacheEntry<DataType<K>> | undefined = undefined;
 
 		if (useCache) {
 			const cacheKey = this.buildCacheKey(key, params);
-			cached = await this.cache.get<unknown>(cacheKey);
+			cached = await this.cache.get<DataType<K>>(cacheKey);
 
 			// If we have fresh cached data, return it immediately
 			if (cached && this.isFresh(cached)) {
@@ -195,11 +195,15 @@ export class DataClient {
 
 			// Handle 304 Not Modified
 			if (useCache && response.status === 304 && cached) {
+				const cacheKey = this.buildCacheKey(key, params);
+				await this.cache.set(cacheKey, { ...cached, timestamp: Date.now() });
 				return { data: cached.data, fromCache: true, notModified: true };
 			}
 
 			if (!response.ok) {
-				const body = await response.json().catch(() => undefined);
+				const body = typeof response.json === 'function'
+					? await response.json().catch(() => undefined)
+					: undefined;
 				throw new HttpError(response.status, response.statusText, body);
 			}
 
@@ -276,7 +280,9 @@ export class DataClient {
 			clearTimeout(timeoutId);
 
 			if (!response.ok) {
-				const body = await response.json().catch(() => undefined);
+				const body = typeof response.json === 'function'
+					? await response.json().catch(() => undefined)
+					: undefined;
 				throw new HttpError(response.status, response.statusText, body);
 			}
 

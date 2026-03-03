@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 
 export default defineConfig({
 	resolve: {
@@ -17,6 +17,7 @@ export default defineConfig({
 	test: {
 		include: ['src/**/*.spec.ts', 'packages/**/*.spec.ts'],
 		exclude: [
+			...configDefaults.exclude,
 			'**/*.svelte.test.ts',
 			'**/*.browser.spec.ts',
 			'src/**/__tests__/**/*.spec.ts', // Bun tests use bun:test, not vitest

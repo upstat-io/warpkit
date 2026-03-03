@@ -13,7 +13,6 @@
 	// The key must be registered in the wrapper's DataClientConfig
 	// Pass invalidateOn through the config (not just rely on DataClient key config)
 	const queryResult = useData(dataKey as DataKey, {
-		url: `/${dataKey}`,
 		invalidateOn: invalidateOn.length > 0 ? invalidateOn : undefined
 	});
 

@@ -128,7 +128,7 @@ export function useQuery<K extends DataKey>(options: UseQueryOptions<K>): QueryS
 
 			// Only update state if this is still the current fetch
 			if (currentFetchId === fetchId) {
-				data = result.data as DataType<K>;
+				data = result.data;
 			}
 		} catch (e) {
 			// Only update error if this is still the current fetch

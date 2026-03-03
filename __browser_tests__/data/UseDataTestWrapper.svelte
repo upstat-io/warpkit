@@ -6,6 +6,7 @@
 	import UseDataTestConsumer from './UseDataTestConsumer.svelte';
 	import { EventEmitter } from '../../src/events/EventEmitter.js';
 	import type { WarpKitEventRegistry } from '../../src/events/types.js';
+	import { onErrorReport } from '../../packages/errors/src/channel.js';
 
 	/** Simple in-memory cache for testing cache + invalidation behavior */
 	class MemoryCache implements CacheProvider {
@@ -24,6 +25,8 @@
 		mockError?: Error | null;
 		mockDelay?: number;
 		invalidateOn?: string[];
+		keyConfigInvalidateOn?: string[];
+		callSiteInvalidateOn?: string[];
 		staleTime?: number;
 		staleWhileRevalidate?: boolean;
 		preSeedCache?: unknown;
@@ -36,12 +39,15 @@
 		mockError = null,
 		mockDelay = 0,
 		invalidateOn = [],
+		keyConfigInvalidateOn = [],
+		callSiteInvalidateOn = [],
 		staleTime = 0,
 		staleWhileRevalidate,
 		preSeedCache
 	}: Props = $props();
 
 	let fetchCount = $state(0);
+	let errorReported = $state(false);
 
 	// Create event emitter for testing invalidation
 	const events = new EventEmitter<WarpKitEventRegistry>();
@@ -53,6 +59,11 @@
 		}
 	};
 
+	// Build key-config invalidateOn from keyConfigInvalidateOn + invalidateOn (legacy compat)
+	const keyConfigEvents = [...keyConfigInvalidateOn, ...invalidateOn];
+	// Build call-site invalidateOn from callSiteInvalidateOn + invalidateOn (legacy compat)
+	const callSiteEvents = [...callSiteInvalidateOn, ...invalidateOn];
+
 	// Create config with test key (include staleTime and staleWhileRevalidate if provided)
 	const config: DataClientConfig = {
 		baseUrl: 'http://localhost/api',
@@ -60,7 +71,7 @@
 			[dataKey]: {
 				key: dataKey,
 				url: `/${dataKey}`,
-				invalidateOn: invalidateOn.length > 0 ? invalidateOn : undefined,
+				invalidateOn: keyConfigEvents.length > 0 ? keyConfigEvents : undefined,
 				...(staleTime > 0 ? { staleTime } : {}),
 				...(staleWhileRevalidate !== undefined ? { staleWhileRevalidate } : {})
 			}
@@ -123,13 +134,29 @@
 		};
 	});
 
+	// Subscribe to error channel for error-reported testid
+	$effect(() => {
+		const unsubscribe = onErrorReport(() => {
+			errorReported = true;
+		});
+		return () => {
+			unsubscribe();
+		};
+	});
+
 	// Provide context
 	setContext(DATA_CLIENT_CONTEXT, client);
 
 	function emitInvalidationEvent() {
-		if (invalidateOn.length > 0) {
-			events.emit(invalidateOn[0] as keyof WarpKitEventRegistry, {} as never);
+		// Emit the first event from whichever invalidation prop is set
+		const event = callSiteInvalidateOn[0] ?? keyConfigInvalidateOn[0] ?? invalidateOn[0];
+		if (event) {
+			events.emit(event as keyof WarpKitEventRegistry, {} as never);
 		}
+	}
+
+	function emitGlobalInvalidation() {
+		events.emit('data:cache-invalidated' as keyof WarpKitEventRegistry, {} as never);
 	}
 
 	function toggleComponent() {
@@ -142,10 +169,12 @@
 </script>
 
 {#if showComponent}
-	<UseDataTestConsumer {dataKey} {invalidateOn} />
+	<UseDataTestConsumer {dataKey} invalidateOn={callSiteEvents} />
 {/if}
 
 <div data-testid="fetch-count">{fetchCount}</div>
+<div data-testid="error-reported">{errorReported}</div>
 <button data-testid="emit-invalidation" onclick={emitInvalidationEvent}>Emit Invalidation</button>
+<button data-testid="emit-global-invalidation" onclick={emitGlobalInvalidation}>Emit Global Invalidation</button>
 <button data-testid="toggle-component" onclick={toggleComponent}>Toggle</button>
 <button data-testid="reset-fetch-count" onclick={resetFetchCount}>Reset Fetch Count</button>

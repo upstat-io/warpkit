@@ -427,15 +427,13 @@ Now use it in the dashboard. Update `src/routes/authenticated/Dashboard.svelte`:
 <!-- src/routes/authenticated/Dashboard.svelte -->
 <script lang="ts">
   import { useWarpKit, usePage, Link } from '@upstat/warpkit';
-  import { useData } from '@warpkit/data';
+  import { useQuery } from '@warpkit/data';
 
   const warpkit = useWarpKit();
 
   // Fetch projects -- this hooks into the DataClient's caching layer.
   // The data will be cached and reused until staleTime expires.
-  const projects = useData('projects', {
-    url: '/projects'
-  });
+  const projects = useQuery({ key: 'projects' });
 
   function handleLogout() {
     warpkit.setState('unauthenticated');
@@ -469,7 +467,7 @@ Now use it in the dashboard. Update `src/routes/authenticated/Dashboard.svelte`:
 </nav>
 ```
 
-`useData` returns a reactive object with `data`, `error`, `isLoading`, `isError`, `isSuccess`, and a `refetch` function. You should not destructure this object -- access properties through the reference to maintain Svelte 5 reactivity.
+`useQuery` returns a reactive object with `data`, `error`, `isLoading`, `isError`, `isSuccess`, and a `refetch` function. You should not destructure this object -- access properties through the reference to maintain Svelte 5 reactivity.
 
 **Compared to other frameworks:** If you have used TanStack Query (React Query), the API will feel familiar. The key difference is that WarpKit's data layer is config-driven: you define keys, URLs, and cache settings upfront in the DataClient, and the hooks reference those keys. This centralization makes it easy to see all your data dependencies in one place.
 

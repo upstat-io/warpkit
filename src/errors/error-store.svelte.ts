@@ -169,7 +169,11 @@ class ErrorStore {
 	subscribe(callback: Subscriber): () => void {
 		this._subscribers.add(callback);
 		// Immediately call with current state
-		callback(this._getState());
+		try {
+			callback(this._getState());
+		} catch (e) {
+			console.error('ErrorStore subscriber threw during initial call:', e);
+		}
 		// Return unsubscribe function
 		return () => {
 			this._subscribers.delete(callback);
@@ -204,7 +208,11 @@ class ErrorStore {
 	private _notify(): void {
 		const state = this._getState();
 		for (const subscriber of this._subscribers) {
-			subscriber(state);
+			try {
+				subscriber(state);
+			} catch (e) {
+				console.error('ErrorStore subscriber threw:', e);
+			}
 		}
 	}
 }

@@ -242,6 +242,45 @@ describe('errorStore', () => {
 	});
 });
 
+describe('subscriber isolation', () => {
+	beforeEach(() => {
+		errorStore.clearHistory();
+	});
+
+	it('should not prevent other subscribers from being notified when one throws', () => {
+		const results: string[] = [];
+
+		errorStore.subscribe(() => {
+			results.push('first');
+		});
+		errorStore.subscribe(() => {
+			throw new Error('subscriber exploded');
+		});
+		errorStore.subscribe(() => {
+			results.push('third');
+		});
+
+		// Clear the results from initial subscribe calls
+		results.length = 0;
+
+		// Trigger a notification
+		errorStore.setError('test error');
+
+		expect(results).toEqual(['first', 'third']);
+	});
+
+	it('should return unsubscribe function even when initial callback throws', () => {
+		const unsubscribe = errorStore.subscribe(() => {
+			throw new Error('initial call exploded');
+		});
+
+		expect(typeof unsubscribe).toBe('function');
+
+		// Should not throw when calling unsubscribe
+		expect(() => unsubscribe()).not.toThrow();
+	});
+});
+
 describe('derived values', () => {
 	beforeEach(() => {
 		errorStore.clearHistory();

@@ -46,6 +46,14 @@
 		initialState: 'ready',
 		providers: {
 			browser: memoryProvider
+		},
+		onError: (error) => {
+			errorStore.setError(error.cause ?? new Error(error.message), {
+				source: 'router',
+				severity: 'error',
+				showUI: true,
+				context: { code: error.code, requestedPath: error.requestedPath }
+			});
 		}
 	});
 

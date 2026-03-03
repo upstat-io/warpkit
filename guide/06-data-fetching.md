@@ -239,27 +239,20 @@ const monitors = useQuery({
 });
 ```
 
-## useData -- The Combined Hook
+## useData -- Query Hook with Call-Site Config
 
-`useData` combines query fetching with integrated mutation support. It is the higher-level hook that most application code should use:
+`useData` is a query hook that adds call-site `invalidateOn` and `enabled` config on top of the DataClient's key configuration. It returns the same query state as `useQuery`. For mutations, use `useMutation` (see below).
 
 ```svelte
 <script lang="ts">
   import { useData } from '@warpkit/data';
 
   const monitors = useData('monitors', {
-    url: '/monitors',
-    staleTime: 30000,
     invalidateOn: ['monitor:created', 'monitor:deleted'],
-    mutations: {
-      create: { method: 'POST' },
-      update: { method: 'PUT', url: (input) => `/monitors/${input.id}` },
-      remove: { method: 'DELETE', url: (input) => `/monitors/${input}` }
-    }
+    enabled: () => !!userId
   });
 </script>
 
-<!-- Query state -->
 {#if monitors.isLoading}
   <LoadingSkeleton />
 {:else}
@@ -269,16 +262,13 @@ const monitors = useQuery({
 {/if}
 ```
 
-The `useData` hook returns the same query state properties as `useQuery` (`data`, `isLoading`, `isError`, `isSuccess`, `error`, `refetch`) plus typed mutation handles for each configured mutation.
+The `useData` hook returns the same query state properties as `useQuery` (`data`, `isLoading`, `isError`, `isSuccess`, `error`, `isRevalidating`, `refetch`). The URL, staleTime, and other key-level config are defined in the DataClient's key configuration -- `useData` only accepts call-site overrides for invalidation events and the enabled flag.
 
 ### useData Options
 
 | Option | Type | Description |
 |--------|------|-------------|
-| `url` | `string \| ((params) => string)` | The fetch URL |
-| `staleTime` | `number` | Milliseconds before data is considered stale |
 | `invalidateOn` | `string[]` | Event names that trigger a refetch |
-| `mutations` | `Record<string, MutationConfig>` | Mutation configurations |
 | `enabled` | `boolean \| (() => boolean)` | Whether the query is active (default: `true`) |
 
 ## useMutation -- Standalone Mutations

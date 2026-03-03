@@ -102,8 +102,8 @@ declare module '@warpkit/data' {
 | `CacheEntry<T>` | `{ data: T, etag?, timestamp: number, staleTime? }` | Cached data envelope |
 | `FetchResult<T>` | `{ data: T, fromCache: boolean, notModified: boolean }` | Fetch response metadata |
 | `QueryState<T>` | `{ data, error, isLoading, isRevalidating, isError, isSuccess, refetch }` | Reactive query state |
-| `UseDataConfig<K>` | `{ url, staleTime?, invalidateOn?, mutations?, enabled? }` | useData hook config |
-| `DataState<K>` | `QueryState` intersected with mutation handles | Combined query+mutation state |
+| `UseDataConfig<K>` | `{ invalidateOn?, enabled? }` | useData hook config |
+| `DataState<K>` | Reactive query state returned by useData (same shape as QueryState) | Query state |
 | `MutationHandle<TInput, TOutput>` | Callable `(input) => Promise<output>` with `isPending`, `error`, `data`, `reset` | Mutation callable with attached state |
 | `MutationDef<TInput, TOutput>` | `{ input: TInput; output: TOutput }` | Mutation type definition for registry |
 | `MutationConfig` | `{ method, url? }` | Runtime mutation endpoint config |
@@ -145,7 +145,7 @@ function useQuery<K extends DataKey>(options: UseQueryOptions<K>): QueryState<Da
 
 ### useData Hook (`src/useData.svelte.ts`)
 
-Combined query and mutations hook. Same fetch/effect pattern as `useQuery` but simplified (no params support, no refetchInterval). Mutations are currently defined as empty (placeholder for future implementation). Returns `DataState<K>` with mutation handles attached via `Object.defineProperty` with getters.
+Query hook with call-site `invalidateOn` and `enabled` config. Same fetch/effect pattern as `useQuery` but simplified (no params support, no refetchInterval). Returns `DataState<K>` (same shape as `QueryState`). For mutations, use `useMutation`.
 
 ```typescript
 function useData<K extends DataKey>(key: K, config: UseDataConfig<K>): DataState<K>

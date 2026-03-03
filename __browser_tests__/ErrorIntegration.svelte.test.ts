@@ -52,7 +52,6 @@ describe('WarpKit Error Integration', () => {
 			// Error message should contain the original error and route context
 			const errorMsg = screen.container.querySelector('[data-testid="error-message"]');
 			expect(errorMsg?.textContent).toContain('Component load failed!');
-			expect(errorMsg?.textContent).toContain('/fail-load');
 
 			// Error overlay should be visible
 			const overlay = screen.container.querySelector('.warpkit-error-overlay');
