@@ -1,7 +1,20 @@
 {
 	"name": "@warpkit/data",
 	"version": "0.0.1",
+	"description": "Reactive data fetching and caching client for WarpKit with Svelte 5 integration",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/upstat-io/warpkit.git",
+		"directory": "packages/data"
+	},
+	"homepage": "https://github.com/upstat-io/warpkit#readme",
+	"bugs": {
+		"url": "https://github.com/upstat-io/warpkit/issues"
+	},
+	"keywords": ["warpkit", "data", "fetching", "cache", "svelte"],
 	"type": "module",
+	"files": ["src", "!src/**/__tests__", "!src/**/__screenshots__", "!src/**/*.spec.ts", "!src/**/*.test.ts"],
 	"module": "src/index.ts",
 	"exports": {
 		".": "./src/index.ts"

@@ -254,5 +254,37 @@ describe('resolveProviders', () => {
 				'Init failed'
 			);
 		});
+
+		it('should destroy already-initialized providers in reverse order on failure', async () => {
+			const destroyOrder: string[] = [];
+
+			const providerA: Provider = {
+				id: 'a',
+				initialize: vi.fn(),
+				destroy: () => { destroyOrder.push('a'); }
+			};
+
+			const providerB: Provider = {
+				id: 'b',
+				dependsOn: ['a'],
+				initialize: vi.fn(),
+				destroy: () => { destroyOrder.push('b'); }
+			};
+
+			const providerC: Provider = {
+				id: 'c',
+				dependsOn: ['b'],
+				initialize: () => { throw new Error('C failed'); }
+			};
+
+			const warpkit = createMockWarpKitCore();
+
+			await expect(
+				resolveProviders({ ...createTestRegistry(), a: providerA, b: providerB, c: providerC }, warpkit)
+			).rejects.toThrow('C failed');
+
+			// A and B were initialized, so they should be destroyed in reverse order
+			expect(destroyOrder).toEqual(['b', 'a']);
+		});
 	});
 });

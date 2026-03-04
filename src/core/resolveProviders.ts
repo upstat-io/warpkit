@@ -95,12 +95,18 @@ export async function resolveProviders(
 	// Topological sort
 	const sorted = topologicalSort(providerList);
 
-	// Initialize in order (with error context for debugging)
+	// Initialize in order (with rollback on failure)
+	const initialized: Provider[] = [];
 	for (const provider of sorted) {
 		if (provider.initialize) {
 			try {
 				await provider.initialize(warpkit);
+				initialized.push(provider);
 			} catch (error) {
+				// Destroy already-initialized providers in reverse order
+				for (const p of initialized.reverse()) {
+					try { p.destroy?.(); } catch { /* continue cleanup */ }
+				}
 				throw new Error(
 					`Provider '${provider.id}' failed to initialize: ${error instanceof Error ? error.message : String(error)}`,
 					{ cause: error }

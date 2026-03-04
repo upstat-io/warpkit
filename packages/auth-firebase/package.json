@@ -1,7 +1,20 @@
 {
 	"name": "@warpkit/auth-firebase",
 	"version": "0.0.1",
+	"description": "Firebase authentication adapter for WarpKit",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/upstat-io/warpkit.git",
+		"directory": "packages/auth-firebase"
+	},
+	"homepage": "https://github.com/upstat-io/warpkit#readme",
+	"bugs": {
+		"url": "https://github.com/upstat-io/warpkit/issues"
+	},
+	"keywords": ["warpkit", "auth", "firebase", "authentication"],
 	"type": "module",
+	"files": ["src", "!src/**/__tests__", "!src/**/*.spec.ts", "!src/**/*.test.ts"],
 	"module": "src/index.ts",
 	"exports": {
 		".": "./src/index.ts"

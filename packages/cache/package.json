@@ -1,7 +1,20 @@
 {
 	"name": "@warpkit/cache",
 	"version": "0.0.1",
+	"description": "Cache providers (memory, storage, ETag) for WarpKit data layer",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/upstat-io/warpkit.git",
+		"directory": "packages/cache"
+	},
+	"homepage": "https://github.com/upstat-io/warpkit#readme",
+	"bugs": {
+		"url": "https://github.com/upstat-io/warpkit/issues"
+	},
+	"keywords": ["warpkit", "cache", "memory-cache", "storage-cache", "etag"],
 	"type": "module",
+	"files": ["src", "!src/**/__tests__", "!src/**/*.spec.ts", "!src/**/*.test.ts"],
 	"module": "src/index.ts",
 	"exports": {
 		".": "./src/index.ts"

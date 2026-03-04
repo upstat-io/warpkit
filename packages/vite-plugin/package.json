@@ -1,7 +1,20 @@
 {
 	"name": "@warpkit/vite-plugin",
 	"version": "0.0.1",
+	"description": "Vite plugin for WarpKit development tooling",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/upstat-io/warpkit.git",
+		"directory": "packages/vite-plugin"
+	},
+	"homepage": "https://github.com/upstat-io/warpkit#readme",
+	"bugs": {
+		"url": "https://github.com/upstat-io/warpkit/issues"
+	},
+	"keywords": ["warpkit", "vite", "vite-plugin"],
 	"type": "module",
+	"files": ["src", "dist", "!src/**/__tests__", "!src/**/*.spec.ts", "!src/**/*.test.ts"],
 	"module": "dist/index.js",
 	"types": "src/index.ts",
 	"exports": {

@@ -27,6 +27,12 @@ let viteCleanup: (() => void) | undefined;
 /** Error channel unsubscribe function */
 let channelCleanup: (() => void) | undefined;
 
+/** Original window.onerror handler (saved on install, restored on removal) */
+let originalOnError: typeof window.onerror = null;
+
+/** Original window.onunhandledrejection handler (saved on install, restored on removal) */
+let originalOnUnhandledRejection: typeof window.onunhandledrejection = null;
+
 /**
  * Vite error payload types (from vite/types/hmrPayload.d.ts)
  */
@@ -70,9 +76,9 @@ export function setupGlobalErrorHandlers(options?: { reporter?: ReportingProvide
 
 	reporter = options?.reporter;
 
-	// Store original handlers to restore later
-	const originalOnError = window.onerror;
-	const originalOnUnhandledRejection = window.onunhandledrejection;
+	// Store original handlers at module level to restore later
+	originalOnError = window.onerror;
+	originalOnUnhandledRejection = window.onunhandledrejection;
 
 	// Set up Vite HMR error handling
 	setupViteErrorHandlers();
@@ -175,9 +181,11 @@ export function removeGlobalErrorHandlers(): void {
 		return;
 	}
 
-	// Reset to default (null removes our handlers)
-	window.onerror = null;
-	window.onunhandledrejection = null;
+	// Restore original handlers
+	window.onerror = originalOnError;
+	window.onunhandledrejection = originalOnUnhandledRejection;
+	originalOnError = null;
+	originalOnUnhandledRejection = null;
 
 	// Clean up Vite handlers
 	viteCleanup?.();

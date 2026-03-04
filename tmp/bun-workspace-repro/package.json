@@ -1,0 +1,7 @@
+{
+  "name": "workspace-root-repro",
+  "version": "1.0.0",
+  "dependencies": {
+    "@warpkit/errors": "workspace:*"
+  }
+}

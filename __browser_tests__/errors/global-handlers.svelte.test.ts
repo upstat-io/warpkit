@@ -272,6 +272,34 @@ describe('setupGlobalErrorHandlers', () => {
 			}).not.toThrow();
 		});
 
+		it('should restore original window.onerror handler', () => {
+			const originalHandler = vi.fn(() => false);
+			window.onerror = originalHandler;
+
+			setupGlobalErrorHandlers();
+			expect(window.onerror).not.toBe(originalHandler);
+
+			removeGlobalErrorHandlers();
+			expect(window.onerror).toBe(originalHandler);
+
+			// Clean up
+			window.onerror = null;
+		});
+
+		it('should restore original window.onunhandledrejection handler', () => {
+			const originalHandler = vi.fn();
+			window.onunhandledrejection = originalHandler;
+
+			setupGlobalErrorHandlers();
+			expect(window.onunhandledrejection).not.toBe(originalHandler);
+
+			removeGlobalErrorHandlers();
+			expect(window.onunhandledrejection).toBe(originalHandler);
+
+			// Clean up
+			window.onunhandledrejection = null;
+		});
+
 		it('should clear reporter', () => {
 			const capturedErrors: NormalizedError[] = [];
 			const reporter: ReportingProvider = {

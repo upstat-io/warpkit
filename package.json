@@ -1,7 +1,28 @@
 {
 	"name": "@upstat/warpkit",
 	"version": "0.0.1",
+	"description": "Svelte 5 application framework with state-driven routing, navigation lifecycle, and provider architecture",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/upstat-io/warpkit.git"
+	},
+	"homepage": "https://github.com/upstat-io/warpkit#readme",
+	"bugs": {
+		"url": "https://github.com/upstat-io/warpkit/issues"
+	},
+	"keywords": ["svelte", "svelte5", "routing", "navigation", "state-management", "spa", "warpkit"],
+	"workspaces": ["packages/*"],
 	"type": "module",
+	"files": [
+		"src",
+		"!src/**/__tests__",
+		"!src/**/__screenshots__",
+		"!src/**/__benchmarks__",
+		"!src/**/*.spec.ts",
+		"!src/**/*.test.ts",
+		"!src/**/*.bench.ts"
+	],
 	"module": "src/index.ts",
 	"exports": {
 		".": "./src/index.ts",
@@ -19,6 +40,12 @@
 		"check": "bunx svelte-check --tsconfig ./tsconfig.json",
 		"lint": "bunx eslint .",
 		"dev": "bun run --hot src/index.ts"
+	},
+	"dependencies": {
+		"@warpkit/errors": "workspace:*"
+	},
+	"peerDependencies": {
+		"svelte": "^5.0.0"
 	},
 	"devDependencies": {
 		"@playwright/experimental-ct-svelte": "^1.58.0",

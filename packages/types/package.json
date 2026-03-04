@@ -1,7 +1,20 @@
 {
 	"name": "@warpkit/types",
 	"version": "0.0.1",
+	"description": "Shared TypeScript type definitions for WarpKit",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/upstat-io/warpkit.git",
+		"directory": "packages/types"
+	},
+	"homepage": "https://github.com/upstat-io/warpkit#readme",
+	"bugs": {
+		"url": "https://github.com/upstat-io/warpkit/issues"
+	},
+	"keywords": ["warpkit", "types", "typescript"],
 	"type": "module",
+	"files": ["src"],
 	"module": "src/index.ts",
 	"exports": {
 		".": "./src/index.ts"

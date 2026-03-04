@@ -110,8 +110,11 @@ export class WarpKit<TAppState extends string, TStateData = unknown> implements 
 	/** Counter for search-only history entries (negative to avoid collision with Navigator) */
 	private searchUpdateCounter = 0;
 
-	/** True after start() has been called */
+	/** True after start() has been called and navigator is ready */
 	private started = false;
+
+	/** True while start() is executing (re-entrancy guard) */
+	private starting = false;
 
 	/** Queued state changes from pre-start setAppState calls */
 	private preStartQueue: QueuedStateChange<TAppState, TStateData>[] = [];
@@ -255,10 +258,10 @@ export class WarpKit<TAppState extends string, TStateData = unknown> implements 
 	 * @throws If called more than once
 	 */
 	public async start(): Promise<void> {
-		if (this.started) {
+		if (this.started || this.starting) {
 			throw new Error('[WarpKit] start() has already been called');
 		}
-		this.started = true;
+		this.starting = true;
 
 		// Dev-mode HMR: expose instance globally for debugging
 		if (import.meta.env?.DEV && typeof window !== 'undefined') {
@@ -269,90 +272,117 @@ export class WarpKit<TAppState extends string, TStateData = unknown> implements 
 		// Install global error handlers FIRST (before anything else can fail)
 		this.globalErrorHandlersCleanup = setupGlobalErrorHandlers();
 
-		// Resolve, validate, and initialize providers using standalone resolveProviders
-		// (Kahn's topological sort, cycle detection, key validation)
-		this.providers = await resolveProviders(this.providerRegistry, this);
+		try {
+			// Resolve, validate, and initialize providers using standalone resolveProviders
+			// (Kahn's topological sort, cycle detection, key validation)
+			this.providers = await resolveProviders(this.providerRegistry, this);
 
-		// Initialize Navigator with all dependencies (deferred from constructor until providers ready)
-		this.navigator = new Navigator({
-			matcher: this.matcher,
-			stateMachine: this.stateMachine,
-			pageState: this.pageState,
-			lifecycle: this.lifecycle,
-			layoutManager: this.layoutManager,
-			providers: this.providers,
-			checkBlockers: () => this.checkBlockers(),
-			setLoadedComponents: (component, layout) => {
-				this.loadedComponent = component;
-				this.loadedLayout = layout;
-			},
-			onError: this.onError,
-			fireNavigationComplete: (context) => this.fireNavigationComplete(context),
-			getResolvedDefault: (state) => this.getResolvedDefault(state as TAppState)
-		});
+			// Initialize Navigator with all dependencies (deferred from constructor until providers ready)
+			this.navigator = new Navigator({
+				matcher: this.matcher,
+				stateMachine: this.stateMachine,
+				pageState: this.pageState,
+				lifecycle: this.lifecycle,
+				layoutManager: this.layoutManager,
+				providers: this.providers,
+				checkBlockers: () => this.checkBlockers(),
+				setLoadedComponents: (component, layout) => {
+					this.loadedComponent = component;
+					this.loadedLayout = layout;
+				},
+				onError: this.onError,
+				fireNavigationComplete: (context) => this.fireNavigationComplete(context),
+				getResolvedDefault: (state) => this.getResolvedDefault(state as TAppState)
+			});
 
-		// Set up popstate listener
-		this.popstateUnsubscribe = this.providers.browser.onPopState((state, direction) => {
-			void this.handlePopState(state, direction);
-		});
+			// Navigator ready — setAppState() can now execute directly instead of queuing
+			this.started = true;
 
-		// Set up beforeunload for blockers
-		this.setupBeforeUnload();
+			// Set up popstate listener
+			this.popstateUnsubscribe = this.providers.browser.onPopState((state, direction) => {
+				void this.handlePopState(state, direction);
+			});
 
-		// Initialize auth adapter if provided
-		if (this.authAdapter) {
-			try {
-				const result = await this.authAdapter.initialize({ events: this.events, storage: this.authStorage });
+			// Set up beforeunload for blockers
+			this.setupBeforeUnload();
 
-				// Update state and state data from auth initialization
-				if (result.stateData !== undefined) {
-					this.updateStateData(result.stateData);
-				}
-				this.stateMachine.setState(result.state);
+			// Initialize auth adapter if provided
+			if (this.authAdapter) {
+				try {
+					const result = await this.authAdapter.initialize({ events: this.events, storage: this.authStorage });
 
-				// Scope cache during initial auth if callback provided
-				if (this.dataConfig?.client && this.dataConfig.scopeKey) {
-					const scope = this.dataConfig.scopeKey(result.stateData ?? this.stateData);
-					if (scope) {
-						this.dataConfig.client.scopeCache(scope);
+					// Update state and state data from auth initialization
+					if (result.stateData !== undefined) {
+						this.updateStateData(result.stateData);
 					}
-				}
+					this.stateMachine.setState(result.state);
 
-				// Subscribe to subsequent auth state changes
-				this.authUnsubscribe = this.authAdapter.onAuthStateChanged((changeResult) => {
-					if (changeResult) {
-						void this.handleAuthStateChange(changeResult);
+					// Scope cache during initial auth if callback provided
+					if (this.dataConfig?.client && this.dataConfig.scopeKey) {
+						const scope = this.dataConfig.scopeKey(result.stateData ?? this.stateData);
+						if (scope) {
+							this.dataConfig.client.scopeCache(scope);
+						}
 					}
-				});
-			} catch (error) {
-				// Auth initialization failed - fall back to initial state from config
-				reportError('auth', error, {
-					showUI: true,
-					context: { phase: 'initialization' }
-				});
+
+					// Subscribe to subsequent auth state changes
+					this.authUnsubscribe = this.authAdapter.onAuthStateChanged((changeResult) => {
+						if (changeResult) {
+							void this.handleAuthStateChange(changeResult);
+						}
+					});
+				} catch (error) {
+					// Auth initialization failed - fall back to initial state from config
+					reportError('auth', error, {
+						showUI: true,
+						context: { phase: 'initialization' }
+					});
+				}
 			}
-		}
 
-		// Process queued state changes (these override auth adapter state)
-		for (const { state, data, path, options } of this.preStartQueue) {
-			// Update state data if provided
-			if (data !== undefined) {
-				this.updateStateData(data);
+			// Apply queued state transitions (state-only, no navigation)
+			let queuedPath: string | undefined;
+			let queuedOptions: SetStateOptions | undefined;
+			for (const { state, data, path, options } of this.preStartQueue) {
+				if (data !== undefined) {
+					this.updateStateData(data);
+				}
+				this.stateMachine.setState(state);
+				const resolved = path ?? this.getResolvedDefault(state) ?? undefined;
+				if (resolved != null) {
+					queuedPath = resolved;
+					queuedOptions = options;
+				}
 			}
-			this.stateMachine.setState(state);
-			// Resolve path: explicit path > resolved default from routes
-			const resolvedPath = path ?? this.getResolvedDefault(state);
-			await this.navigator.navigateAfterStateChange(state, resolvedPath ?? undefined, options);
+
+			// Single initial navigation: queued path takes precedence over browser URL
+			const location = this.providers.browser.getLocation();
+			const initialPath = queuedPath
+				?? (location.pathname + location.search + location.hash);
+			const result = await this.navigator.navigate(initialPath, {
+				replace: queuedOptions?.replace ?? true,
+				state: queuedOptions?.state,
+			});
+
+			if (!result.success && this.pageState.route === null) {
+				throw new Error(
+					`[WarpKit] Initial navigation failed, no active route: ${result.error?.message ?? 'unknown error'}`,
+					{ cause: result.error }
+				);
+			}
+
+			// Clear queue only after successful navigation
+			this.preStartQueue = [];
+
+			// Mark as ready after initial navigation
+			this.ready = true;
+		} catch (error) {
+			this.destroy();
+			this.started = false;
+			throw error;
+		} finally {
+			this.starting = false;
 		}
-		this.preStartQueue = [];
-
-		// Perform initial navigation based on current URL
-		const location = this.providers.browser.getLocation();
-		const initialPath = location.pathname + location.search + location.hash;
-		await this.navigator.navigate(initialPath, { replace: true });
-
-		// Mark as ready after initial navigation
-		this.ready = true;
 	}
 
 	/**
@@ -428,11 +458,13 @@ export class WarpKit<TAppState extends string, TStateData = unknown> implements 
 		this.authUnsubscribe?.();
 
 		// Destroy providers (try-catch to ensure all providers get cleanup attempt)
-		for (const provider of Object.values(this.providers)) {
-			try {
-				provider.destroy?.();
-			} catch {
-				// Continue cleaning up other providers even if one fails
+		if (this.providers) {
+			for (const provider of Object.values(this.providers)) {
+				try {
+					provider.destroy?.();
+				} catch {
+					// Continue cleaning up other providers even if one fails
+				}
 			}
 		}
 
