@@ -192,4 +192,106 @@ describe('WarpKit.start() resilience', () => {
 		await expect(wk.start()).rejects.toThrow('Initial navigation failed');
 		expect(wk.ready).toBe(false);
 	});
+
+	describe('startup recovery (transient load failures)', () => {
+		it('should recover from transient component load failure', async () => {
+			let callCount = 0;
+			const transientComponent = () => {
+				callCount++;
+				if (callCount <= 1) {
+					return Promise.reject(new TypeError('Failed to fetch dynamically imported module: /src/pages/Dashboard.svelte'));
+				}
+				return Promise.resolve({ default: {} as never });
+			};
+
+			const config: WarpKitConfig<'active' | 'inactive'> = {
+				initialState: 'active',
+				routes: {
+					active: {
+						routes: [{ path: '/dashboard', component: transientComponent, meta: {} }],
+						default: '/dashboard'
+					},
+					inactive: {
+						routes: [{ path: '/login', component: dummyComponent, meta: {} }],
+						default: '/login'
+					}
+				},
+				providers: {
+					browser: new MemoryBrowserProvider('/dashboard'),
+					confirmDialog: new MockConfirmProvider({ alwaysConfirm: true }),
+					storage: new NoOpStorageProvider()
+				}
+			};
+
+			const wk = createWarpKit(config);
+			await wk.start();
+
+			// Should eventually recover and become ready
+			expect(wk.ready).toBe(true);
+			wk.destroy();
+		});
+
+		it('should NOT retry on non-transient errors (SyntaxError)', async () => {
+			let callCount = 0;
+			const syntaxErrorComponent = () => {
+				callCount++;
+				return Promise.reject(new SyntaxError('Unexpected token'));
+			};
+
+			const config: WarpKitConfig<'active' | 'inactive'> = {
+				initialState: 'active',
+				routes: {
+					active: {
+						routes: [{ path: '/dashboard', component: syntaxErrorComponent, meta: {} }],
+						default: '/dashboard'
+					},
+					inactive: {
+						routes: [{ path: '/login', component: dummyComponent, meta: {} }],
+						default: '/login'
+					}
+				},
+				providers: {
+					browser: new MemoryBrowserProvider('/dashboard'),
+					confirmDialog: new MockConfirmProvider({ alwaysConfirm: true }),
+					storage: new NoOpStorageProvider()
+				}
+			};
+
+			const wk = createWarpKit(config);
+			await expect(wk.start()).rejects.toThrow('Initial navigation failed');
+			expect(wk.ready).toBe(false);
+			// SyntaxError should not trigger retries — component called only
+			// once at the navigate level (retryDynamicImport also doesn't retry SyntaxError)
+			expect(callCount).toBe(1);
+		});
+
+		it('should give up after max retries on persistent transient failure', { timeout: 30_000 }, async () => {
+			const persistentComponent = () => {
+				return Promise.reject(new TypeError('Failed to fetch dynamically imported module: /src/pages/Dashboard.svelte'));
+			};
+
+			const config: WarpKitConfig<'active' | 'inactive'> = {
+				initialState: 'active',
+				routes: {
+					active: {
+						routes: [{ path: '/dashboard', component: persistentComponent, meta: {} }],
+						default: '/dashboard'
+					},
+					inactive: {
+						routes: [{ path: '/login', component: dummyComponent, meta: {} }],
+						default: '/login'
+					}
+				},
+				providers: {
+					browser: new MemoryBrowserProvider('/dashboard'),
+					confirmDialog: new MockConfirmProvider({ alwaysConfirm: true }),
+					storage: new NoOpStorageProvider()
+				}
+			};
+
+			const wk = createWarpKit(config);
+			await expect(wk.start()).rejects.toThrow('Initial navigation failed');
+			expect(wk.ready).toBe(false);
+		});
+	});
 });

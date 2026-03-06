@@ -28,6 +28,7 @@ import type {
 	BlockerRegistration,
 	AuthAdapter
 } from './types.js';
+import { NavigationErrorCode } from './types.js';
 import type { AuthStorage } from '../auth/types.js';
 import type {
 	WarpKitCore,
@@ -359,10 +360,30 @@ export class WarpKit<TAppState extends string, TStateData = unknown> implements 
 			const location = this.providers.browser.getLocation();
 			const initialPath = queuedPath
 				?? (location.pathname + location.search + location.hash);
-			const result = await this.navigator.navigate(initialPath, {
+			const navOptions = {
 				replace: queuedOptions?.replace ?? true,
 				state: queuedOptions?.state,
-			});
+			};
+
+			let result = await this.navigator.navigate(initialPath, navOptions);
+
+			// Retry initial navigation on transient load failures (e.g., Vite 504)
+			// Combined with retryDynamicImport (Section 03), this provides defense-in-depth:
+			// - retryDynamicImport handles brief blips at the import() level (3 attempts, < 1s)
+			// - This retry handles longer server restarts at the navigate() level (3 attempts, 500-1500ms delays)
+			const MAX_START_RETRIES = 3;
+			let retryCount = 0;
+			while (
+				!result.success &&
+				this.pageState.route === null &&
+				retryCount < MAX_START_RETRIES &&
+				this.isTransientLoadError(result.error)
+			) {
+				retryCount++;
+				this.layoutManager.clearCache();
+				await new Promise<void>(r => setTimeout(r, 500 * retryCount));
+				result = await this.navigator.navigate(initialPath, navOptions);
+			}
 
 			if (!result.success && this.pageState.route === null) {
 				throw new Error(
@@ -383,6 +404,30 @@ export class WarpKit<TAppState extends string, TStateData = unknown> implements 
 		} finally {
 			this.starting = false;
 		}
+	}
+
+	/**
+	 * Check if a navigation error is a transient load failure that may succeed on retry.
+	 * Only LOAD_FAILED errors caused by transient network/fetch failures are retryable.
+	 */
+	private isTransientLoadError(error: NavigationError | undefined): boolean {
+		if (!error || error.code !== NavigationErrorCode.LOAD_FAILED) return false;
+
+		const cause = error.cause;
+		if (!cause || !(cause instanceof Error)) return false;
+
+		// Don't retry module evaluation errors
+		if (cause instanceof SyntaxError) return false;
+		if (cause instanceof ReferenceError) return false;
+		if (cause instanceof RangeError) return false;
+
+		const msg = cause.message.toLowerCase();
+		return (
+			msg.includes('failed to fetch dynamically imported module') ||
+			msg.includes('load failed') ||
+			msg.includes('fetch') ||
+			msg.includes('loading chunk')
+		);
 	}
 
 	/**

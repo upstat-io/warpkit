@@ -9,6 +9,7 @@
  */
 
 import type { Component } from 'svelte';
+import { retryDynamicImport } from './retryDynamicImport.js';
 import type { Route, StateConfig, LayoutConfig } from './types.js';
 
 /**
@@ -55,7 +56,7 @@ export class LayoutManager {
 
 		// Different layout - load new one via lazy import
 		try {
-			const module = await layoutConfig.load();
+			const module = await retryDynamicImport(() => layoutConfig.load());
 			this.currentLayout = module.default;
 			this.currentLayoutId = layoutId;
 			return this.currentLayout;

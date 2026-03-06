@@ -18,6 +18,7 @@
  */
 
 import type { Component } from 'svelte';
+import { retryDynamicImport } from './retryDynamicImport.js';
 import type {
 	NavigationRequest,
 	NavigationResult,
@@ -472,7 +473,7 @@ export class Navigator {
 	 */
 	private async loadComponent(route: Route): Promise<Component> {
 		try {
-			const module = await route.component();
+			const module = await retryDynamicImport(() => route.component());
 			return module.default;
 		} catch (error) {
 			throw this.enhanceLoadError(error, route.path, 'component');

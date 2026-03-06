@@ -221,6 +221,47 @@ describe('LayoutManager', () => {
 		});
 	});
 
+	describe('retry on transient import failure', () => {
+		it('should load layout successfully after transient failure', async () => {
+			const fetchError = new TypeError('Failed to fetch dynamically imported module');
+			const retryLayout: LayoutConfig = {
+				id: 'retry-layout',
+				load: vi
+					.fn()
+					.mockRejectedValueOnce(fetchError)
+					.mockResolvedValue({ default: AppLayout })
+			};
+			const stateWithRetryLayout: StateConfig = {
+				routes: [],
+				default: '/dashboard',
+				layout: retryLayout
+			};
+
+			const result = await layoutManager.resolveLayout(routeWithoutLayout, stateWithRetryLayout);
+
+			expect(result).toBe(AppLayout);
+			expect(retryLayout.load).toHaveBeenCalledTimes(2);
+		});
+
+		it('should throw enhanced error after all retries exhausted', async () => {
+			const fetchError = new TypeError('Failed to fetch dynamically imported module');
+			const failLayout: LayoutConfig = {
+				id: 'fail-layout',
+				load: vi.fn().mockRejectedValue(fetchError)
+			};
+			const stateWithFailLayout: StateConfig = {
+				routes: [],
+				default: '/dashboard',
+				layout: failLayout
+			};
+
+			await expect(
+				layoutManager.resolveLayout(routeWithoutLayout, stateWithFailLayout)
+			).rejects.toThrow('[layout:fail-layout]');
+			expect(failLayout.load).toHaveBeenCalledTimes(3);
+		});
+	});
+
 	describe('clearCache', () => {
 		it('should clear the cached layout', async () => {
 			// Load layout
