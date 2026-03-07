@@ -1,0 +1,19 @@
+name: Notify website of docs change
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'guide/**'
+      - 'docs/**'
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger website rebuild
+        run: |
+          gh api repos/upstat-io/warpkit-website/dispatches \
+            -f event_type=warpkit-docs-updated
+        env:
+          GH_TOKEN: ${{ secrets.WARPKIT_PAT }}
