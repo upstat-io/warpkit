@@ -89,6 +89,12 @@ export interface WarpKit<TAppState extends string = string, TStateData = unknown
 
 	/** Retry the last navigation (useful after error recovery) */
 	retry(): Promise<NavigationResult>;
+
+	/** Update search params without triggering full navigation. Use for filters, tabs, pagination. */
+	updateSearch(params: Record<string, string | null>, options?: { replace?: boolean }): void;
+
+	/** Subscribe to search param changes via updateSearch(). Returns unsubscribe function. */
+	onSearchChange(callback: (params: Record<string, string>, path: string) => void): () => void;
 }
 
 /**

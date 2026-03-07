@@ -1,3 +1,9 @@
+---
+title: "WebSockets & Real-Time"
+description: "Type-safe real-time communication"
+order: 8
+---
+
 # WebSockets & Real-Time
 
 Modern applications are expected to be live. When a teammate creates an incident, you should see it immediately. When a monitor goes down, the dashboard should update without a refresh. When someone edits a shared resource, the stale data on your screen should be replaced.

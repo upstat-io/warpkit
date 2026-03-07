@@ -1,3 +1,9 @@
+---
+title: "Forms & Validation"
+description: "Schema-driven forms with deep proxy binding"
+order: 7
+---
+
 # Forms & Validation
 
 Every non-trivial application has forms. Login forms, settings forms, multi-step wizards, dynamic lists of line items. And every application eventually discovers that forms are the most deceptively complex UI pattern in web development.

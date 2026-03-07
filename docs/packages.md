@@ -1,3 +1,9 @@
+---
+title: "Packages"
+description: "Technical specification for all WarpKit sub-packages"
+order: 1
+---
+
 # WarpKit Packages Technical Specification
 
 Maintainer reference for all sub-packages in the `packages/` directory. Each package is independently publishable and can be used standalone. The dependency graph is intentionally shallow: `@warpkit/errors` is the only leaf dependency shared across packages, and `@warpkit/validation` is the shared validation abstraction layer.

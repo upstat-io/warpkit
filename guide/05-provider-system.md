@@ -1,3 +1,9 @@
+---
+title: "The Provider System"
+description: "Pluggable abstractions for browser APIs"
+order: 5
+---
+
 # The Provider System
 
 Every SPA framework needs to interact with browser APIs. The browser's History API for navigation, `localStorage` or `sessionStorage` for persisting data across page loads, `window.confirm()` for blocking dialogs. These are the fundamental building blocks of client-side routing.

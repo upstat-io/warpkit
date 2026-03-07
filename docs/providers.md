@@ -1,3 +1,9 @@
+---
+title: "Providers"
+description: "Provider interfaces and implementations"
+order: 4
+---
+
 # Provider System
 
 WarpKit's provider system is a pluggable abstraction layer over browser APIs (history, storage, confirmation dialogs). Providers enable testability without mocking globals and allow consumers to swap implementations (hash routing, custom modals, IndexedDB storage).

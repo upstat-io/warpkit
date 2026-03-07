@@ -1,3 +1,9 @@
+---
+title: "Data Fetching & Caching"
+description: "Config-driven data layer with E-Tag caching"
+order: 6
+---
+
 # Data Fetching & Caching
 
 Every SPA needs to fetch data from APIs. The naive approach -- call `fetch()` inside a component, manage loading and error state manually, sprinkle in some `try/catch` blocks -- works for small applications. But it falls apart quickly:

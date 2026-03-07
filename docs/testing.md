@@ -1,3 +1,9 @@
+---
+title: "Testing Utilities"
+description: "Testing helpers and mock implementations"
+order: 6
+---
+
 # Testing Infrastructure
 
 Technical specification for WarpKit's testing utilities. This document covers every test helper, mock provider, assertion function, and rendering utility available in `src/testing/`.

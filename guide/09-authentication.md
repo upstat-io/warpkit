@@ -1,3 +1,9 @@
+---
+title: "Authentication"
+description: "Pluggable auth adapter pattern"
+order: 9
+---
+
 # Authentication
 
 Authentication is the first thing that happens in every SPA behind a login wall. Before the router can navigate to a page, before data can be fetched, before any UI renders, the application needs to answer a fundamental question: who is this user, and what state should the app be in?

@@ -1,3 +1,9 @@
+---
+title: "Testing"
+description: "Mock providers, assertion helpers, and testing strategies"
+order: 10
+---
+
 # Testing
 
 WarpKit was designed with testing as a first-class concern. The provider system -- where every browser API is behind an interface -- exists primarily so that your tests never need to mock `window`, `localStorage`, or `history`. The entire navigation pipeline runs in memory, deterministically, with no browser required.

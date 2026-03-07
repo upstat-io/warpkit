@@ -1,3 +1,9 @@
+---
+title: "Architecture & Design Decisions"
+description: "Why WarpKit is built the way it is"
+order: 11
+---
+
 # Architecture & Design Decisions
 
 This chapter explains the reasoning behind WarpKit's architecture. Understanding these decisions will help you use the framework effectively, diagnose issues when they arise, and contribute improvements. Each section covers a specific design choice, why we made it, and what alternatives we considered.

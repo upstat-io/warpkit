@@ -1,3 +1,9 @@
+---
+title: "Quick Start"
+description: "Get a WarpKit app running in 5 minutes"
+order: 2
+---
+
 # Quick Start
 
 This chapter walks you through building a complete WarpKit application from scratch. By the end, you will have a working SPA with authentication states, page navigation, data fetching, and a form -- enough to understand how all the pieces fit together.

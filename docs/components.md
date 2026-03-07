@@ -1,3 +1,9 @@
+---
+title: "Components"
+description: "Svelte components provided by WarpKit"
+order: 2
+---
+
 # Components and Hooks
 
 Technical specification for WarpKit's Svelte component layer and context/hooks system. This document covers every component, the context bridge, all hooks, and shared utilities that connect WarpKit's core navigation engine to Svelte's rendering and reactivity model.

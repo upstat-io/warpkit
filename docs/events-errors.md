@@ -1,3 +1,9 @@
+---
+title: "Events & Errors"
+description: "Event system and error handling"
+order: 5
+---
+
 # Event System & Error System
 
 Technical specification for WarpKit's two cross-cutting subsystems: the type-safe event emitter and the layered error pipeline. Both are foundational infrastructure that other packages depend on.

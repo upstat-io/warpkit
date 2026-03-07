@@ -1,3 +1,9 @@
+---
+title: "Core Internals"
+description: "Internal architecture and core modules"
+order: 3
+---
+
 # WarpKit Core Internals
 
 Technical specification for the core runtime of WarpKit. This document covers the classes in `src/core/` that implement routing, navigation, state management, and layout resolution. It is written for framework maintainers and contributors who need to understand the internal architecture before making changes.

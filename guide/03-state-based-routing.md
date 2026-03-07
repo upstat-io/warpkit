@@ -1,3 +1,9 @@
+---
+title: "State-Based Routing"
+description: "The core innovation: routes organized by application state"
+order: 3
+---
+
 # State-Based Routing
 
 Every web application has states. A user is logged in or logged out. An account is onboarding or fully set up. An admin has elevated privileges or they don't. These states fundamentally change what the user can see and do, yet traditional routers pretend they don't exist.

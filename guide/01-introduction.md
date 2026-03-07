@@ -1,3 +1,9 @@
+---
+title: "Introduction & Philosophy"
+description: "What WarpKit is, why it exists, and the design principles behind it"
+order: 1
+---
+
 # Introduction & Philosophy
 
 Every few years, the frontend ecosystem goes through a routing renaissance. File-based routing. Nested layouts. Server-side rendering. Each wave optimizes for a particular class of application. But there is a large and underserved class of application that keeps getting treated as an afterthought: the pure single-page application.

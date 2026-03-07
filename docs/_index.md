@@ -1,3 +1,9 @@
+---
+title: "API Overview"
+description: "WarpKit API reference overview"
+order: 0
+---
+
 # WarpKit Technical Specification
 
 > **Maintainer documentation for the WarpKit framework internals.**

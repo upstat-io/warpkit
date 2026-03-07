@@ -1,3 +1,9 @@
+---
+title: "The Navigation Pipeline"
+description: "How every navigation flows through 10 predictable phases"
+order: 4
+---
+
 # The Navigation Pipeline
 
 Every navigation in WarpKit --- whether the user clicks a link, calls `navigate()`, hits the back button, or transitions between app states --- flows through the same pipeline. This is not an implementation detail you can ignore. Understanding the pipeline helps you predict exactly what will happen, in what order, and where things can go wrong.
