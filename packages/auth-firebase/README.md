@@ -44,7 +44,7 @@ This package provides a WarpKit `AuthAdapter` implementation for Firebase Authen
 ## Installation
 
 ```bash
-npm install @warpkit/auth-firebase firebase
+bun add @warpkit/auth-firebase firebase
 ```
 
 ## Quick Start
@@ -132,7 +132,7 @@ async function getInitialState(user: FirebaseUser | null) {
 ### Basic Setup with WarpKit
 
 ```typescript
-import { WarpKit } from '@upstat/warpkit';
+import { WarpKit } from '@warpkit/core';
 import { FirebaseAuthAdapter } from '@warpkit/auth-firebase';
 
 const authAdapter = new FirebaseAuthAdapter(

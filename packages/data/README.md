@@ -5,7 +5,7 @@ Type-safe data fetching hooks for Svelte 5 with caching and event-driven invalid
 ## Installation
 
 ```bash
-npm install @warpkit/data
+bun add @warpkit/data
 ```
 
 ## Features

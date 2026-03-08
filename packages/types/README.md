@@ -5,7 +5,7 @@ Shared TypeScript types for WarpKit packages.
 ## Installation
 
 ```bash
-npm install @warpkit/types
+bun add @warpkit/types
 ```
 
 ## Types
@@ -47,8 +47,8 @@ interface AuthInitResult<TAppState, TStateData> {
 
 ## Usage
 
-These types are re-exported from `@upstat/warpkit` for convenience:
+These types are re-exported from `@warpkit/core` for convenience:
 
 ```typescript
-import type { AuthAdapter } from '@upstat/warpkit';
+import type { AuthAdapter } from '@warpkit/core';
 ```

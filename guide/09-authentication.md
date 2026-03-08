@@ -488,7 +488,7 @@ WarpKit's event system includes built-in auth events. Use them for cross-compone
 
 ```svelte
 <script>
-  import { useEvent } from '@upstat/warpkit';
+  import { useEvent } from '@warpkit/core';
 
   // Initialize analytics after sign-in
   useEvent('auth:signed-in', ({ userId }) => {
@@ -522,7 +522,7 @@ You can also define custom events via module augmentation:
 
 ```typescript
 // In your app's type declarations
-declare module '@upstat/warpkit' {
+declare module '@warpkit/core' {
   interface WarpKitEventRegistry {
     'auth:mfa-required': { resolver: unknown };
     'auth:email-verified': { userId: string };

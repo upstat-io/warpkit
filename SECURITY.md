@@ -27,7 +27,7 @@ Include:
 
 This policy applies to:
 
-- All packages in the `@upstat/warpkit` namespace
+- All packages in the `@warpkit` namespace
 - The WarpKit framework core
 
 ### Out of Scope

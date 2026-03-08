@@ -6,7 +6,7 @@
  *
  * Usage:
  * ```typescript
- * import { waitForState, waitFor } from '@upstat/warpkit/testing';
+ * import { waitForState, waitFor } from '@warpkit/core/testing';
  *
  * await waitForState(actor, 'authenticated');
  * await waitFor(() => someCondition);

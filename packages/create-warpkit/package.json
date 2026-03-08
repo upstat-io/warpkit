@@ -1,0 +1,19 @@
+{
+	"name": "create-warpkit",
+	"version": "0.0.1",
+	"description": "Scaffold a new WarpKit project",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/upstat-io/warpkit.git",
+		"directory": "packages/create-warpkit"
+	},
+	"type": "module",
+	"bin": {
+		"create-warpkit": "src/index.ts"
+	},
+	"files": ["src"],
+	"dependencies": {
+		"@clack/prompts": "^0.9.1"
+	}
+}

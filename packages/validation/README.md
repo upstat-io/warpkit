@@ -5,7 +5,7 @@ StandardSchema validation utilities for WarpKit.
 ## Installation
 
 ```bash
-npm install @warpkit/validation
+bun add @warpkit/validation
 ```
 
 ## Features

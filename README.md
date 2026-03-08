@@ -19,7 +19,7 @@ A standalone Svelte 5 SPA framework providing state-based routing, data fetching
 
 | Package | Description |
 | ------- | ----------- |
-| `@upstat/warpkit` | Router, state machine, events, components |
+| `@warpkit/core` | Router, state machine, events, components |
 | `@warpkit/data` | Data fetching, caching, mutations |
 | `@warpkit/cache` | Cache implementations (Memory, Storage, E-Tag) |
 | `@warpkit/forms` | Schema-driven form state management |
@@ -31,15 +31,15 @@ A standalone Svelte 5 SPA framework providing state-based routing, data fetching
 ## Installation
 
 ```bash
-npm install @upstat/warpkit @warpkit/data @warpkit/cache
+bun add @warpkit/core @warpkit/data @warpkit/cache
 ```
 
 Optional packages:
 
 ```bash
-npm install @warpkit/forms @warpkit/validation
-npm install @warpkit/websocket
-npm install @warpkit/auth-firebase firebase
+bun add @warpkit/forms @warpkit/validation
+bun add @warpkit/websocket
+bun add @warpkit/auth-firebase firebase
 ```
 
 ## Quick Start
@@ -47,7 +47,7 @@ npm install @warpkit/auth-firebase firebase
 ### 1. Define Routes
 
 ```typescript
-import { createRoute, createStateRoutes } from '@upstat/warpkit';
+import { createRoute, createStateRoutes } from '@warpkit/core';
 
 type AppState = 'authenticated' | 'unauthenticated';
 
@@ -83,7 +83,7 @@ export const routes = createStateRoutes<AppState>({
 ### 2. Create WarpKit Instance
 
 ```typescript
-import { createWarpKit } from '@upstat/warpkit';
+import { createWarpKit } from '@warpkit/core';
 import { routes } from './routes';
 
 export const warpkit = createWarpKit({
@@ -97,7 +97,7 @@ export const warpkit = createWarpKit({
 ```svelte
 <!-- App.svelte -->
 <script lang="ts">
-  import { WarpKitProvider, RouterView } from '@upstat/warpkit';
+  import { WarpKitProvider, RouterView } from '@warpkit/core';
   import { warpkit } from './warpkit';
 
   $effect(() => {
@@ -115,7 +115,7 @@ export const warpkit = createWarpKit({
 
 ```svelte
 <script lang="ts">
-  import { Link, useWarpKit } from '@upstat/warpkit';
+  import { Link, useWarpKit } from '@warpkit/core';
 
   const warpkit = useWarpKit();
 

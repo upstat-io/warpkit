@@ -827,7 +827,7 @@ interface AuthAdapter<TContext, TAppState extends string, TStateData, TTokens> {
 - `setItem(key: string, value: string): void`
 - `removeItem(key: string): void`
 
-Mirrors the Web Storage API. In production, backed by `localStorage` (default). In tests, use `MemoryAuthStorage` from `@upstat/warpkit/testing`. Custom implementations can be passed via `WarpKitConfig.authStorage`.
+Mirrors the Web Storage API. In production, backed by `localStorage` (default). In tests, use `MemoryAuthStorage` from `@warpkit/core/testing`. Custom implementations can be passed via `WarpKitConfig.authStorage`.
 
 **Type parameters:**
 - `TContext`: Context passed to `initialize()` (WarpKit provides `AuthAdapterContext`)

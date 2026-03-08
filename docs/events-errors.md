@@ -91,7 +91,7 @@ Built-in events emitted by WarpKit internals:
 Consumers add custom events by augmenting the `WarpKitEventRegistry` interface:
 
 ```typescript
-declare module '@upstat/warpkit' {
+declare module '@warpkit/core' {
   interface WarpKitEventRegistry {
     'monitor:created': { uuid: string };
     'monitor:updated': { uuid: string };

@@ -5,7 +5,7 @@ Cache implementations for @warpkit/data with E-Tag support and two-tier caching.
 ## Installation
 
 ```bash
-npm install @warpkit/cache
+bun add @warpkit/cache
 ```
 
 ## Features

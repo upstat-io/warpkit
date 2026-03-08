@@ -190,7 +190,7 @@ Implements `AuthStorage` with an in-memory `Map`. Prevents auth adapters from to
 Pass via the `authStorage` config option when creating a WarpKit instance with an auth adapter:
 
 ```typescript
-import { MemoryAuthStorage } from '@upstat/warpkit/testing';
+import { MemoryAuthStorage } from '@warpkit/core/testing';
 
 const warpkit = new WarpKit({
   routes,
@@ -524,7 +524,7 @@ All standard `DataClient` methods are implemented as `vi.fn()` mocks:
 ### Basic navigation test
 
 ```typescript
-import { createMockWarpKit, expectNavigation, expectState } from '@upstat/warpkit/testing';
+import { createMockWarpKit, expectNavigation, expectState } from '@warpkit/core/testing';
 
 const warpkit = await createMockWarpKit({
   routes: {
@@ -573,7 +573,7 @@ unregister();
 ### Testing events
 
 ```typescript
-import { createMockEvents, createEventSpy } from '@upstat/warpkit/testing';
+import { createMockEvents, createEventSpy } from '@warpkit/core/testing';
 
 const events = createMockEvents();
 const spy = createEventSpy();
@@ -589,7 +589,7 @@ expect(spy.calledTimes('auth:signed-out')).toBe(1);
 ### Testing async navigation (indirect trigger)
 
 ```typescript
-import { createMockWarpKit, waitForNavigationWithTimeout } from '@upstat/warpkit/testing';
+import { createMockWarpKit, waitForNavigationWithTimeout } from '@warpkit/core/testing';
 
 const warpkit = await createMockWarpKit({ /* ... */ });
 

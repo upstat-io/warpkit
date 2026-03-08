@@ -184,10 +184,10 @@ bun run src/core/__benchmarks__/router.bench.ts
     ↑
 @warpkit/cache           (depends on: @warpkit/data for CacheProvider type)
     ↑
-@upstat/warpkit (src/)     (depends on: @warpkit/errors)
+@warpkit/core (src/)     (depends on: @warpkit/errors)
     ↑
 @warpkit/forms           (depends on: @warpkit/validation)
 @warpkit/websocket       (depends on: @warpkit/errors)
-@warpkit/auth-firebase   (depends on: @upstat/warpkit for types)
+@warpkit/auth-firebase   (depends on: @warpkit/core for types)
 @warpkit/vite-plugin     (standalone Vite plugin)
 ```

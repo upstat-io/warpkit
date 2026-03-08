@@ -5,7 +5,7 @@ Type-safe WebSocket client with auto-reconnect for Svelte 5.
 ## Installation
 
 ```bash
-npm install @warpkit/websocket
+bun add @warpkit/websocket
 ```
 
 ## Features

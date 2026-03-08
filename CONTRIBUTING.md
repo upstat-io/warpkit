@@ -5,9 +5,9 @@ Thank you for your interest in contributing to WarpKit!
 ## Development Setup
 
 1. Clone the repository
-2. Install dependencies: `npm install`
-3. Run tests: `npm test`
-4. Type check: `npm run typecheck`
+2. Install dependencies: `bun install`
+3. Run tests: `bun test`
+4. Type check: `bun run typecheck`
 
 ## Code Style
 

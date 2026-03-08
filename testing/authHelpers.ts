@@ -6,7 +6,7 @@
  *
  * Usage:
  * ```typescript
- * import { createMockAuthProvider, createMockDataLayer } from '@upstat/warpkit/testing';
+ * import { createMockAuthProvider, createMockDataLayer } from '@warpkit/core/testing';
  *
  * const authProvider = createMockAuthProvider();
  * authProvider.simulateLogin({ uid: 'user-123' });

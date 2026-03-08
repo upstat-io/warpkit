@@ -25,7 +25,7 @@ WarpKit ships with three core providers, each abstracting a specific browser cap
 When you call `createWarpKit()` without specifying providers, the defaults are applied automatically:
 
 ```typescript
-import { createWarpKit } from '@upstat/warpkit';
+import { createWarpKit } from '@warpkit/core';
 
 // All three default providers are created internally
 const warpkit = createWarpKit({
@@ -45,7 +45,7 @@ This is the primary reason providers exist. Without them, testing a router means
 With providers, testing is trivial:
 
 ```typescript
-import { createMockWarpKit } from '@upstat/warpkit/testing';
+import { createMockWarpKit } from '@warpkit/core/testing';
 
 const warpkit = await createMockWarpKit({
   routes,
@@ -141,7 +141,7 @@ The default implementation wraps the HTML5 History API (`pushState`, `replaceSta
 - **Direction detection** -- Tracks the current position in the history stack to determine whether a popstate event is a back or forward navigation.
 
 ```typescript
-import { DefaultBrowserProvider } from '@upstat/warpkit';
+import { DefaultBrowserProvider } from '@warpkit/core';
 
 // For an app deployed at /app/
 const warpkit = createWarpKit({
@@ -160,7 +160,7 @@ With `basePath: '/app'`, an internal path of `/dashboard` becomes `/app/dashboar
 For deployment to static file hosts where you cannot configure server-side URL rewrites, the `HashBrowserProvider` uses the URL hash fragment for routing:
 
 ```typescript
-import { HashBrowserProvider } from '@upstat/warpkit';
+import { HashBrowserProvider } from '@warpkit/core';
 
 const warpkit = createWarpKit({
   routes,
@@ -178,7 +178,7 @@ Internal path `/dashboard` becomes `example.com/#/dashboard` in the browser. The
 The in-memory implementation maintains a history stack as a plain array. It never touches `window` or any browser API. This is what `createMockWarpKit` uses for testing:
 
 ```typescript
-import { MemoryBrowserProvider } from '@upstat/warpkit';
+import { MemoryBrowserProvider } from '@warpkit/core';
 
 const browser = new MemoryBrowserProvider('/dashboard');
 
@@ -227,7 +227,7 @@ interface StorageProvider extends Provider {
 The `DefaultStorageProvider` uses `sessionStorage` with LRU (Least Recently Used) eviction to prevent unbounded storage growth. The default limit is 50 scroll positions. When the limit is reached, the oldest entries are evicted first.
 
 ```typescript
-import { DefaultStorageProvider } from '@upstat/warpkit';
+import { DefaultStorageProvider } from '@warpkit/core';
 
 const warpkit = createWarpKit({
   routes,
@@ -305,8 +305,8 @@ expect(warpkit.page.pathname).toBe('/dashboard'); // Navigation succeeded
 All three providers can be passed together when creating a WarpKit instance:
 
 ```typescript
-import { createWarpKit } from '@upstat/warpkit';
-import { HashBrowserProvider } from '@upstat/warpkit';
+import { createWarpKit } from '@warpkit/core';
+import { HashBrowserProvider } from '@warpkit/core';
 
 const warpkit = createWarpKit({
   routes,

@@ -7,11 +7,11 @@
  * Usage:
  * ```typescript
  * import { vi } from 'vitest';
- * import { createMockRouter, createMockNavigationHooks } from '@upstat/warpkit/testing';
+ * import { createMockRouter, createMockNavigationHooks } from '@warpkit/core/testing';
  *
  * const { mockPush, mockReplace, mockBack } = createMockRouter();
  *
- * vi.mock('@upstat/warpkit', async (importOriginal) => {
+ * vi.mock('@warpkit/core', async (importOriginal) => {
  *   const original = await importOriginal();
  *   return {
  *     ...original,
@@ -184,7 +184,7 @@ export function createMockNavigationContext(overrides: Partial<NavigationContext
  * ```typescript
  * const { mockReplace } = vi.hoisted(() => createHoistedRouterMocks());
  *
- * vi.mock('@upstat/warpkit', async (importOriginal) => ({
+ * vi.mock('@warpkit/core', async (importOriginal) => ({
  *   ...(await importOriginal()),
  *   replace: mockReplace
  * }));

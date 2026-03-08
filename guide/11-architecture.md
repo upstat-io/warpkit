@@ -307,7 +307,7 @@ WarpKit includes a typed event emitter for decoupled cross-component communicati
 
 ```typescript
 // Define custom events via TypeScript module augmentation
-declare module '@upstat/warpkit' {
+declare module '@warpkit/core' {
   interface WarpKitEventRegistry {
     'monitor:created': { uuid: string; name: string };
     'monitor:deleted': { uuid: string };
@@ -369,7 +369,7 @@ The global `onError` handler (configured via `createWarpKit`) receives all visua
 WarpKit is a monorepo with focused, independent packages:
 
 ```
-@upstat/warpkit          Required. Router, state machine, events, components.
+@warpkit/core          Required. Router, state machine, events, components.
 @warpkit/data          Optional. DataClient, useData, useMutation, cache integration.
 @warpkit/cache         Optional. MemoryCache, StorageCache, ETagCacheProvider.
 @warpkit/forms         Optional. useForm, deep proxy, validation, array fields.
@@ -380,11 +380,11 @@ WarpKit is a monorepo with focused, independent packages:
 @warpkit/types         Internal. Shared TypeScript types.
 ```
 
-Only `@upstat/warpkit` is required. Everything else is opt-in.
+Only `@warpkit/core` is required. Everything else is opt-in.
 
-Packages communicate through typed interfaces, not implementation details. The `@warpkit/data` package does not import from `@upstat/warpkit`'s internal modules. It uses the `EventEmitterAPI` interface to subscribe to events and the `WarpKitCore` interface to read navigation state.
+Packages communicate through typed interfaces, not implementation details. The `@warpkit/data` package does not import from `@warpkit/core`'s internal modules. It uses the `EventEmitterAPI` interface to subscribe to events and the `WarpKitCore` interface to read navigation state.
 
-This means you can use `@upstat/warpkit` for routing and bring your own data fetching library (TanStack Query, custom hooks, etc.). You can use `@warpkit/forms` with any validation library that implements StandardSchema. You can replace `@warpkit/auth-firebase` with your own auth adapter by implementing the `AuthAdapter` interface.
+This means you can use `@warpkit/core` for routing and bring your own data fetching library (TanStack Query, custom hooks, etc.). You can use `@warpkit/forms` with any validation library that implements StandardSchema. You can replace `@warpkit/auth-firebase` with your own auth adapter by implementing the `AuthAdapter` interface.
 
 ## Performance Considerations
 

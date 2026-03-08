@@ -1,7 +1,7 @@
 /**
  * Pure testing providers - no vitest dependencies.
- * Use @upstat/warpkit/testing/providers for these.
- * Use @upstat/warpkit/testing for vitest-dependent utilities.
+ * Use @warpkit/core/testing/providers for these.
+ * Use @warpkit/core/testing for vitest-dependent utilities.
  */
 
 // Mock Providers

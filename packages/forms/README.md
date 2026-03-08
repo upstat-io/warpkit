@@ -5,7 +5,7 @@ Schema-driven form state management for Svelte 5 with deep proxy binding.
 ## Installation
 
 ```bash
-npm install @warpkit/forms @warpkit/validation
+bun add @warpkit/forms @warpkit/validation
 ```
 
 ## Features

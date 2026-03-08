@@ -6,7 +6,7 @@
  *
  * Usage:
  * ```typescript
- * import { createTestWarpKit } from '@upstat/warpkit/testing';
+ * import { createTestWarpKit } from '@warpkit/core/testing';
  *
  * const { actor, authProvider, cleanup } = createTestWarpKit({
  *   authState: 'authenticated'

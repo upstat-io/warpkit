@@ -6,7 +6,7 @@
  *
  * Usage:
  * ```typescript
- * import { renderWithRouter } from '@upstat/warpkit/testing';
+ * import { renderWithRouter } from '@warpkit/core/testing';
  *
  * const { screen } = renderWithRouter(MyComponent, {
  *   props: { uuid: '123' },

@@ -1,5 +1,5 @@
 {
-	"name": "@upstat/warpkit",
+	"name": "@warpkit/core",
 	"version": "0.0.1",
 	"description": "Svelte 5 application framework with state-driven routing, navigation lifecycle, and provider architecture",
 	"license": "MIT",

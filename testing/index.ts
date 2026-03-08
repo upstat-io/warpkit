@@ -2,7 +2,7 @@
  * WarpKit Test Utilities
  *
  * This module provides test utilities for testing applications built with WarpKit.
- * Import from '@upstat/warpkit/testing' in your test files.
+ * Import from '@warpkit/core/testing' in your test files.
  *
  * Usage:
  * ```typescript
@@ -12,7 +12,7 @@
  *   waitForState,
  *   renderWithRouter,
  *   createMockFormSubmit
- * } from '@upstat/warpkit/testing';
+ * } from '@warpkit/core/testing';
  * ```
  */
 

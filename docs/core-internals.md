@@ -70,7 +70,7 @@ function createWarpKit<TAppState extends string, TStateData = unknown>(
 ): WarpKit<TAppState, TStateData>
 ```
 
-Preferred over direct constructor usage. Exported from both `@upstat/warpkit` and `@upstat/warpkit/testing`.
+Preferred over direct constructor usage. Exported from both `@warpkit/core` and `@warpkit/core/testing`.
 
 ### Constructor
 

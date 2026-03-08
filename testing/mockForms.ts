@@ -5,7 +5,7 @@
  *
  * Usage:
  * ```typescript
- * import { createMockFormSubmit, waitForFormSuccess } from '@upstat/warpkit/testing';
+ * import { createMockFormSubmit, waitForFormSuccess } from '@warpkit/core/testing';
  *
  * const mockSubmit = createMockFormSubmit({ simulateSuccess: true });
  * render(MyForm, { props: { onSubmit: mockSubmit.handler } });
