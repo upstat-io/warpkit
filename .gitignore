@@ -47,5 +47,8 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# Temp / scratch
+tmp/
+
 # Optional: local development
 .claude/settings.local.json
