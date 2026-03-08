@@ -1,0 +1,122 @@
+name: Publish to npm
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  publish:
+    needs: ci
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Set version from tag
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+          # Update root package version
+          bun -e "
+            const pkg = await Bun.file('package.json').json();
+            pkg.version = '$VERSION';
+            await Bun.write('package.json', JSON.stringify(pkg, null, '\t') + '\n');
+          "
+
+          # Update all sub-package versions
+          for dir in packages/*/; do
+            if [ -f "$dir/package.json" ]; then
+              bun -e "
+                const pkg = await Bun.file('$dir/package.json').json();
+                pkg.version = '$VERSION';
+                await Bun.write('$dir/package.json', JSON.stringify(pkg, null, '\t') + '\n');
+              "
+            fi
+          done
+
+      - name: Resolve workspace dependencies
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+
+          for dir in packages/*/; do
+            if [ -f "$dir/package.json" ]; then
+              bun -e "
+                const pkg = await Bun.file('$dir/package.json').json();
+                let changed = false;
+                for (const depType of ['dependencies', 'peerDependencies', 'devDependencies']) {
+                  if (!pkg[depType]) continue;
+                  for (const [name, version] of Object.entries(pkg[depType])) {
+                    if (version === 'workspace:*') {
+                      pkg[depType][name] = '$VERSION';
+                      changed = true;
+                    }
+                  }
+                }
+                if (changed) {
+                  await Bun.write('$dir/package.json', JSON.stringify(pkg, null, '\t') + '\n');
+                }
+              "
+            fi
+          done
+
+          # Also resolve root package workspace deps
+          bun -e "
+            const pkg = await Bun.file('package.json').json();
+            let changed = false;
+            for (const depType of ['dependencies', 'peerDependencies', 'devDependencies']) {
+              if (!pkg[depType]) continue;
+              for (const [name, version] of Object.entries(pkg[depType])) {
+                if (version === 'workspace:*') {
+                  pkg[depType][name] = '$VERSION';
+                  changed = true;
+                }
+              }
+            }
+            if (changed) {
+              await Bun.write('package.json', JSON.stringify(pkg, null, '\t') + '\n');
+            }
+          "
+
+      - name: Setup npm auth
+        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
+
+      - name: Publish packages
+        run: |
+          # Publish sub-packages first (order matters for dependencies)
+          for pkg in \
+            packages/types \
+            packages/errors \
+            packages/validation \
+            packages/cache \
+            packages/data \
+            packages/forms \
+            packages/websocket \
+            packages/auth-firebase \
+            packages/vite-plugin \
+            packages/create-warpkit; do
+            if [ -f "$pkg/package.json" ]; then
+              echo "Publishing $(basename $pkg)..."
+              cd "$pkg"
+              npm publish --access public --provenance
+              cd "$GITHUB_WORKSPACE"
+            fi
+          done
+
+          # Publish root package last
+          echo "Publishing @warpkit/core..."
+          npm publish --access public --provenance
