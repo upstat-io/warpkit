@@ -251,8 +251,7 @@ function setupViteErrorHandlers(): void {
 		};
 
 		// Subscribe to Vite HMR error events
-		// Type assertion needed because Vite's types use a generic callback signature
-		hot.on('vite:error', handleViteError as (data: unknown) => void);
+		hot.on('vite:error', handleViteError);
 
 		// Clear stale Vite errors when a successful HMR update arrives
 		const handleViteUpdate = () => {
@@ -265,12 +264,12 @@ function setupViteErrorHandlers(): void {
 				// Never throw from error handler
 			}
 		};
-		hot.on('vite:beforeUpdate', handleViteUpdate as (data: unknown) => void);
+		hot.on('vite:beforeUpdate', handleViteUpdate);
 
 		viteCleanup = () => {
 			try {
-				hot.off('vite:error', handleViteError as (data: unknown) => void);
-				hot.off('vite:beforeUpdate', handleViteUpdate as (data: unknown) => void);
+				hot.off('vite:error', handleViteError);
+				hot.off('vite:beforeUpdate', handleViteUpdate);
 			} catch {
 				// Ignore cleanup errors
 			}

@@ -108,7 +108,9 @@ describe('WarpKit v2 Context', () => {
 				getStateId: () => 0,
 				start: async () => {},
 				destroy: () => {},
-				retry: async () => ({ success: true })
+				retry: async () => ({ success: true }),
+				updateSearch: () => {},
+				onSearchChange: () => () => {}
 			};
 
 			expect(typeof mockWarpKit.navigate).toBe('function');

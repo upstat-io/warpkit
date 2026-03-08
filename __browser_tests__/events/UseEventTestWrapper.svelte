@@ -34,7 +34,9 @@
 		getStateId: () => 0,
 		start: async () => {},
 		destroy: () => {},
-		retry: async () => ({ success: true })
+		retry: async () => ({ success: true }),
+		updateSearch: () => {},
+		onSearchChange: () => () => {}
 	};
 
 	// Provide WarpKit context
