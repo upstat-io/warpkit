@@ -219,6 +219,17 @@ export class Navigator {
 
 			// Handle no match (null)
 			if (match === null) {
+				// On initial navigation or state-change, redirect to state default instead of 404
+				if (request.type === 'push' || request.type === 'state-change') {
+					const defaultPath = this.getResolvedDefault?.(currentState) ?? null;
+					if (defaultPath && defaultPath !== request.path) {
+						const redirectCount = (request.redirectCount ?? 0) + 1;
+						if (redirectCount > MAX_REDIRECTS) {
+							return this.tooManyRedirectsError(request.path);
+						}
+						return this.runPipeline({ ...request, path: defaultPath, redirectCount, replace: true });
+					}
+				}
 				return this.notFoundError(parsed.pathname, request.path);
 			}
 
