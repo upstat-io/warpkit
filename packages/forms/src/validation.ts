@@ -2,12 +2,93 @@
  * @warpkit/forms Validation Utilities
  *
  * Orchestrates form validation using StandardSchema from @warpkit/validation.
+ * Auto-detects TypeBox schemas and validates them natively when ~standard is not present.
  * Provides utilities for validation timing, error mapping, and debouncing.
  */
 
 import type { StandardSchema } from '@warpkit/validation';
+import { isStandardSchema } from '@warpkit/validation';
 import type { ValidationMode } from './types';
 import { pathToString } from './paths';
+
+/** Symbol used by TypeBox to mark schema objects */
+const TypeBoxKind = Symbol.for('TypeBox.Kind');
+
+/**
+ * Check if a value is a TypeBox schema (has the TypeBox.Kind symbol).
+ */
+function isTypeBoxSchema(value: unknown): boolean {
+	return typeof value === 'object' && value !== null && TypeBoxKind in value;
+}
+
+/**
+ * Convert a JSON Pointer path (e.g. "/address/street") to dot notation ("address.street").
+ */
+function jsonPointerToDotPath(pointer: string): string {
+	if (!pointer || pointer === '/') return '';
+	return pointer.slice(1).replace(/\//g, '.');
+}
+
+/**
+ * Validate values against a TypeBox schema using TypeBox's native Value.Check/Value.Errors.
+ * Requires @sinclair/typebox to be installed by the consumer.
+ */
+async function validateTypeBoxAsync<T>(schema: unknown, values: T): Promise<ValidationResult> {
+	if (!_typeboxValue) {
+		const { Value } = await import('@sinclair/typebox/value');
+		_typeboxValue = Value;
+	}
+	const Value = _typeboxValue;
+
+	if (Value.Check(schema as never, values)) {
+		return { valid: true, errors: {} };
+	}
+
+	const errors: Record<string, string> = {};
+	for (const error of Value.Errors(schema as never, values)) {
+		const path = jsonPointerToDotPath(error.path);
+		const key = path || '_root';
+		if (!(key in errors)) {
+			errors[key] = error.message;
+		}
+	}
+
+	return { valid: false, errors };
+}
+
+// Cache for TypeBox Value module (loaded once via dynamic import, reused by sync path)
+let _typeboxValue: { Check: (schema: never, value: unknown) => boolean; Errors: (schema: never, value: unknown) => Iterable<{ path: string; message: string }> } | undefined;
+
+/**
+ * Validate values against a TypeBox schema synchronously.
+ * Requires that validateTypeBoxAsync was called first to cache the TypeBox module.
+ * Falls back to assuming valid if TypeBox hasn't been loaded yet.
+ */
+function validateTypeBoxSync<T>(schema: unknown, values: T): ValidationResult {
+	if (!_typeboxValue) {
+		// TypeBox not yet loaded — can't validate synchronously without it.
+		// The async path will handle this properly on first submit.
+		throw new Error(
+			'TypeBox schema detected but TypeBox is not loaded for sync validation. ' +
+			'Use validateSchemaAsync() instead.'
+		);
+	}
+
+	if (_typeboxValue.Check(schema as never, values)) {
+		return { valid: true, errors: {} };
+	}
+
+	const errors: Record<string, string> = {};
+	for (const error of _typeboxValue.Errors(schema as never, values)) {
+		const path = jsonPointerToDotPath(error.path);
+		const key = path || '_root';
+		if (!(key in errors)) {
+			errors[key] = error.message;
+		}
+	}
+
+	return { valid: false, errors };
+}
 
 /**
  * Normalize a StandardSchema issue path to a simple (string | number)[] array.
@@ -71,31 +152,43 @@ export function validateSchema<T>(schema: StandardSchema<T> | undefined, values:
 		return { valid: true, errors: {} };
 	}
 
-	const result = schema['~standard'].validate(values);
+	// StandardSchema path
+	if (isStandardSchema(schema)) {
+		const result = schema['~standard'].validate(values);
 
-	// Check if schema returned a Promise (async validation)
-	if (result instanceof Promise) {
-		throw new Error('Schema returned a Promise. Use validateSchemaAsync() for async schemas.');
-	}
-
-	// Validation passed
-	if ('value' in result) {
-		return { valid: true, errors: {} };
-	}
-
-	// Validation failed - map issues to errors
-	const errors: Record<string, string> = {};
-
-	for (const issue of result.issues) {
-		const path = pathToString(normalizePathArray(issue.path));
-		const key = path || '_root';
-		// Only keep first error for each path
-		if (!(key in errors)) {
-			errors[key] = issue.message;
+		// Check if schema returned a Promise (async validation)
+		if (result instanceof Promise) {
+			throw new Error('Schema returned a Promise. Use validateSchemaAsync() for async schemas.');
 		}
+
+		// Validation passed
+		if ('value' in result) {
+			return { valid: true, errors: {} };
+		}
+
+		// Validation failed - map issues to errors
+		const errors: Record<string, string> = {};
+
+		for (const issue of result.issues) {
+			const path = pathToString(normalizePathArray(issue.path));
+			const key = path || '_root';
+			if (!(key in errors)) {
+				errors[key] = issue.message;
+			}
+		}
+
+		return { valid: false, errors };
 	}
 
-	return { valid: false, errors };
+	// TypeBox schema fallback
+	if (isTypeBoxSchema(schema)) {
+		return validateTypeBoxSync(schema, values);
+	}
+
+	throw new Error(
+		'Schema does not implement StandardSchema (~standard) and is not a TypeBox schema. ' +
+		'Use a StandardSchema-compatible validator (Zod, Valibot, ArkType) or TypeBox.'
+	);
 }
 
 /**
@@ -121,26 +214,38 @@ export async function validateSchemaAsync<T>(
 		return { valid: true, errors: {} };
 	}
 
-	const result = await schema['~standard'].validate(values);
+	// StandardSchema path
+	if (isStandardSchema(schema)) {
+		const result = await schema['~standard'].validate(values);
 
-	// Validation passed
-	if ('value' in result) {
-		return { valid: true, errors: {} };
-	}
-
-	// Validation failed - map issues to errors
-	const errors: Record<string, string> = {};
-
-	for (const issue of result.issues) {
-		const path = pathToString(normalizePathArray(issue.path));
-		const key = path || '_root';
-		// Only keep first error for each path
-		if (!(key in errors)) {
-			errors[key] = issue.message;
+		// Validation passed
+		if ('value' in result) {
+			return { valid: true, errors: {} };
 		}
+
+		// Validation failed - map issues to errors
+		const errors: Record<string, string> = {};
+
+		for (const issue of result.issues) {
+			const path = pathToString(normalizePathArray(issue.path));
+			const key = path || '_root';
+			if (!(key in errors)) {
+				errors[key] = issue.message;
+			}
+		}
+
+		return { valid: false, errors };
 	}
 
-	return { valid: false, errors };
+	// TypeBox schema fallback
+	if (isTypeBoxSchema(schema)) {
+		return validateTypeBoxAsync(schema, values);
+	}
+
+	throw new Error(
+		'Schema does not implement StandardSchema (~standard) and is not a TypeBox schema. ' +
+		'Use a StandardSchema-compatible validator (Zod, Valibot, ArkType) or TypeBox.'
+	);
 }
 
 /**

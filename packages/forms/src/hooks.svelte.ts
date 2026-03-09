@@ -360,7 +360,17 @@ export function useForm<T extends object>(options: FormOptions<T>): FormState<T>
 		submitError = null;
 
 		// Run full validation
-		const valid = await validate();
+		let valid: boolean;
+		try {
+			valid = await validate();
+		} catch (e) {
+			submitError = e instanceof Error ? e : new Error(String(e));
+			reportError('forms:submit', submitError, {
+				handledLocally: true,
+				showUI: false
+			});
+			return;
+		}
 
 		if (!valid) {
 			return;
