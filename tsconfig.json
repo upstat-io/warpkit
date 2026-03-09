@@ -23,6 +23,8 @@
 			"@warpkit/types": ["./packages/types/src/index.ts"],
 			"@warpkit/errors": ["./packages/errors/src/index.ts"],
 			"@warpkit/auth-firebase": ["./packages/auth-firebase/src/index.ts"],
+			"@warpkit/data-firestore": ["./packages/data-firestore/src/index.ts"],
+			"@warpkit/storage-firebase": ["./packages/storage-firebase/src/index.ts"],
 			"@warpkit/forms": ["./packages/forms/src/index.ts"],
 			"@warpkit/forms/testing": ["./packages/forms/src/testing/index.ts"],
 			"@warpkit/vite-plugin": ["./packages/vite-plugin/src/index.ts"]

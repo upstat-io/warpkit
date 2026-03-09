@@ -61,8 +61,7 @@ export class StorageCache {
 			reportError('cache', error, {
 				severity: 'warning',
 				showUI: false,
-				handledLocally: true,
-				context: { operation: 'get', key }
+								context: { operation: 'get', key }
 			});
 			// Corrupted JSON - delete and return undefined
 			try {
@@ -90,8 +89,7 @@ export class StorageCache {
 			reportError('cache', error, {
 				severity: 'warning',
 				showUI: false,
-				handledLocally: true,
-				context: { operation: 'set', key }
+								context: { operation: 'set', key }
 			});
 		}
 	}
@@ -106,8 +104,8 @@ export class StorageCache {
 		const fullKey = this.prefix + key;
 		try {
 			this.storage.removeItem(fullKey);
-		} catch {
-			// Ignore errors
+		} catch (error) {
+			console.warn('[WarpKit cache] Failed to delete key:', key, error);
 		}
 	}
 
@@ -133,8 +131,8 @@ export class StorageCache {
 					}
 				}
 			}
-		} catch {
-			// If iteration fails, bail out
+		} catch (error) {
+			console.warn('[WarpKit cache] Failed to iterate storage for prefix:', prefix, error);
 			return;
 		}
 
@@ -142,8 +140,8 @@ export class StorageCache {
 		for (const key of keysToDelete) {
 			try {
 				this.storage.removeItem(key);
-			} catch {
-				// Ignore individual removal errors
+			} catch (error) {
+				console.warn('[WarpKit cache] Failed to remove key:', key, error);
 			}
 		}
 	}

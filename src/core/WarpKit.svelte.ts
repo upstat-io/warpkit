@@ -301,7 +301,12 @@ export class WarpKit<TAppState extends string, TStateData = unknown> implements 
 
 			// Set up popstate listener
 			this.popstateUnsubscribe = this.providers.browser.onPopState((state, direction) => {
-				void this.handlePopState(state, direction);
+				void this.handlePopState(state, direction).catch((error) => {
+					reportError('navigation-lifecycle', error, {
+						showUI: true,
+						context: { hook: 'popstate' }
+					});
+				});
 			});
 
 			// Set up beforeunload for blockers
@@ -329,15 +334,21 @@ export class WarpKit<TAppState extends string, TStateData = unknown> implements 
 					// Subscribe to subsequent auth state changes
 					this.authUnsubscribe = this.authAdapter.onAuthStateChanged((changeResult) => {
 						if (changeResult) {
-							void this.handleAuthStateChange(changeResult);
+							void this.handleAuthStateChange(changeResult).catch((error) => {
+								reportError('auth', error, {
+									showUI: true,
+									context: { phase: 'state-change' }
+								});
+							});
 						}
 					});
 				} catch (error) {
-					// Auth initialization failed - fall back to initial state from config
+					// Auth initialization failed - cannot proceed without auth
 					reportError('auth', error, {
 						showUI: true,
 						context: { phase: 'initialization' }
 					});
+					throw error;
 				}
 			}
 
@@ -398,6 +409,10 @@ export class WarpKit<TAppState extends string, TStateData = unknown> implements 
 			// Mark as ready after initial navigation
 			this.ready = true;
 		} catch (error) {
+			reportError('navigation-lifecycle', error, {
+				showUI: true,
+				context: { phase: 'start' }
+			});
 			this.destroy();
 			this.started = false;
 			throw error;
@@ -971,7 +986,7 @@ export class WarpKit<TAppState extends string, TStateData = unknown> implements 
 				listener(context);
 			} catch (error) {
 				reportError('navigation-lifecycle', error, {
-					showUI: false,
+					showUI: true,
 					context: { hook: 'navigationComplete' }
 				});
 			}

@@ -12,6 +12,8 @@
 export type ErrorChannelSource =
 	| 'data:query'
 	| 'data:mutation'
+	| 'firestore'
+	| 'storage'
 	| 'websocket'
 	| 'websocket:message'
 	| 'websocket:heartbeat'

@@ -72,6 +72,22 @@
         "svelte": "^5.0.0",
       },
     },
+    "packages/data-firestore": {
+      "name": "@warpkit/data-firestore",
+      "version": "0.0.1",
+      "dependencies": {
+        "@warpkit/errors": "workspace:*",
+      },
+      "devDependencies": {
+        "firebase": "^11.0.0",
+        "svelte": "^5.0.0",
+        "testcontainers": "^10.0.0",
+      },
+      "peerDependencies": {
+        "firebase": "^11.0.0",
+        "svelte": "^5.0.0",
+      },
+    },
     "packages/errors": {
       "name": "@warpkit/errors",
       "version": "0.0.1",
@@ -87,6 +103,22 @@
         "@sinclair/typebox": "^0.34.33",
       },
       "peerDependencies": {
+        "svelte": "^5.0.0",
+      },
+    },
+    "packages/storage-firebase": {
+      "name": "@warpkit/storage-firebase",
+      "version": "0.0.1",
+      "dependencies": {
+        "@warpkit/errors": "workspace:*",
+      },
+      "devDependencies": {
+        "firebase": "^11.0.0",
+        "svelte": "^5.0.0",
+        "testcontainers": "^10.0.0",
+      },
+      "peerDependencies": {
+        "firebase": "^11.0.0",
         "svelte": "^5.0.0",
       },
     },
@@ -428,9 +460,13 @@
 
     "@warpkit/data": ["@warpkit/data@workspace:packages/data"],
 
+    "@warpkit/data-firestore": ["@warpkit/data-firestore@workspace:packages/data-firestore"],
+
     "@warpkit/errors": ["@warpkit/errors@workspace:packages/errors"],
 
     "@warpkit/forms": ["@warpkit/forms@workspace:packages/forms"],
+
+    "@warpkit/storage-firebase": ["@warpkit/storage-firebase@workspace:packages/storage-firebase"],
 
     "@warpkit/types": ["@warpkit/types@workspace:packages/types"],
 

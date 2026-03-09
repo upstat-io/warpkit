@@ -98,8 +98,9 @@ export function useData<K extends DataKey>(key: K, config: UseDataConfig<K>): Da
 					isRevalidating = true;
 					hasStaleData = true;
 				}
-			} catch {
+			} catch (e) {
 				// Cache read failed, continue with normal fetch
+				console.warn('[WarpKit data:query] SWR cache read failed for key:', key, e);
 			}
 		}
 

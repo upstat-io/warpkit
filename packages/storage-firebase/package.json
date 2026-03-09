@@ -1,0 +1,46 @@
+{
+	"name": "@warpkit/storage-firebase",
+	"version": "0.0.1",
+	"description": "Firebase Storage wrapper with reactive uploads for WarpKit",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/upstat-io/warpkit.git",
+		"directory": "packages/storage-firebase"
+	},
+	"homepage": "https://github.com/upstat-io/warpkit#readme",
+	"bugs": {
+		"url": "https://github.com/upstat-io/warpkit/issues"
+	},
+	"keywords": ["warpkit", "storage", "firebase", "upload", "svelte"],
+	"type": "module",
+	"files": ["dist"],
+	"main": "./dist/index.js",
+	"module": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"svelte": "./dist/index.js",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"svelte": "./dist/index.js",
+			"default": "./dist/index.js"
+		}
+	},
+	"scripts": {
+		"clean": "rm -rf dist",
+		"build": "svelte-package -i src -o dist",
+		"test": "bun test"
+	},
+	"dependencies": {
+		"@warpkit/errors": "workspace:*"
+	},
+	"peerDependencies": {
+		"firebase": "^11.0.0",
+		"svelte": "^5.0.0"
+	},
+	"devDependencies": {
+		"firebase": "^11.0.0",
+		"svelte": "^5.0.0",
+		"testcontainers": "^10.0.0"
+	}
+}

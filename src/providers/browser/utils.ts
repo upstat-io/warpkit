@@ -5,6 +5,7 @@
  */
 
 import type { HistoryState, PopStateCallback } from '../interfaces';
+import { reportError } from '@warpkit/errors';
 
 /**
  * Extract WarpKit history state from browser history state.
@@ -31,7 +32,10 @@ export function notifyListeners(
 		try {
 			listener(state, direction);
 		} catch (error) {
-			console.error('[WarpKit] PopState listener threw error:', error);
+			reportError('navigation-lifecycle', error, {
+				showUI: true,
+				context: { hook: 'popstate', direction }
+			});
 		}
 	}
 }

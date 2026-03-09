@@ -8,7 +8,7 @@
  * Source identifier for error reports.
  * Each sub-package uses a distinct source for routing and filtering.
  */
-export type ErrorChannelSource = 'data:query' | 'data:mutation' | 'websocket' | 'websocket:message' | 'websocket:heartbeat' | 'forms:submit' | 'cache' | 'auth' | 'event-emitter' | 'state-machine' | 'navigation-lifecycle';
+export type ErrorChannelSource = 'data:query' | 'data:mutation' | 'firestore' | 'storage' | 'websocket' | 'websocket:message' | 'websocket:heartbeat' | 'forms:submit' | 'cache' | 'auth' | 'event-emitter' | 'state-machine' | 'navigation-lifecycle';
 /**
  * Severity level for error reports.
  */

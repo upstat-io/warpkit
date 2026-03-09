@@ -68,6 +68,47 @@ function validatePathPattern(path: string): void {
 	}
 }
 
+/**
+ * Validate that a route component is a lazy import function.
+ * Throws at definition time if the consumer passes a direct component reference.
+ */
+function validateRouteComponent(path: string, component: unknown): void {
+	if (typeof component !== 'function') {
+		throw new Error(
+			`Route '${path}': component must be a lazy import function, ` +
+				`e.g. component: () => import('./Page.svelte'). Got ${typeof component}.`
+		);
+	}
+}
+
+/**
+ * Validate that a route layout has the correct { id, load } format.
+ * Throws at definition time if the consumer passes a wrong format.
+ */
+function validateRouteLayout(path: string, layout: unknown): void {
+	if (typeof layout !== 'object' || layout === null) {
+		throw new Error(
+			`Route '${path}': layout must be an object with { id, load }, ` +
+				`e.g. { id: 'app', load: () => import('./Layout.svelte') }. Got ${typeof layout}.`
+		);
+	}
+
+	const layoutObj = layout as Record<string, unknown>;
+
+	if (typeof layoutObj.id !== 'string' || !layoutObj.id) {
+		throw new Error(
+			`Route '${path}': layout.id must be a non-empty string. Got ${JSON.stringify(layoutObj.id)}.`
+		);
+	}
+
+	if (typeof layoutObj.load !== 'function') {
+		throw new Error(
+			`Route '${path}': layout.load must be a function, ` +
+				`e.g. load: () => import('./Layout.svelte'). Got ${typeof layoutObj.load}.`
+		);
+	}
+}
+
 // Overload: no meta provided → RouteMeta
 export function createRoute<TPath extends string>(
 	config: Omit<RouteConfig<TPath, RouteMeta>, 'meta'> & { meta?: undefined }
@@ -100,6 +141,10 @@ export function createRoute<TPath extends string, TMeta extends RouteMeta = Rout
 	config: RouteConfig<TPath, TMeta>
 ): TypedRoute<TPath, TMeta> {
 	validatePathPattern(config.path);
+	validateRouteComponent(config.path, config.component);
+	if (config.layout) {
+		validateRouteLayout(config.path, config.layout);
+	}
 
 	const paramNames = extractParamNames(config.path);
 	// Default meta to empty object. The overload signatures ensure correct typing.
@@ -192,9 +237,18 @@ export function createStateRoutes<TAppState extends string, TStateData = unknown
 			paths.add(route.path);
 		}
 
-		// 2. Validate path patterns
+		// 2. Validate path patterns, component, and layout
 		for (const route of stateConfig.routes) {
 			validatePathPattern(route.path);
+			validateRouteComponent(route.path, route.component);
+			if (route.layout) {
+				validateRouteLayout(route.path, route.layout);
+			}
+		}
+
+		// 2b. Validate state-level layout if present
+		if (stateConfig.layout) {
+			validateRouteLayout(`state '${state}' default layout`, stateConfig.layout);
 		}
 
 		// 3. Validate default path is either null, a function, or matches a route in this state
@@ -207,10 +261,9 @@ export function createStateRoutes<TAppState extends string, TStateData = unknown
 				? Object.values(stateConfig.redirects).includes(defaultPath)
 				: false;
 			if (!defaultMatches && !isRedirectTarget) {
-				console.warn(
-					`[WarpKit] Default path '${defaultPath}' in state '${state}' ` +
-						`does not match any route in this state. Navigation to this state ` +
-						`will trigger route matching which may result in NOT_FOUND.`
+				throw new Error(
+					`State '${state}': default path '${defaultPath}' does not match any route in this state. ` +
+						`Available paths: ${[...paths].join(', ')}.`
 				);
 			}
 		}

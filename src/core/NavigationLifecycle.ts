@@ -85,9 +85,7 @@ export class NavigationLifecycle {
 				} catch (error) {
 					// Hook threw - treat as abort
 					reportError('navigation-lifecycle', error, {
-						severity: 'warning',
-						showUI: false,
-						handledLocally: true,
+						showUI: true,
 						context: { hook: 'beforeNavigate' }
 					});
 					return false;
@@ -132,9 +130,10 @@ export class NavigationLifecycle {
 				await hook(context);
 			} catch (error) {
 				reportError('navigation-lifecycle', error, {
-					showUI: false,
+					showUI: true,
 					context: { hook: 'onNavigate' }
 				});
+				break; // Abort remaining sequential hooks — state is indeterminate after a throw
 			}
 		}
 	}
@@ -153,7 +152,7 @@ export class NavigationLifecycle {
 				hook(context);
 			} catch (error) {
 				reportError('navigation-lifecycle', error, {
-					showUI: false,
+					showUI: true,
 					context: { hook: 'afterNavigate' }
 				});
 			}

@@ -21,6 +21,8 @@ export type ErrorSource =
 	| 'manual'
 	| 'data:query'
 	| 'data:mutation'
+	| 'firestore'
+	| 'storage'
 	| 'websocket'
 	| 'websocket:message'
 	| 'websocket:heartbeat'

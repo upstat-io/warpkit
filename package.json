@@ -38,7 +38,7 @@
 	},
 	"scripts": {
 		"clean": "rm -rf dist packages/*/dist",
-		"build:packages": "bun run clean && for pkg in packages/types packages/errors packages/validation packages/websocket packages/auth-firebase packages/vite-plugin packages/data packages/forms packages/cache packages/create-warpkit; do echo \"Building $pkg...\" && cd $pkg && bun run build && cd ../.. || exit 1; done",
+		"build:packages": "bun run clean && for pkg in packages/types packages/errors packages/validation packages/websocket packages/auth-firebase packages/data-firestore packages/storage-firebase packages/vite-plugin packages/data packages/forms packages/cache packages/create-warpkit; do echo \"Building $pkg...\" && cd $pkg && bun run build && cd ../.. || exit 1; done",
 		"build": "bun run build:packages && echo 'Building @warpkit/core...' && svelte-package -i src -o dist",
 		"test": "bun test src",
 		"test:packages": "bunx vitest run --config vitest.config.ts",

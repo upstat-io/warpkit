@@ -102,8 +102,9 @@ export function useQuery<K extends DataKey>(options: UseQueryOptions<K>): QueryS
 					isRevalidating = true;
 					hasStaleData = true;
 				}
-			} catch {
+			} catch (e) {
 				// Cache read failed, continue with normal fetch
+				console.warn('[WarpKit data:query] SWR cache read failed for key:', options.key, e);
 			}
 		}
 

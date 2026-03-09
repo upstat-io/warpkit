@@ -214,7 +214,6 @@ export class FirebaseAuthAdapter<
 				reportError('auth', error, {
 					severity: 'warning',
 					showUI: false,
-					handledLocally: true,
 					context: { tokenType: 'appCheck' }
 				});
 			}
@@ -228,7 +227,6 @@ export class FirebaseAuthAdapter<
 				reportError('auth', error, {
 					severity: 'warning',
 					showUI: false,
-					handledLocally: true,
 					context: { tokenType: 'idToken' }
 				});
 			}
@@ -250,16 +248,23 @@ export class FirebaseAuthAdapter<
 		let isFirstCall = true;
 
 		const unsubscribe = firebaseOnAuthStateChanged(this.auth, async (fbUser) => {
-			if (isFirstCall) {
-				isFirstCall = false;
-				return;
+			try {
+				if (isFirstCall) {
+					isFirstCall = false;
+					return;
+				}
+
+				this.currentUser = fbUser ? toFirebaseUser(fbUser) : null;
+
+				// Let consumer determine state change
+				const result = await this.getStateChange(this.currentUser);
+				await callback(result);
+			} catch (error) {
+				reportError('auth', error, {
+					showUI: true,
+					context: { phase: 'auth-state-change' }
+				});
 			}
-
-			this.currentUser = fbUser ? toFirebaseUser(fbUser) : null;
-
-			// Let consumer determine state change
-			const result = await this.getStateChange(this.currentUser);
-			await callback(result);
 		});
 
 		return unsubscribe;

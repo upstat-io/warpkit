@@ -124,8 +124,12 @@ export class DataClient {
 		// (e.g., "monitor-detail?uuid=abc" when invalidating "monitor-detail").
 		for (const [event, keys] of eventToKeys) {
 			const unsub = this.events.on(event, async () => {
-				for (const key of keys) {
-					await this.invalidateByPrefix(key);
+				try {
+					for (const key of keys) {
+						await this.invalidateByPrefix(key);
+					}
+				} catch (e) {
+					console.error(`[WarpKit data] Cache invalidation failed for event "${event}", keys: [${keys.join(', ')}]`, e);
 				}
 			});
 			this.eventUnsubscribes.push(unsub);

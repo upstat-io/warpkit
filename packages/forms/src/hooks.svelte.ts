@@ -156,11 +156,19 @@ export function useForm<T extends object>(options: FormOptions<T>): FormState<T>
 
 			// Determine if we should validate
 			if (shouldValidateField(path, 'change')) {
-				void runFieldValidation(path);
+				void runFieldValidation(path).catch((e) => {
+					reportError('forms:submit', e instanceof Error ? e : new Error(String(e)), {
+						handledLocally: true,
+						showUI: false,
+						context: { field: path, trigger: 'change' }
+					});
+				});
 			}
 
 			// Always run warners (not affected by mode)
-			void runFieldWarner(path);
+			void runFieldWarner(path).catch((e) => {
+				console.warn('[WarpKit forms] Field warner failed for:', path, e);
+			});
 		}
 	});
 
@@ -527,7 +535,13 @@ export function useForm<T extends object>(options: FormOptions<T>): FormState<T>
 
 		// Trigger blur validation if applicable
 		if (shouldValidateField(field, 'blur')) {
-			void runFieldValidation(field);
+			void runFieldValidation(field).catch((e) => {
+				reportError('forms:submit', e instanceof Error ? e : new Error(String(e)), {
+					handledLocally: true,
+					showUI: false,
+					context: { field, trigger: 'blur' }
+				});
+			});
 		}
 	}
 

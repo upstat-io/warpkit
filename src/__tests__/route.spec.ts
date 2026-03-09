@@ -285,22 +285,20 @@ describe('createStateRoutes', () => {
 			).toThrow("Self-referencing redirect '/loop' → '/loop'");
 		});
 
-		it('should warn for default path not matching any route', () => {
-			createStateRoutes({
-				auth: {
-					routes: [
-						createRoute({
-							path: '/dashboard',
-							component: () => Promise.resolve({ default: {} as never })
-						})
-					],
-					default: '/nonexistent'
-				}
-			});
-
-			expect(consoleWarnSpy).toHaveBeenCalledWith(
-				expect.stringContaining("Default path '/nonexistent' in state 'auth'")
-			);
+		it('should throw for default path not matching any route', () => {
+			expect(() =>
+				createStateRoutes({
+					auth: {
+						routes: [
+							createRoute({
+								path: '/dashboard',
+								component: () => Promise.resolve({ default: {} as never })
+							})
+						],
+						default: '/nonexistent'
+					}
+				})
+			).toThrow("default path '/nonexistent' does not match any route");
 		});
 
 		it('should not warn when default matches a route', () => {

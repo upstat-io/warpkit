@@ -1,0 +1,10 @@
+{
+	"extends": "../../tsconfig.json",
+	"compilerOptions": {
+		"rootDir": "src",
+		"paths": {
+			"@warpkit/data-firestore": ["./src/index.ts"]
+		}
+	},
+	"include": ["src/**/*"]
+}

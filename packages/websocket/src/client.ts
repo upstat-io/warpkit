@@ -356,8 +356,12 @@ export class SocketClient {
 		for (const handler of this.errorHandlers) {
 			try {
 				handler(error);
-			} catch {
-				// Don't let one handler break others
+			} catch (handlerError) {
+				// Consumer's onError callback threw — surface it
+				reportError('websocket', handlerError instanceof Error ? handlerError : new Error(String(handlerError)), {
+					showUI: true,
+					context: { state: this.state, origin: 'onError callback' }
+				});
 			}
 		}
 	}
@@ -717,6 +721,10 @@ export class SocketClient {
 		// Don't exceed max attempts (Infinity by default)
 		if (this.backoff.attempts >= this.options.maxReconnectAttempts) {
 			this.emitInternal('reconnect_failed', { attempts: this.backoff.attempts });
+			reportError('websocket', new Error(`WebSocket reconnection failed after ${this.backoff.attempts} attempts`), {
+				showUI: true,
+				context: { attempts: this.backoff.attempts, state: this.state }
+			});
 			return;
 		}
 
@@ -897,13 +905,8 @@ export class SocketClient {
 		// Force close the connection - onclose will trigger reconnect
 		if (this.ws) {
 			const error = new Error('Heartbeat timeout - no pong received');
-			for (const handler of this.errorHandlers) {
-				try {
-					handler(error);
-				} catch {
-					// Don't let one handler break others
-				}
-			}
+			// Route through notifyError for consistent error reporting
+			this.notifyError(error);
 			this.ws.close();
 		}
 	}

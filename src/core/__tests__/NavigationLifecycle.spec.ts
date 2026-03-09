@@ -190,7 +190,7 @@ describe('NavigationLifecycle', () => {
 			expect(reports).toHaveLength(1);
 			expect(reports[0].source).toBe('navigation-lifecycle');
 			expect(reports[0].error.message).toBe('Hook error');
-			expect(reports[0].severity).toBe('warning');
+			expect(reports[0].severity).toBe('error');
 			expect(reports[0].context).toEqual({ hook: 'beforeNavigate' });
 		});
 
@@ -238,7 +238,7 @@ describe('NavigationLifecycle', () => {
 			expect(hook).toHaveBeenCalledWith(mockContext);
 		});
 
-		it('should continue running hooks even if one throws and report to error channel', async () => {
+		it('should abort remaining hooks when one throws and report to error channel', async () => {
 			const reports: ErrorReport[] = [];
 			onErrorReport((report) => reports.push(report));
 
@@ -252,9 +252,9 @@ describe('NavigationLifecycle', () => {
 
 			await lifecycle.runOnNavigate(mockContext);
 
-			// Both hooks should be called even when first one throws
+			// First hook called, second hook aborted
 			expect(hook1).toHaveBeenCalled();
-			expect(hook2).toHaveBeenCalled();
+			expect(hook2).not.toHaveBeenCalled();
 
 			// Error should be reported to channel
 			expect(reports).toHaveLength(1);

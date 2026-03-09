@@ -154,6 +154,14 @@ export function setupGlobalErrorHandlers(options?: { reporter?: ReportingProvide
 	// Subscribe to error channel from sub-packages
 	channelCleanup = onErrorReport((report) => {
 		try {
+			// Always log to console — errors must never be silent
+			const prefix = `[WarpKit ${report.source}]`;
+			if (report.severity === 'warning' || report.severity === 'info') {
+				console.warn(prefix, report.error, report.context ?? '');
+			} else {
+				console.error(prefix, report.error, report.context ?? '');
+			}
+
 			const showUI = report.showUI && !report.handledLocally;
 			const normalizedError = errorStore.setError(report.error, {
 				source: report.source,
