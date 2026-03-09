@@ -4,9 +4,7 @@
 		"rootDir": "src",
 		"paths": {
 			"@warpkit/data": ["../data/src/index.ts"],
-			"@warpkit/cache": ["./src/index.ts"],
-			"@warpkit/state-machine": ["../../packages/state-machine/src/index.ts"],
-			"@warpkit/state-machine/svelte": ["../../packages/state-machine/src/svelte/index.ts"]
+			"@warpkit/cache": ["./src/index.ts"]
 		}
 	},
 	"include": ["src/**/*"]

@@ -14,10 +14,21 @@
 	},
 	"keywords": ["warpkit", "data", "fetching", "cache", "svelte"],
 	"type": "module",
-	"files": ["src", "!src/**/__tests__", "!src/**/__screenshots__", "!src/**/*.spec.ts", "!src/**/*.test.ts"],
-	"module": "src/index.ts",
+	"files": ["dist"],
+	"main": "./dist/index.js",
+	"module": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"svelte": "./dist/index.js",
 	"exports": {
-		".": "./src/index.ts"
+		".": {
+			"types": "./dist/index.d.ts",
+			"svelte": "./dist/index.js",
+			"default": "./dist/index.js"
+		}
+	},
+	"scripts": {
+		"clean": "rm -rf dist",
+		"build": "svelte-package -i src -o dist"
 	},
 	"dependencies": {
 		"@warpkit/errors": "workspace:*",

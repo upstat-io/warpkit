@@ -10,9 +10,13 @@
 	},
 	"type": "module",
 	"bin": {
-		"create-warpkit": "src/index.ts"
+		"create-warpkit": "dist/index.js"
 	},
-	"files": ["src"],
+	"files": ["dist"],
+	"scripts": {
+		"clean": "rm -rf dist",
+		"build": "bun build src/index.ts --outdir dist --format esm --target node --banner '#!/usr/bin/env node'"
+	},
 	"dependencies": {
 		"@clack/prompts": "^0.9.1"
 	}

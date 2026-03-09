@@ -14,17 +14,19 @@
 	},
 	"keywords": ["warpkit", "vite", "vite-plugin"],
 	"type": "module",
-	"files": ["src", "dist", "!src/**/__tests__", "!src/**/*.spec.ts", "!src/**/*.test.ts"],
-	"module": "dist/index.js",
-	"types": "src/index.ts",
+	"files": ["dist"],
+	"main": "./dist/index.js",
+	"module": "./dist/index.js",
+	"types": "./dist/index.d.ts",
 	"exports": {
 		".": {
-			"types": "./src/index.ts",
+			"types": "./dist/index.d.ts",
 			"default": "./dist/index.js"
 		}
 	},
 	"scripts": {
-		"build": "bun build src/index.ts --outdir dist --format esm --target node"
+		"clean": "rm -rf dist",
+		"build": "tsc -p tsconfig.build.json && bun build src/index.ts --outdir dist --format esm --target node"
 	},
 	"peerDependencies": {
 		"vite": "^5.0.0 || ^6.0.0 || ^7.0.0"

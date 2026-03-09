@@ -14,22 +14,32 @@
 	"keywords": ["svelte", "svelte5", "routing", "navigation", "state-management", "spa", "warpkit"],
 	"workspaces": ["packages/*"],
 	"type": "module",
-	"files": [
-		"src",
-		"!src/**/__tests__",
-		"!src/**/__screenshots__",
-		"!src/**/__benchmarks__",
-		"!src/**/*.spec.ts",
-		"!src/**/*.test.ts",
-		"!src/**/*.bench.ts"
-	],
-	"module": "src/index.ts",
+	"files": ["dist"],
+	"main": "./dist/index.js",
+	"module": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"svelte": "./dist/index.js",
 	"exports": {
-		".": "./src/index.ts",
-		"./testing": "./src/testing/index.ts",
-		"./testing/providers": "./src/testing/providers.ts"
+		".": {
+			"types": "./dist/index.d.ts",
+			"svelte": "./dist/index.js",
+			"default": "./dist/index.js"
+		},
+		"./testing": {
+			"types": "./dist/testing/index.d.ts",
+			"svelte": "./dist/testing/index.js",
+			"default": "./dist/testing/index.js"
+		},
+		"./testing/providers": {
+			"types": "./dist/testing/providers.d.ts",
+			"svelte": "./dist/testing/providers.js",
+			"default": "./dist/testing/providers.js"
+		}
 	},
 	"scripts": {
+		"clean": "rm -rf dist packages/*/dist",
+		"build:packages": "bun run clean && for pkg in packages/types packages/errors packages/validation packages/websocket packages/auth-firebase packages/vite-plugin packages/data packages/forms packages/cache packages/create-warpkit; do echo \"Building $pkg...\" && cd $pkg && bun run build && cd ../.. || exit 1; done",
+		"build": "bun run build:packages && echo 'Building @warpkit/core...' && svelte-package -i src -o dist",
 		"test": "bun test src",
 		"test:packages": "bunx vitest run --config vitest.config.ts",
 		"test:browser": "bunx vitest run --config vitest.browser.config.ts",
@@ -50,6 +60,7 @@
 	"devDependencies": {
 		"@playwright/experimental-ct-svelte": "^1.58.0",
 		"@playwright/test": "^1.58.0",
+		"@sveltejs/package": "^2.5.7",
 		"@sveltejs/vite-plugin-svelte": "^6.2.4",
 		"@vitest/browser": "^4.0.18",
 		"@vitest/browser-playwright": "^4.0.18",

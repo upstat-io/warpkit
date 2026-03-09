@@ -14,12 +14,19 @@
 	},
 	"keywords": ["warpkit", "auth", "firebase", "authentication"],
 	"type": "module",
-	"files": ["src", "!src/**/__tests__", "!src/**/*.spec.ts", "!src/**/*.test.ts"],
-	"module": "src/index.ts",
+	"files": ["dist"],
+	"main": "./dist/index.js",
+	"module": "./dist/index.js",
+	"types": "./dist/index.d.ts",
 	"exports": {
-		".": "./src/index.ts"
+		".": {
+			"types": "./dist/index.d.ts",
+			"default": "./dist/index.js"
+		}
 	},
 	"scripts": {
+		"clean": "rm -rf dist",
+		"build": "tsc -p tsconfig.build.json && bun build src/index.ts --outdir dist --format esm --target browser --packages external",
 		"test": "bun test",
 		"test:build-emulator": "docker build -t warpkit-firebase-emulator:latest ."
 	},

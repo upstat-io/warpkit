@@ -1,9 +1,23 @@
-#!/usr/bin/env bun
-
 import * as p from '@clack/prompts';
 import { mkdirSync, writeFileSync, existsSync } from 'node:fs';
 import { join, dirname, resolve } from 'node:path';
 import { execSync } from 'node:child_process';
+
+function detectPackageManager(): string {
+	const ua = process.env.npm_config_user_agent;
+	if (ua?.startsWith('bun')) return 'bun install';
+	if (ua?.startsWith('yarn')) return 'yarn install';
+	if (ua?.startsWith('pnpm')) return 'pnpm install';
+	return 'npm install';
+}
+
+function detectPMName(): string {
+	const ua = process.env.npm_config_user_agent;
+	if (ua?.startsWith('bun')) return 'bun';
+	if (ua?.startsWith('yarn')) return 'yarn';
+	if (ua?.startsWith('pnpm')) return 'pnpm';
+	return 'npm';
+}
 
 async function main() {
 	console.log();
@@ -16,6 +30,11 @@ async function main() {
 		(args.includes('--template')
 			? args[args.indexOf('--template') + 1]
 			: undefined);
+	const flagInstall = args.includes('--install')
+		? true
+		: args.includes('--no-install')
+			? false
+			: undefined;
 
 	const project = await p.group(
 		{
@@ -50,10 +69,12 @@ async function main() {
 							],
 						}),
 			install: () =>
-				p.confirm({
-					message: 'Install dependencies?',
-					initialValue: true,
-				}),
+				flagInstall !== undefined
+					? (Promise.resolve(flagInstall) as Promise<boolean>)
+					: p.confirm({
+							message: 'Install dependencies?',
+							initialValue: true,
+						}),
 		},
 		{
 			onCancel: () => {
@@ -86,16 +107,19 @@ async function main() {
 		const installSpinner = p.spinner();
 		installSpinner.start('Installing dependencies...');
 		try {
-			execSync('bun install', { cwd: root, stdio: 'ignore' });
+			const installCmd = detectPackageManager();
+			execSync(installCmd, { cwd: root, stdio: 'ignore' });
 			installSpinner.stop('Dependencies installed.');
 		} catch {
-			installSpinner.stop('Failed to install. Run `bun install` manually.');
+			const pm = detectPMName();
+			installSpinner.stop(`Failed to install. Run \`${pm} install\` manually.`);
 		}
 	}
 
 	const steps = [`cd ${project.name}`];
-	if (!project.install) steps.push('bun install');
-	steps.push('bun dev');
+	const pm = detectPMName();
+	if (!project.install) steps.push(`${pm} install`);
+	steps.push(`${pm === 'npm' ? 'npx vite' : `${pm} dev`}`);
 
 	p.note(steps.join('\n'), 'Next steps');
 	p.outro('Happy hacking!');
@@ -142,6 +166,9 @@ import { svelte } from '@sveltejs/vite-plugin-svelte';
 
 export default defineConfig({
   plugins: [svelte()],
+  optimizeDeps: {
+    exclude: ['@warpkit/core'],
+  },
 });
 `,
 
@@ -368,7 +395,7 @@ function minimal(name: string): Record<string, string> {
 						preview: 'vite preview',
 					},
 					dependencies: {
-						'@warpkit/core': '^0.0.1',
+						'@warpkit/core': '^0.0.3',
 						svelte: '^5.0.0',
 					},
 					devDependencies: {
@@ -439,7 +466,7 @@ function full(name: string): Record<string, string> {
 						preview: 'vite preview',
 					},
 					dependencies: {
-						'@warpkit/core': '^0.0.1',
+						'@warpkit/core': '^0.0.3',
 						'@warpkit/data': '^0.0.1',
 						'@warpkit/cache': '^0.0.1',
 						'@warpkit/forms': '^0.0.1',

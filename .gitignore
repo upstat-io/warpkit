@@ -50,5 +50,8 @@ yarn-error.log*
 # Temp / scratch
 tmp/
 
+# Plans (local development only)
+plans/
+
 # Optional: local development
 .claude/settings.local.json

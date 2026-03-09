@@ -1,0 +1,22 @@
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"noEmit": false,
+		"declaration": true,
+		"declarationMap": true,
+		"emitDeclarationOnly": true,
+		"types": [],
+		"paths": {}
+	},
+	"exclude": [
+		"node_modules",
+		"dist",
+		"**/dist",
+		"src/v1",
+		"**/*.spec.ts",
+		"**/*.test.ts",
+		"**/__tests__/**",
+		"**/__benchmarks__/**",
+		"__browser_tests__/**"
+	]
+}

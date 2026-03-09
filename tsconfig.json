@@ -17,8 +17,6 @@
 		"verbatimModuleSyntax": true,
 		"types": ["bun-types"],
 		"paths": {
-			"@warpkit/state-machine": ["./packages/state-machine/src/index.ts"],
-			"@warpkit/state-machine/svelte": ["./packages/state-machine/src/svelte/index.ts"],
 			"@warpkit/data": ["./packages/data/src/index.ts"],
 			"@warpkit/cache": ["./packages/cache/src/index.ts"],
 			"@warpkit/validation": ["./packages/validation/src/index.ts"],
