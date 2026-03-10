@@ -14,7 +14,7 @@
 	},
 	"keywords": ["warpkit", "firestore", "firebase", "svelte", "realtime"],
 	"type": "module",
-	"files": ["dist"],
+	"files": ["dist", "!dist/__tests__"],
 	"main": "./dist/index.js",
 	"module": "./dist/index.js",
 	"types": "./dist/index.d.ts",
