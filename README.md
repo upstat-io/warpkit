@@ -1,6 +1,6 @@
 # WarpKit
 
-> **Alpha Software** — WarpKit is being built and used in production by [Upstat](https://upstat.io) and [CloudLayer.io](https://cloudlayer.io) to power their applications. While this real-world usage drives rapid improvements, the framework is still early stage. Use at your own risk. APIs and behaviors are subject to change.
+> **Alpha Software** — WarpKit is being built and used in production by [Upstat](https://upstat.io) and [cloudlayer.io](https://cloudlayer.io) to power their applications. While this real-world usage drives rapid improvements, the framework is still early stage. Use at your own risk. APIs and behaviors are subject to change.
 
 A standalone Svelte 5 SPA framework providing state-based routing, data fetching, forms, and real-time capabilities.
 
@@ -19,14 +19,14 @@ A standalone Svelte 5 SPA framework providing state-based routing, data fetching
 
 | Package | Description |
 | ------- | ----------- |
-| `@warpkit/core` | Router, state machine, events, components |
-| `@warpkit/data` | Data fetching, caching, mutations |
-| `@warpkit/cache` | Cache implementations (Memory, Storage, E-Tag) |
-| `@warpkit/forms` | Schema-driven form state management |
-| `@warpkit/validation` | StandardSchema validation (Zod, TypeBox) |
-| `@warpkit/websocket` | WebSocket client with reconnection |
-| `@warpkit/auth-firebase` | Firebase authentication adapter |
-| `@warpkit/types` | Shared TypeScript types |
+| [`@warpkit/core`](https://www.npmjs.com/package/@warpkit/core) | Router, state machine, events, components |
+| [`@warpkit/data`](https://www.npmjs.com/package/@warpkit/data) | Data fetching, caching, mutations |
+| [`@warpkit/cache`](https://www.npmjs.com/package/@warpkit/cache) | Cache implementations (Memory, Storage, E-Tag) |
+| [`@warpkit/forms`](https://www.npmjs.com/package/@warpkit/forms) | Schema-driven form state management |
+| [`@warpkit/validation`](https://www.npmjs.com/package/@warpkit/validation) | StandardSchema validation (Zod, TypeBox) |
+| [`@warpkit/websocket`](https://www.npmjs.com/package/@warpkit/websocket) | WebSocket client with reconnection |
+| [`@warpkit/auth-firebase`](https://www.npmjs.com/package/@warpkit/auth-firebase) | Firebase authentication adapter |
+| [`@warpkit/types`](https://www.npmjs.com/package/@warpkit/types) | Shared TypeScript types |
 
 ## Installation
 
