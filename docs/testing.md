@@ -500,7 +500,7 @@ All standard `DataClient` methods are implemented as `vi.fn()` mocks:
 | `getBaseUrl()` | Returns `''`. |
 | `setCache(...)` | No-op. |
 | `setEvents(...)` | No-op. |
-| `mutate(url, options)` | Returns `{}`. |
+| `mutate(url, options)` | Returns `{}`. Ignores `options.responseType` — always returns `{}` regardless. Override via `setMutateResponse()` for custom values (e.g., `new Blob()` for blob tests). |
 
 **Test control methods:**
 

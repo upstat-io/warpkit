@@ -57,7 +57,7 @@ new DataClient(config: DataClientConfig, options?: DataClientOptions)
 | Method | Signature | Behavior |
 |--------|-----------|----------|
 | `fetch` | `fetch<K>(key, params?) => Promise<FetchResult<unknown>>` | Resolves URL from config, checks cache freshness via `isFresh()` (compares `Date.now() - timestamp < staleTime`). If fresh, returns immediately. If stale with E-Tag, sends `If-None-Match` header. Handles 304 Not Modified by returning cached data. Stores response with E-Tag and `staleTime` from config. Uses `AbortController` with timeout. Applies `onRequest` interceptor. Auto-retries on 429 with `Retry-After` header or exponential backoff. Throws `HttpError` on failure. |
-| `mutate` | `mutate<T>(url, options: MutateOptions) => Promise<T>` | Sends POST/PUT/PATCH/DELETE with JSON body. Prepends `baseUrl`. Applies `onRequest` interceptor. Handles 204 No Content (returns `undefined`). Uses `AbortController` with timeout. Auto-retries on 429 with `Retry-After` header or exponential backoff. Throws `HttpError` on failure. |
+| `mutate` | `mutate<T>(url, options: MutateOptions) => Promise<T \| Blob \| string \| Response>` | Sends POST/PUT/PATCH/DELETE with JSON body. Prepends `baseUrl`. Applies `onRequest` interceptor. Handles 204 No Content (returns `undefined`). Parses response based on `options.responseType`: `'json'` (default), `'blob'`, `'text'`, or `'raw'` (returns Response). Uses TypeScript overloads for type-safe returns. Uses `AbortController` with timeout. Auto-retries on 429 with `Retry-After` header or exponential backoff. Throws `HttpError` on failure. |
 | `getQueryData` | `getQueryData<K>(key, params?) => Promise<DataType<K> \| undefined>` | Direct cache read for optimistic updates. |
 | `setQueryData` | `setQueryData<K>(key, data, params?) => Promise<void>` | Direct cache write for optimistic updates. Sets `timestamp: Date.now()` and copies `staleTime` from key config. |
 | `invalidate` | `invalidate(key, params?) => Promise<void>` | Deletes specific cache entry by exact key. |
@@ -742,7 +742,8 @@ new FirebaseAuthAdapter(app: FirebaseApp, options: {
 **Sign-in methods:**
 
 - `signInWithEmail(email, password)`: Tries `signInWithEmailAndPassword`. If `auth/user-not-found`, falls back to `createUserWithEmailAndPassword`. Returns `FirebaseSignInResult = { user, isNewUser }`.
-- `signInWithGoogle()`: `signInWithPopup` with `GoogleAuthProvider`. Checks `_tokenResponse.isNewUser` (undocumented Firebase property).
+- `signInWithPopup()`: Google OAuth popup sign-in via `signInWithPopup` with `GoogleAuthProvider`. Returns `FirebaseSignInResult = { user, isNewUser }`. Checks `_tokenResponse.isNewUser` (undocumented Firebase property).
+- `signInWithRedirect()`: Google OAuth redirect sign-in via `signInWithRedirect`. Page navigates away; auth state is picked up by `onAuthStateChanged` on return.
 - `createUserWithEmail(email, password)`: Direct account creation. Alias: `signUpWithEmail`.
 - `getIdToken()`: Convenience wrapper returning just the ID token.
 - `refreshUser()`: Reloads Firebase user profile.

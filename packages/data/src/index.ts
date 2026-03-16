@@ -41,8 +41,9 @@ export type {
 // Context
 export { DATA_CLIENT_CONTEXT, getDataClient } from './context.js';
 
-// Classes
+// Classes & mutation types
 export { DataClient, HttpError } from './DataClient.js';
+export type { MutateOptions, MutateResponseType } from './DataClient.js';
 export { NoCacheProvider } from './NoCacheProvider.js';
 
 // Components

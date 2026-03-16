@@ -6,6 +6,7 @@
  */
 
 import type { StandardSchema } from '@warpkit/validation';
+import type { TypeBoxSchemaLike } from './defaults';
 
 // ============================================================================
 // Validation Modes
@@ -146,8 +147,8 @@ export interface FormOptions<T> {
 	/** Initial values for the form fields */
 	initialValues: T;
 
-	/** StandardSchema for validation (from @warpkit/validation) */
-	schema?: StandardSchema<T>;
+	/** Schema for validation — accepts StandardSchema (Zod, Valibot) or raw TypeBox schemas (auto-detected at runtime) */
+	schema?: StandardSchema<T> | TypeBoxSchemaLike;
 
 	/**
 	 * When to start validating fields.

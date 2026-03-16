@@ -302,7 +302,7 @@ The Firebase adapter provides sign-in methods for use in your login components:
     error = null;
 
     try {
-      const { user, isNewUser } = await authAdapter.signInWithGoogle();
+      const { user, isNewUser } = await authAdapter.signInWithPopup();
 
       if (isNewUser) {
         await createUserInBackend(user.uid, user.email);
@@ -321,7 +321,8 @@ Available sign-in methods:
 | Method | Description |
 |--------|-------------|
 | `signInWithEmail(email, password)` | Email/password sign-in. Auto-creates account if user does not exist. |
-| `signInWithGoogle()` | Google OAuth popup sign-in. |
+| `signInWithPopup()` | Google OAuth popup sign-in. Returns `FirebaseSignInResult`. |
+| `signInWithRedirect()` | Google OAuth redirect sign-in. Page navigates away; no return value. |
 | `createUserWithEmail(email, password)` | Explicitly create a new account. |
 | `signUpWithEmail(email, password)` | Alias for `createUserWithEmail`. |
 | `signOut()` | Sign out the current user. |

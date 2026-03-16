@@ -20,7 +20,9 @@ import {
 	onAuthStateChanged as firebaseOnAuthStateChanged,
 	signInWithEmailAndPassword,
 	createUserWithEmailAndPassword,
-	signInWithPopup,
+	signInWithPopup as firebaseSignInWithPopup,
+	signInWithRedirect as firebaseSignInWithRedirect,
+	getRedirectResult as firebaseGetRedirectResult,
 	signOut as firebaseSignOut,
 	setPersistence,
 	inMemoryPersistence,
@@ -167,12 +169,30 @@ export class FirebaseAuthAdapter<
 	 * for existing session) before returning.
 	 */
 	public async initialize(): Promise<AuthInitResult<TAppState, TStateData>> {
-		// Create a promise that resolves when we get the initial auth state
+		// Check for redirect result first (returning from signInWithRedirect).
+		// Must be called before onAuthStateChanged to ensure the redirect
+		// credential is resolved before we check auth state.
+		try {
+			const redirectResult = await firebaseGetRedirectResult(this.auth);
+			if (redirectResult) {
+				this.currentUser = toFirebaseUser(redirectResult.user);
+				return this.getInitialState(this.currentUser);
+			}
+		} catch (error: unknown) {
+			if (isFirebaseAuthError(error)) {
+				reportError('auth', mapFirebaseError(error), {
+					severity: 'warning',
+					showUI: false,
+					context: { phase: 'redirect-result' }
+				});
+			}
+		}
+
+		// Normal flow: wait for onAuthStateChanged to determine session state
 		this.initializePromise = new Promise<void>((resolve) => {
 			this.initializeResolve = resolve;
 		});
 
-		// Set up one-time listener for initial state
 		const unsubscribe = firebaseOnAuthStateChanged(this.auth, (fbUser) => {
 			this.currentUser = fbUser ? toFirebaseUser(fbUser) : null;
 
@@ -327,10 +347,13 @@ export class FirebaseAuthAdapter<
 
 	/**
 	 * Sign in with Google OAuth popup
+	 *
+	 * Opens a popup window for Google authentication. The result is returned
+	 * directly once the user completes the flow.
 	 */
-	public async signInWithGoogle(): Promise<FirebaseSignInResult> {
+	public async signInWithPopup(): Promise<FirebaseSignInResult> {
 		try {
-			const credential = await signInWithPopup(this.auth, this.googleProvider);
+			const credential = await firebaseSignInWithPopup(this.auth, this.googleProvider);
 
 			// Check if this is a new user
 			// @ts-expect-error - _tokenResponse exists but is not typed
@@ -349,6 +372,20 @@ export class FirebaseAuthAdapter<
 			}
 			throw error;
 		}
+	}
+
+	/**
+	 * Sign in with Google OAuth redirect
+	 *
+	 * Redirects the page to Google for authentication. After the user
+	 * completes the flow, the page redirects back to the app. The auth
+	 * state is picked up by `onAuthStateChanged` during the next
+	 * `initialize()` call.
+	 *
+	 * This method does not return a result — the page navigates away.
+	 */
+	public async signInWithRedirect(): Promise<void> {
+		await firebaseSignInWithRedirect(this.auth, this.googleProvider);
 	}
 
 	/**

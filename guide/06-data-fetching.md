@@ -607,7 +607,7 @@ new DataClient(config: DataClientConfig, options?: DataClientOptions)
 | Method | Signature | Description |
 |--------|-----------|-------------|
 | `fetch` | `fetch<K>(key: K, params?): Promise<FetchResult>` | Fetch data for a configured key |
-| `mutate` | `mutate<T>(url, options): Promise<T>` | Execute a mutation (POST/PUT/PATCH/DELETE) |
+| `mutate` | `mutate(url, options): Promise<T \| Blob \| string \| Response>` | Execute a mutation. `responseType` controls parsing: `'json'` (default), `'blob'`, `'text'`, `'raw'` |
 | `getQueryData` | `getQueryData<K>(key, params?): Promise<T \| undefined>` | Get cached data without fetching |
 | `setQueryData` | `setQueryData<K>(key, data, params?): Promise<void>` | Set data in cache (for optimistic updates) |
 | `invalidate` | `invalidate(key, params?): Promise<void>` | Invalidate a specific cache entry |
@@ -616,6 +616,40 @@ new DataClient(config: DataClientConfig, options?: DataClientOptions)
 | `scopeCache` | `scopeCache(scope): void` | Scope cache to a key (requires ETagCacheProvider) |
 | `setEvents` | `setEvents(events): void` | Set event emitter and subscribe to invalidation events. WarpKit calls this automatically. |
 | `resolveUrl` | `resolveUrl(template, params?): string` | Resolve a URL template with parameters |
+
+### Binary & Non-JSON Responses
+
+Use `responseType` in `MutateOptions` to control how the response body is parsed:
+
+```typescript
+// Binary data (PDF, image)
+const blob = await client.mutate('/export/pdf', {
+  method: 'POST',
+  body: { html: '<h1>Hello</h1>' },
+  responseType: 'blob'
+});
+
+// Plain text
+const text = await client.mutate('/export/csv', {
+  method: 'POST',
+  body: { data },
+  responseType: 'text'
+});
+
+// Raw Response (custom handling)
+const response = await client.mutate('/export', {
+  method: 'POST',
+  body: { data },
+  responseType: 'raw'
+});
+const contentType = response.headers.get('content-type');
+```
+
+TypeScript overloads ensure type-safe returns:
+- `responseType: 'blob'` → `Promise<Blob>`
+- `responseType: 'text'` → `Promise<string>`
+- `responseType: 'raw'` → `Promise<Response>`
+- default (omitted) → `Promise<T>` (JSON)
 
 ### Direct DataClient Usage
 

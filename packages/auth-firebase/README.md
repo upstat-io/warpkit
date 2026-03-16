@@ -198,7 +198,7 @@ const warpkit = new WarpKit({
 		error = '';
 
 		try {
-			const result = await authAdapter.signInWithGoogle();
+			const result = await authAdapter.signInWithPopup();
 			if (result.isNewUser) {
 				console.log('New user created:', result.user.email);
 			}

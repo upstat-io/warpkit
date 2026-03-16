@@ -42,6 +42,15 @@ export class HttpError extends Error {
 }
 
 /**
+ * How to parse the response body from a mutation.
+ * - `'json'` (default): Parse as JSON via `response.json()`
+ * - `'blob'`: Return as `Blob` (for binary data like PDFs, images)
+ * - `'text'`: Return as `string` via `response.text()`
+ * - `'raw'`: Return the raw `Response` object without consuming the body
+ */
+export type MutateResponseType = 'json' | 'blob' | 'text' | 'raw';
+
+/**
  * Options for mutation execution.
  */
 export interface MutateOptions {
@@ -49,6 +58,14 @@ export interface MutateOptions {
 	method: 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 	/** Request body (will be JSON stringified) */
 	body?: unknown;
+	/**
+	 * How to parse the response body.
+	 * - `'json'` (default): Parse as JSON
+	 * - `'blob'`: Return as Blob (for binary data like PDFs, images)
+	 * - `'text'`: Return as string
+	 * - `'raw'`: Return the raw Response object
+	 */
+	responseType?: MutateResponseType;
 }
 
 /**
@@ -236,28 +253,41 @@ export class DataClient {
 	 *
 	 * @param url - The URL to send the mutation to
 	 * @param options - Mutation options including method and body
-	 * @returns The response data
-	 * @throws Error if request fails
+	 * @returns The response data, parsed according to `responseType`
+	 * @throws HttpError if response status is not OK
 	 *
 	 * @example
-	 * // Create a new resource
+	 * // Create a new resource (default: JSON)
 	 * const monitor = await client.mutate('/monitors', {
 	 *   method: 'POST',
 	 *   body: { name: 'New Monitor', url: 'https://example.com' }
 	 * });
 	 *
 	 * @example
-	 * // Update a resource
-	 * await client.mutate('/monitors/123', {
-	 *   method: 'PUT',
-	 *   body: { name: 'Updated Name' }
+	 * // Get binary data (PDF, image, etc.)
+	 * const blob = await client.mutate('/export/pdf', {
+	 *   method: 'POST',
+	 *   body: { html: '<h1>Hello</h1>' },
+	 *   responseType: 'blob'
+	 * });
+	 *
+	 * @example
+	 * // Get raw Response for custom handling
+	 * const response = await client.mutate('/export/pdf', {
+	 *   method: 'POST',
+	 *   body: { html: '<h1>Hello</h1>' },
+	 *   responseType: 'raw'
 	 * });
 	 *
 	 * @example
 	 * // Delete a resource
 	 * await client.mutate('/monitors/123', { method: 'DELETE' });
 	 */
-	public async mutate<T>(url: string, options: MutateOptions): Promise<T> {
+	public async mutate(url: string, options: MutateOptions & { responseType: 'blob' }): Promise<Blob>;
+	public async mutate(url: string, options: MutateOptions & { responseType: 'text' }): Promise<string>;
+	public async mutate(url: string, options: MutateOptions & { responseType: 'raw' }): Promise<Response>;
+	public async mutate<T>(url: string, options: MutateOptions): Promise<T>;
+	public async mutate<T>(url: string, options: MutateOptions): Promise<T | Blob | string | Response> {
 		const fullUrl = this.config.baseUrl ? `${this.config.baseUrl}${url}` : url;
 
 		const headers: HeadersInit = {
@@ -295,7 +325,18 @@ export class DataClient {
 				return undefined as T;
 			}
 
-			return (await response.json()) as T;
+			// Parse response based on responseType
+			const type = options.responseType ?? 'json';
+			switch (type) {
+				case 'blob':
+					return await response.blob();
+				case 'text':
+					return await response.text();
+				case 'raw':
+					return response;
+				default:
+					return (await response.json()) as T;
+			}
 		} finally {
 			clearTimeout(timeoutId);
 		}
