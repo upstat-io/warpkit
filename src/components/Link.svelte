@@ -62,6 +62,11 @@ function handleClick(event: MouseEvent) {
 </a>
 
 <style>
+	a {
+		text-decoration: none;
+		color: inherit;
+	}
+
 	.disabled {
 		pointer-events: none;
 		opacity: 0.5;
