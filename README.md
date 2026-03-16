@@ -1,6 +1,6 @@
 # WarpKit
 
-> **Alpha Software** — WarpKit is being built and used in production by [Upstat](https://upstat.io) to power their own application. While this real-world usage drives rapid improvements, the framework is still early stage. Use at your own risk. APIs and behaviors are subject to change.
+> **Alpha Software** — WarpKit is being built and used in production by [Upstat](https://upstat.io) and [CloudLayer.io](https://cloudlayer.io) to power their applications. While this real-world usage drives rapid improvements, the framework is still early stage. Use at your own risk. APIs and behaviors are subject to change.
 
 A standalone Svelte 5 SPA framework providing state-based routing, data fetching, forms, and real-time capabilities.
 

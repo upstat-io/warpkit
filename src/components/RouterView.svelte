@@ -3,13 +3,19 @@
  * RouterView - Route Renderer Component
  *
  * Renders the currently matched route's component.
- * Uses {#key} to remount when state changes.
+ * Uses {#key} to remount when state changes or pathname changes.
  * Handles layout wrapping when layout is defined.
  * Wraps component rendering in svelte:boundary to catch RENDER_ERROR (code 8).
+ *
+ * Error handling strategy:
+ * - When an `error` snippet is provided: renders it in the failed snippet (consumer handles UI)
+ * - When no `error` snippet: routes error to ErrorOverlay via errorStore (framework handles UI)
+ * - {#key page.pathname} ensures back/forward navigation recreates the boundary, clearing errors
  */
 
 import type { Snippet } from 'svelte';
 import { useWarpKitContext } from '../hooks';
+import { errorStore } from '../errors/error-store.svelte.js';
 
 import { NavigationErrorCode } from '../core/types';
 import type { NavigationError } from '../core/types';
@@ -46,6 +52,21 @@ function toRenderError(caught: unknown): NavigationError {
 		requestedPath: page.path
 	};
 }
+
+/**
+ * Route render errors to ErrorOverlay when no custom error snippet is provided.
+ * Called via onerror on svelte:boundary — fires before the failed snippet renders.
+ */
+function handleRenderError(caught: unknown): void {
+	if (error) return;
+	const err = caught instanceof Error ? caught : new Error(String(caught));
+	errorStore.setError(err, {
+		source: 'component',
+		severity: 'error',
+		context: { renderError: true, path: page.path },
+		showUI: true
+	});
+}
 </script>
 
 {#key stateId}
@@ -54,25 +75,25 @@ function toRenderError(caught: unknown): NavigationError {
 	{:else if page.isNavigating && loading}
 		{@render loading()}
 	{:else if routeComponent}
-		<svelte:boundary>
-			{#if layoutComponent}
-				{@const Layout = layoutComponent}
-				{@const Route = routeComponent}
-				<Layout>
-					<Route {...page.params} />
-				</Layout>
-			{:else}
-				{@const Route = routeComponent}
-				<Route {...page.params} />
-			{/if}
-			{#snippet failed(caughtError, reset)}
-				{#if error}
-					{@render error({ error: toRenderError(caughtError), retry: () => { reset(); ctx.retryLoad(); } })}
+		{#key page.pathname}
+			<svelte:boundary onerror={handleRenderError}>
+				{#if layoutComponent}
+					{@const Layout = layoutComponent}
+					{@const Route = routeComponent}
+					<Layout>
+						<Route {...page.params} />
+					</Layout>
 				{:else}
-					<p>Component render error: {caughtError instanceof Error ? caughtError.message : String(caughtError)}</p>
+					{@const Route = routeComponent}
+					<Route {...page.params} />
 				{/if}
-			{/snippet}
-		</svelte:boundary>
+				{#snippet failed(caughtError, reset)}
+					{#if error}
+						{@render error({ error: toRenderError(caughtError), retry: () => { reset(); ctx.retryLoad(); } })}
+					{/if}
+				{/snippet}
+			</svelte:boundary>
+		{/key}
 	{:else if fallback}
 		{@render fallback()}
 	{/if}
