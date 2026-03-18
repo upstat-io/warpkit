@@ -76,7 +76,7 @@
       "name": "@warpkit/data-firestore",
       "version": "0.0.2",
       "dependencies": {
-        "@warpkit/errors": "^0.0.7",
+        "@warpkit/errors": "workspace:*",
       },
       "devDependencies": {
         "firebase": "^11.0.0",
@@ -110,7 +110,7 @@
       "name": "@warpkit/storage-firebase",
       "version": "0.0.2",
       "dependencies": {
-        "@warpkit/errors": "^0.0.7",
+        "@warpkit/errors": "workspace:*",
       },
       "devDependencies": {
         "firebase": "^11.0.0",
@@ -867,10 +867,6 @@
     "@playwright/experimental-ct-svelte/@sveltejs/vite-plugin-svelte": ["@sveltejs/vite-plugin-svelte@5.1.1", "", { "dependencies": { "@sveltejs/vite-plugin-svelte-inspector": "^4.0.1", "debug": "^4.4.1", "deepmerge": "^4.3.1", "kleur": "^4.1.5", "magic-string": "^0.30.17", "vitefu": "^1.0.6" }, "peerDependencies": { "svelte": "^5.0.0", "vite": "^6.0.0" } }, "sha512-Y1Cs7hhTc+a5E9Va/xwKlAJoariQyHY+5zBgCZg4PFWNYQ1nMN9sjK1zhw1gK69DuqVP++sht/1GZg1aRwmAXQ=="],
 
     "@types/ssh2/@types/node": ["@types/node@18.19.130", "", { "dependencies": { "undici-types": "~5.26.4" } }, "sha512-GRaXQx6jGfL8sKfaIDD6OupbIHBr9jv7Jnaml9tB7l4v068PAOXqfcujMMo5PhbIs6ggR1XODELqahT2R8v0fg=="],
-
-    "@warpkit/data-firestore/@warpkit/errors": ["@warpkit/errors@0.0.7", "", {}, "sha512-iZ8JV3dGUptlggFrEFD+lIib2UDo0FK7PcknBuDkBHKaUjI2vWFwuMk20Bc5t2m6uO0m8cnjjzbqzh/7SJfL7Q=="],
-
-    "@warpkit/storage-firebase/@warpkit/errors": ["@warpkit/errors@0.0.7", "", {}, "sha512-iZ8JV3dGUptlggFrEFD+lIib2UDo0FK7PcknBuDkBHKaUjI2vWFwuMk20Bc5t2m6uO0m8cnjjzbqzh/7SJfL7Q=="],
 
     "bl/buffer": ["buffer@5.7.1", "", { "dependencies": { "base64-js": "^1.3.1", "ieee754": "^1.1.13" } }, "sha512-EHcyIPBQ4BSGlvjB16k5KgAJ27CIsHY/2JBmCRReo48y9rQ3MaUzWX3KVlBa4U7MyX02HdVj0K7C3WaB3ju7FQ=="],
 

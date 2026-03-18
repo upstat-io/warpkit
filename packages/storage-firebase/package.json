@@ -32,7 +32,7 @@
 		"test": "bun test"
 	},
 	"dependencies": {
-		"@warpkit/errors": "^0.0.7"
+		"@warpkit/errors": "workspace:*"
 	},
 	"peerDependencies": {
 		"firebase": "^11.0.0",

@@ -108,10 +108,12 @@ jobs:
             packages/errors \
             packages/validation \
             packages/data \
+            packages/data-firestore \
             packages/cache \
             packages/forms \
             packages/websocket \
             packages/auth-firebase \
+            packages/storage-firebase \
             packages/vite-plugin \
             packages/create-warpkit; do
             if [ -f "$pkg/package.json" ]; then
