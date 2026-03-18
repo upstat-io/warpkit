@@ -1,6 +1,6 @@
 {
 	"name": "@warpkit/data-firestore",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"description": "Svelte 5 reactive Firestore subscriptions for WarpKit",
 	"license": "MIT",
 	"repository": {
@@ -32,7 +32,7 @@
 		"test": "bun test"
 	},
 	"dependencies": {
-		"@warpkit/errors": "workspace:*"
+		"@warpkit/errors": "^0.0.7"
 	},
 	"peerDependencies": {
 		"firebase": "^11.0.0",
