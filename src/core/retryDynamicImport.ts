@@ -81,6 +81,26 @@ export async function retryDynamicImport<T>(loader: () => Promise<T>): Promise<T
 		}
 	}
 
-	// All retries exhausted — throw the original last error (not wrapped)
+	// All retries exhausted on a chunk load error — likely a new deployment
+	// with different chunk hashes. Auto-reload to pick up the new index.html.
+	// SessionStorage guard prevents infinite reload loops.
+	if (typeof window !== 'undefined' && typeof sessionStorage !== 'undefined') {
+		const RELOAD_KEY = 'warpkit:chunk-reload';
+		const reloadedAt = sessionStorage.getItem(RELOAD_KEY);
+		const reloadAge = reloadedAt ? Date.now() - Number(reloadedAt) : Infinity;
+
+		if (reloadAge > 10_000) {
+			// Haven't reloaded recently — do it now
+			sessionStorage.setItem(RELOAD_KEY, String(Date.now()));
+			window.location.reload();
+			// Halt execution while reload happens
+			await new Promise(() => {});
+		}
+
+		// Already reloaded within 10s — something else is wrong.
+		// Clean up flag and throw so error surfaces.
+		sessionStorage.removeItem(RELOAD_KEY);
+	}
+
 	throw lastError;
 }
