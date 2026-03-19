@@ -6,6 +6,7 @@
  */
 
 import { getDataClient } from './context';
+import { HttpError } from './DataClient';
 import { reportError } from '@warpkit/errors';
 import type { DataKey, DataRegistry, DataType, QueryState, UseQueryOptions } from './types';
 
@@ -145,6 +146,11 @@ export function useQuery<K extends DataKey>(options: UseQueryOptions<K>): QueryS
 				}
 				// SWR: if we have stale data showing, suppress the error
 				if (hasStaleData) {
+					return;
+				}
+				// Suppress auth errors (401/403) during silent background polling
+				// or when the DataClient is paused (e.g., during logout transition)
+				if ((opts?.silent || client.isPaused) && e instanceof HttpError && (e.status === 401 || e.status === 403)) {
 					return;
 				}
 				error = e instanceof Error ? e : new Error(String(e));

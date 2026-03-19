@@ -449,13 +449,19 @@ export class WarpKit<TAppState extends string, TStateData = unknown> implements 
 	 * Handle auth state changes after initialization.
 	 */
 	private async handleAuthStateChange(result: { state: TAppState; stateData?: TStateData }): Promise<void> {
+		// Pause DataClient immediately on any state change to prevent
+		// in-flight queries from firing with stale/cleared auth tokens
+		const previousState = this.stateMachine.getState();
+		if (result.state !== previousState) {
+			this.dataConfig?.client.pause();
+		}
+
 		// Update state data if provided
 		if (result.stateData !== undefined) {
 			this.updateStateData(result.stateData);
 		}
 
 		// Emit auth events based on state transition direction
-		const previousState = this.stateMachine.getState();
 		if (result.state !== previousState) {
 			if (result.stateData !== undefined) {
 				// State data present indicates a signed-in user
