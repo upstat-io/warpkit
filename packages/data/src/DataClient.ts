@@ -94,6 +94,7 @@ export class DataClient {
 	private readonly retryOn429: boolean;
 	private readonly maxRetries: number;
 	private eventUnsubscribes: Array<() => void> = [];
+	private _paused = false;
 
 	/**
 	 * Create a new DataClient.
@@ -440,6 +441,31 @@ export class DataClient {
 	 */
 	public getBaseUrl(): string {
 		return this.config.baseUrl ?? '';
+	}
+
+	/**
+	 * Pause all query activity.
+	 *
+	 * When paused, hooks skip refetch intervals and new fetches.
+	 * Use during app state transitions (e.g., logout) to prevent
+	 * requests from firing after auth is cleared.
+	 */
+	public pause(): void {
+		this._paused = true;
+	}
+
+	/**
+	 * Resume query activity after a pause.
+	 */
+	public resume(): void {
+		this._paused = false;
+	}
+
+	/**
+	 * Whether the client is currently paused.
+	 */
+	public get isPaused(): boolean {
+		return this._paused;
 	}
 
 	/**

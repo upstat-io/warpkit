@@ -625,6 +625,10 @@ export class WarpKit<TAppState extends string, TStateData = unknown> implements 
 		const data = isPath ? undefined : dataOrPath;
 		const explicitPath = isPath ? dataOrPath : options?.path;
 
+		// Pause DataClient during state transition to prevent queries from
+		// firing after auth is cleared (e.g., logout → 403 errors)
+		this.dataConfig?.client.pause();
+
 		// Update state data if provided
 		if (data !== undefined) {
 			this.updateStateData(data);
@@ -638,6 +642,7 @@ export class WarpKit<TAppState extends string, TStateData = unknown> implements 
 		// Queue if called before start()
 		if (!this.started) {
 			this.preStartQueue.push({ state, data, path: explicitPath, options });
+			this.dataConfig?.client.resume();
 			return { success: true };
 		}
 
@@ -648,7 +653,12 @@ export class WarpKit<TAppState extends string, TStateData = unknown> implements 
 		const resolvedPath = explicitPath ?? this.getResolvedDefault(state);
 
 		// Navigate after state change
-		return this.navigator.navigateAfterStateChange(state, resolvedPath ?? undefined, options);
+		const result = this.navigator.navigateAfterStateChange(state, resolvedPath ?? undefined, options);
+
+		// Resume DataClient after navigation settles
+		result.then(() => this.dataConfig?.client.resume()).catch(() => this.dataConfig?.client.resume());
+
+		return result;
 	}
 
 	/**

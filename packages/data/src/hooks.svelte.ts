@@ -68,6 +68,7 @@ export function useQuery<K extends DataKey>(options: UseQueryOptions<K>): QueryS
 	/**
 	 * Execute fetch and update state.
 	 * Handles race conditions by checking fetchId.
+	 * Skips fetch when the DataClient is paused (e.g., during logout).
 	 *
 	 * @param resolvedParams - Pre-resolved params (resolved synchronously in $effect for tracking)
 	 * @param opts.silent - Skip setting isLoading (used by refetchInterval to avoid UI flash)
@@ -78,6 +79,9 @@ export function useQuery<K extends DataKey>(options: UseQueryOptions<K>): QueryS
 		resolvedParams: Record<string, string> | undefined,
 		opts?: { silent?: boolean; invalidate?: boolean; swr?: boolean }
 	): Promise<void> {
+		// Skip fetch when DataClient is paused (e.g., during logout)
+		if (client.isPaused) return;
+
 		// Increment fetch ID to track this specific fetch
 		const currentFetchId = ++fetchId;
 

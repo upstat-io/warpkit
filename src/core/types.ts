@@ -466,6 +466,8 @@ export interface WarpKitConfig<TAppState extends string, TStateData = unknown> {
 			clearCache(): Promise<void>;
 			scopeCache(scope: string): void;
 			setEvents(events: { on(event: string, handler: () => void | Promise<void>): () => void }): void;
+			pause(): void;
+			resume(): void;
 		};
 		/** Derive cache scope from state data. Return undefined to skip scoping. */
 		scopeKey?: (stateData: TStateData | undefined) => string | undefined;
