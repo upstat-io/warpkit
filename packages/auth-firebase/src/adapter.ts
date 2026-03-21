@@ -318,25 +318,6 @@ export class FirebaseAuthAdapter<
 				isNewUser: false
 			};
 		} catch (error: unknown) {
-			const firebaseError = error as { code?: string };
-			// If user not found, attempt to create account
-			if (firebaseError.code === 'auth/user-not-found') {
-				try {
-					const credential = await createUserWithEmailAndPassword(this.auth, email, password);
-					const user = toFirebaseUser(credential.user);
-					this.currentUser = user;
-					return {
-						user,
-						isNewUser: true
-					};
-				} catch (createError: unknown) {
-					// Map Firebase error to user-friendly message
-					if (isFirebaseAuthError(createError)) {
-						throw mapFirebaseError(createError);
-					}
-					throw createError;
-				}
-			}
 			// Map Firebase error to user-friendly message
 			if (isFirebaseAuthError(error)) {
 				throw mapFirebaseError(error);

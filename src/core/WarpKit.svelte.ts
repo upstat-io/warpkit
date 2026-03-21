@@ -332,14 +332,16 @@ export class WarpKit<TAppState extends string, TStateData = unknown> implements 
 					}
 
 					// Subscribe to subsequent auth state changes
-					this.authUnsubscribe = this.authAdapter.onAuthStateChanged((changeResult) => {
+					this.authUnsubscribe = this.authAdapter.onAuthStateChanged(async (changeResult) => {
 						if (changeResult) {
-							void this.handleAuthStateChange(changeResult).catch((error) => {
+							try {
+								await this.handleAuthStateChange(changeResult);
+							} catch (error) {
 								reportError('auth', error, {
 									showUI: true,
 									context: { phase: 'state-change' }
 								});
-							});
+							}
 						}
 					});
 				} catch (error) {

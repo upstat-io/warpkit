@@ -17,10 +17,16 @@ const FIREBASE_ERROR_MESSAGES: Record<string, string> = {
 
 	// Account errors
 	'auth/email-already-in-use': 'An account with this email already exists',
+	'auth/email-already-exists': 'An account with this email already exists',
 	'auth/user-disabled': 'This account has been disabled',
 
 	// Password errors
 	'auth/weak-password': 'Password must be at least 6 characters',
+	'auth/invalid-login-credentials': 'Invalid email or password',
+
+	// Operation errors
+	'auth/operation-not-allowed': 'This sign-in method is not enabled',
+	'auth/internal-error': 'An unexpected error occurred. Please try again',
 
 	// Rate limiting
 	'auth/too-many-requests': 'Too many attempts. Please try again later',

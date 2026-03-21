@@ -366,19 +366,11 @@ export class Navigator {
 			// Clear any previous navigation error
 			this.pageState.clearError();
 
-			// Update PageState (triggers Svelte 5 reactivity)
-			this.pageState.update(context.to);
-
 			// ========================================================================
-			// Phase 7: ON NAVIGATE
+			// Phase 7: COMMIT URL
 			// ========================================================================
-			await this.lifecycle.runOnNavigate(context);
-
-			if (isCancelled()) return this.cancelledResult(request.path);
-
-			// ========================================================================
-			// Phase 8: COMMIT
-			// ========================================================================
+			// Commit URL to browser BEFORE updating PageState, so components
+			// that read window.location during init see the correct URL
 			const historyState = this.createHistoryState(navigationId, currentState, request.state);
 
 			if (request.type !== 'pop') {
@@ -389,6 +381,14 @@ export class Navigator {
 					this.historyPosition++;
 				}
 			}
+
+			// Update PageState (triggers Svelte 5 reactivity)
+			this.pageState.update(context.to);
+
+			// ========================================================================
+			// Phase 8: ON NAVIGATE
+			// ========================================================================
+			await this.lifecycle.runOnNavigate(context);
 
 			// Handle scroll restoration
 			this.handleScroll(request, context);
