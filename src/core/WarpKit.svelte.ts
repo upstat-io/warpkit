@@ -399,10 +399,18 @@ export class WarpKit<TAppState extends string, TStateData = unknown> implements 
 			}
 
 			if (!result.success && this.pageState.route === null) {
-				throw new Error(
-					`[WarpKit] Initial navigation failed, no active route: ${result.error?.message ?? 'unknown error'}`,
-					{ cause: result.error }
-				);
+				// Browser URL belongs to a different state (e.g., auth page after login)
+				// — fall back to current state's default path
+				const fallbackPath = this.getResolvedDefault(this.stateMachine.getState());
+				if (fallbackPath) {
+					result = await this.navigator.navigate(fallbackPath, { ...navOptions, replace: true });
+				}
+				if (!result.success && this.pageState.route === null) {
+					throw new Error(
+						`[WarpKit] Initial navigation failed, no active route: ${result.error?.message ?? 'unknown error'}`,
+						{ cause: result.error }
+					);
+				}
 			}
 
 			// Clear queue only after successful navigation
@@ -1059,12 +1067,7 @@ export class WarpKit<TAppState extends string, TStateData = unknown> implements 
 
 		const defaultValue = stateConfig.default;
 		if (typeof defaultValue === 'function') {
-			// Resolve function default with current state data
-			if (this.stateData === undefined) {
-				// No state data yet - can't resolve function default
-				return null;
-			}
-			const resolved = defaultValue(this.stateData);
+			const resolved = defaultValue(this.stateData as TStateData);
 			// Cache the resolved value
 			this.defaultPathCache.set(state, resolved);
 			return resolved;
