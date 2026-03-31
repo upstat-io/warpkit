@@ -49,7 +49,7 @@ async function validateTypeBoxAsync<T>(schema: unknown, values: T): Promise<Vali
 		const path = jsonPointerToDotPath(error.path);
 		const key = path || '_root';
 		if (!(key in errors)) {
-			errors[key] = error.message;
+			errors[key] = extractTypeBoxErrorMessage(error);
 		}
 	}
 
@@ -57,7 +57,18 @@ async function validateTypeBoxAsync<T>(schema: unknown, values: T): Promise<Vali
 }
 
 // Cache for TypeBox Value module (loaded once via dynamic import, reused by sync path)
-let _typeboxValue: { Check: (schema: never, value: unknown) => boolean; Errors: (schema: never, value: unknown) => Iterable<{ path: string; message: string }> } | undefined;
+let _typeboxValue: { Check: (schema: never, value: unknown) => boolean; Errors: (schema: never, value: unknown) => Iterable<{ path: string; message: string; schema: Record<string, unknown> }> } | undefined;
+
+/**
+ * Extract the best error message from a TypeBox validation error.
+ * Prefers custom `error` annotation on the schema if present, falls back to default message.
+ */
+function extractTypeBoxErrorMessage(error: { message: string; schema: Record<string, unknown> }): string {
+	if (typeof error.schema?.error === 'string') {
+		return error.schema.error;
+	}
+	return error.message;
+}
 
 /**
  * Validate values against a TypeBox schema synchronously.
@@ -83,7 +94,7 @@ function validateTypeBoxSync<T>(schema: unknown, values: T): ValidationResult {
 		const path = jsonPointerToDotPath(error.path);
 		const key = path || '_root';
 		if (!(key in errors)) {
-			errors[key] = error.message;
+			errors[key] = extractTypeBoxErrorMessage(error);
 		}
 	}
 
