@@ -226,7 +226,7 @@ export function useQuery<K extends DataKey>(options: UseQueryOptions<K>): QueryS
 		for (const event of invalidateOn) {
 			unsubscribes.push(
 				events.on(event, () => {
-					doFetch(resolveParams());
+					doFetch(resolveParams(), { invalidate: true });
 				})
 			);
 		}
