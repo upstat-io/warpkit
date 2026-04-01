@@ -184,7 +184,7 @@ export function useData<K extends DataKey>(key: K, config: UseDataConfig<K>): Da
 		for (const event of keyInvalidateOn) {
 			unsubscribes.push(
 				events.on(event, () => {
-					doFetch();
+					doFetch({ invalidate: true });
 				})
 			);
 		}
