@@ -6,7 +6,7 @@
  * Must wrap all components that use useWarpKit() or usePage().
  */
 
-import { setContext, type Snippet } from 'svelte';
+import { onDestroy, setContext, type Snippet } from 'svelte';
 import { WARPKIT_CONTEXT, type WarpKit, type WarpKitContext } from '../context';
 import type { PageState } from '../core/types';
 
@@ -43,6 +43,14 @@ const context: WarpKitContext = {
 };
 
 setContext(WARPKIT_CONTEXT, context);
+
+// Clean up WarpKit when the provider unmounts. Fires on page teardown in
+// production, and on test component unmount in testing. Without this,
+// WarpKit instances leak window/document listeners from start() and
+// accumulate across many component mounts (BUG-11.21 in upstat).
+onDestroy(() => {
+	warpkit.destroy();
+});
 </script>
 
 {@render children()}
