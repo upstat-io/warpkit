@@ -11,8 +11,7 @@
 		"lib": ["ES2022", "DOM"],
 		"types": ["bun-types"],
 		"allowImportingTsExtensions": true,
-		"noEmit": true,
-		"baseUrl": "."
+		"noEmit": true
 	},
 	"include": ["src/**/*", "__tests__/**/*"],
 	"exclude": ["node_modules"]
