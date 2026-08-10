@@ -452,9 +452,10 @@ export class Navigator {
 
 	/**
 	 * Merge the original request's query and hash onto a config-table redirect
-	 * target. `StateConfig.redirects` entries are bare pathnames, so following a
-	 * redirect (e.g. a renamed route's legacy alias) would otherwise silently
-	 * drop a filtered link's query string. Per component: a target that already
+	 * target. `StateConfig.redirects` is typed `Record<string, string>` and every
+	 * entry a consumer declares today is a bare pathname, so following a redirect
+	 * (e.g. a renamed route's legacy alias) would otherwise silently drop a
+	 * filtered link's query string. Per component: a target that already
 	 * declares its own search or hash keeps it; an absent component is filled in
 	 * from the original request. Reparsing (rather than string-concatenating)
 	 * keeps `search` before `hash` regardless of which component the target
