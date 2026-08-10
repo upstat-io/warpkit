@@ -334,6 +334,24 @@ describe('Navigator', () => {
 			expect(mockMatcher.match).toHaveBeenCalledTimes(3);
 		});
 
+		it('should carry a hop-one target-owned query through hop two, not the original request query', async () => {
+			const targetRoute = createMockRoute('/activity');
+
+			// Hop one's target declares its own query, which wins over the original
+			// request's per §03.4's single-hop precedence rule. That per-component
+			// win has to survive being reparsed as hop two's own request, so hop
+			// two's merge sees hop one's query as ITS "original request" query,
+			// carrying `?scope=default` — never `?status=error` — to the end.
+			mockMatcher.match
+				.mockReturnValueOnce({ redirect: '/legacy-alias?scope=default' })
+				.mockReturnValueOnce({ redirect: '/activity' })
+				.mockReturnValueOnce({ route: targetRoute, params: {}, state: 'authenticated' });
+
+			const result = await navigator.navigate('/jobs?status=error');
+
+			expect(result.location?.path).toBe('/activity?scope=default');
+		});
+
 		it('should return TOO_MANY_REDIRECTS after 10 redirects', async () => {
 			// Always return redirect
 			mockMatcher.match.mockReturnValue({ redirect: '/loop' });
