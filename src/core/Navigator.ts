@@ -239,7 +239,8 @@ export class Navigator {
 				if (redirectCount > MAX_REDIRECTS) {
 					return this.tooManyRedirectsError(request.path);
 				}
-				return this.runPipeline({ ...request, path: match.redirect, redirectCount });
+				const redirectPath = this.mergeRedirectTarget(match.redirect, parsed.search, parsed.hash);
+				return this.runPipeline({ ...request, path: redirectPath, redirectCount });
 			}
 
 			// Handle state mismatch (discriminated by stateMismatch: true)
@@ -447,6 +448,21 @@ export class Navigator {
 		}
 
 		return { pathname, search, hash };
+	}
+
+	/**
+	 * Merge the original request's query and hash onto a config-table redirect
+	 * target. `StateConfig.redirects` entries are bare pathnames, so following a
+	 * redirect (e.g. a renamed route's legacy alias) would otherwise silently
+	 * drop a filtered link's query string. Per component: a target that already
+	 * declares its own search or hash keeps it; an absent component is filled in
+	 * from the original request. Reparsing (rather than string-concatenating)
+	 * keeps `search` before `hash` regardless of which component the target
+	 * itself already carries.
+	 */
+	private mergeRedirectTarget(redirectPath: string, search: string, hash: string): string {
+		const target = this.parsePath(redirectPath);
+		return target.pathname + (target.search || search) + (target.hash || hash);
 	}
 
 	/**

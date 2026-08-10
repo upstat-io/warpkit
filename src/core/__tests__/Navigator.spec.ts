@@ -187,6 +187,135 @@ describe('Navigator', () => {
 			expect(result.location?.pathname).toBe('/new-path');
 		});
 
+		// Regression: BUG-07-098 — a renamed route's redirect dropped the query
+		// string, so a shared filtered link (e.g. `/jobs?status=error`) lost its
+		// filter the moment the legacy alias redirected to the renamed route.
+		it('should carry the query string across a redirect from route config', async () => {
+			const targetRoute = createMockRoute('/activity');
+
+			mockMatcher.match
+				.mockReturnValueOnce({ redirect: '/activity' })
+				.mockReturnValueOnce({ route: targetRoute, params: {}, state: 'authenticated' });
+
+			const result = await navigator.navigate('/jobs?status=error');
+
+			expect(result.success).toBe(true);
+			expect(result.location?.pathname).toBe('/activity');
+			expect(result.location?.search).toBe('?status=error');
+			expect(result.location?.path).toBe('/activity?status=error');
+			// RouteMatcher's contract stays pathname-only: the re-match after the
+			// redirect is called with the bare pathname, never the query.
+			expect(mockMatcher.match).toHaveBeenNthCalledWith(2, '/activity', 'authenticated');
+		});
+
+		it('should carry the hash across a redirect from route config', async () => {
+			const targetRoute = createMockRoute('/activity');
+
+			mockMatcher.match
+				.mockReturnValueOnce({ redirect: '/activity' })
+				.mockReturnValueOnce({ route: targetRoute, params: {}, state: 'authenticated' });
+
+			const result = await navigator.navigate('/jobs#section-2');
+
+			expect(result.location?.path).toBe('/activity#section-2');
+		});
+
+		it('should carry both the query string and the hash across a redirect', async () => {
+			const targetRoute = createMockRoute('/activity');
+
+			mockMatcher.match
+				.mockReturnValueOnce({ redirect: '/activity' })
+				.mockReturnValueOnce({ route: targetRoute, params: {}, state: 'authenticated' });
+
+			const result = await navigator.navigate('/jobs?status=error#section-2');
+
+			expect(result.location?.path).toBe('/activity?status=error#section-2');
+		});
+
+		it('should not carry a query across a redirect when the original request had none', async () => {
+			const targetRoute = createMockRoute('/activity');
+
+			mockMatcher.match
+				.mockReturnValueOnce({ redirect: '/activity' })
+				.mockReturnValueOnce({ route: targetRoute, params: {}, state: 'authenticated' });
+
+			const result = await navigator.navigate('/jobs');
+
+			// Negative pin: no query on the request means no query gets invented
+			// on the redirect target.
+			expect(result.location?.path).toBe('/activity');
+		});
+
+		it('should not double up a query when the redirect target already declares its own', async () => {
+			const targetRoute = createMockRoute('/activity');
+
+			mockMatcher.match
+				.mockReturnValueOnce({ redirect: '/activity?scope=default' })
+				.mockReturnValueOnce({ route: targetRoute, params: {}, state: 'authenticated' });
+
+			const result = await navigator.navigate('/jobs?status=error');
+
+			// Negative pin: a redirect target that already carries its own query
+			// wins; the original request's query is never blindly appended on top.
+			expect(result.location?.path).toBe('/activity?scope=default');
+		});
+
+		it('should not double up a hash when the redirect target already declares its own', async () => {
+			const targetRoute = createMockRoute('/activity');
+
+			mockMatcher.match
+				.mockReturnValueOnce({ redirect: '/activity#top' })
+				.mockReturnValueOnce({ route: targetRoute, params: {}, state: 'authenticated' });
+
+			const result = await navigator.navigate('/jobs#section-2');
+
+			expect(result.location?.path).toBe('/activity#top');
+		});
+
+		it('should place a carried query before a target-declared hash, never after', async () => {
+			const targetRoute = createMockRoute('/activity');
+
+			// The target owns only its hash; the original request's query has no
+			// declared component to compete with, so it fills the gap. A naive
+			// string-append implementation would produce the invalid ordering
+			// `/activity#top?status=error` (hash before query) here.
+			mockMatcher.match
+				.mockReturnValueOnce({ redirect: '/activity#top' })
+				.mockReturnValueOnce({ route: targetRoute, params: {}, state: 'authenticated' });
+
+			const result = await navigator.navigate('/jobs?status=error');
+
+			expect(result.location?.path).toBe('/activity?status=error#top');
+		});
+
+		it('should carry the original hash when the target owns only its own query', async () => {
+			const targetRoute = createMockRoute('/activity');
+
+			mockMatcher.match
+				.mockReturnValueOnce({ redirect: '/activity?scope=default' })
+				.mockReturnValueOnce({ route: targetRoute, params: {}, state: 'authenticated' });
+
+			const result = await navigator.navigate('/jobs#section-2');
+
+			expect(result.location?.path).toBe('/activity?scope=default#section-2');
+		});
+
+		it('should NOT carry the query across a no-match-to-default redirect (different mechanism)', async () => {
+			mockGetResolvedDefault.mockReturnValue('/dashboard');
+			const dashboardRoute = createMockRoute('/dashboard');
+
+			mockMatcher.match
+				.mockReturnValueOnce(null)
+				.mockReturnValueOnce({ route: dashboardRoute, params: {}, state: 'authenticated' });
+
+			const result = await navigator.navigate('/totally-unknown?foo=bar');
+
+			// Negative pin: BUG-07-098's fix is scoped to the config-redirect branch
+			// only. A path with no match at all has no defined query mapping onto an
+			// unrelated default path, so this branch's existing behavior is unchanged.
+			expect(result.location?.path).toBe('/dashboard');
+		});
+
 		it('should return TOO_MANY_REDIRECTS after 10 redirects', async () => {
 			// Always return redirect
 			mockMatcher.match.mockReturnValue({ redirect: '/loop' });
