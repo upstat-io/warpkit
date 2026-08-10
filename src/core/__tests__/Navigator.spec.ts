@@ -352,6 +352,23 @@ describe('Navigator', () => {
 			expect(result.location?.path).toBe('/activity?scope=default');
 		});
 
+		it('should carry a hop-one target-owned hash through hop two, not the original request hash', async () => {
+			const targetRoute = createMockRoute('/activity');
+
+			// Mirror of the query case above, for hash: hop one's target declares
+			// its own hash, winning per §03.4's single-hop precedence, and that
+			// win has to survive being reparsed as hop two's own request rather
+			// than losing to the true original request's hash.
+			mockMatcher.match
+				.mockReturnValueOnce({ redirect: '/legacy-alias#top' })
+				.mockReturnValueOnce({ redirect: '/activity' })
+				.mockReturnValueOnce({ route: targetRoute, params: {}, state: 'authenticated' });
+
+			const result = await navigator.navigate('/jobs#section-2');
+
+			expect(result.location?.path).toBe('/activity#top');
+		});
+
 		it('should return TOO_MANY_REDIRECTS after 10 redirects', async () => {
 			// Always return redirect
 			mockMatcher.match.mockReturnValue({ redirect: '/loop' });
