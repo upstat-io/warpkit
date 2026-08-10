@@ -385,6 +385,23 @@ describe('Navigator', () => {
 			expect(result.location?.path).toBe('/activity#top');
 		});
 
+		it('should carry a hop-one target owning both components through hop two', async () => {
+			const targetRoute = createMockRoute('/activity');
+
+			// Combines the two-hop cases above with the single-hop
+			// both-components-owned case: hop one's target declares both its own
+			// query and hash, and that combined win has to survive being
+			// reparsed as hop two's own request.
+			mockMatcher.match
+				.mockReturnValueOnce({ redirect: '/legacy-alias?scope=default#top' })
+				.mockReturnValueOnce({ redirect: '/activity' })
+				.mockReturnValueOnce({ route: targetRoute, params: {}, state: 'authenticated' });
+
+			const result = await navigator.navigate('/jobs?status=error#section-2');
+
+			expect(result.location?.path).toBe('/activity?scope=default#top');
+		});
+
 		it('should return TOO_MANY_REDIRECTS after 10 redirects', async () => {
 			// Always return redirect
 			mockMatcher.match.mockReturnValue({ redirect: '/loop' });
