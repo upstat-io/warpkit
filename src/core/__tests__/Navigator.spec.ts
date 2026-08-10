@@ -492,6 +492,28 @@ describe('Navigator', () => {
 			expect(mockProviders.browser.replace).toHaveBeenCalled();
 		});
 
+		it('should NOT carry the query across a state-mismatch-to-default redirect (different mechanism)', async () => {
+			const dashboardRoute = createMockRoute('/dashboard');
+			mockGetResolvedDefault.mockReturnValue('/dashboard');
+			mockMatcher.match
+				.mockReturnValueOnce({
+					stateMismatch: true,
+					requestedState: 'authenticated',
+					availableInState: 'admin',
+					pathname: '/admin-only'
+				})
+				.mockReturnValueOnce({ route: dashboardRoute, params: {}, state: 'authenticated' });
+
+			const result = await navigator.navigate('/admin-only?status=error#section-2');
+
+			// Negative pin, per BUG-07-098's §01/§02 scope boundary: a foreign
+			// path's query has no defined mapping onto an unrelated default
+			// path, so this branch (a different mechanism from the
+			// config-redirect branch the fix touches) stays unchanged — the
+			// query and hash are dropped, not carried.
+			expect(result.location?.path).toBe('/dashboard');
+		});
+
 		it('should call lifecycle hooks in order', async () => {
 			const route = createMockRoute('/dashboard');
 			mockMatcher.match.mockReturnValue({
@@ -676,6 +698,29 @@ describe('Navigator', () => {
 
 			expect(result.success).toBe(true);
 			expect(result.location?.pathname).toBe('/new');
+		});
+
+		it('should NOT carry the query across a beforeNavigate-hook redirect (different mechanism)', async () => {
+			const oldRoute = createMockRoute('/old');
+			const newRoute = createMockRoute('/new');
+
+			mockMatcher.match
+				.mockReturnValueOnce({ route: oldRoute, params: {}, state: 'authenticated' })
+				.mockReturnValueOnce({ route: newRoute, params: {}, state: 'authenticated' });
+
+			mockLifecycle.runBeforeNavigate
+				.mockResolvedValueOnce({ proceed: false, redirect: '/new' })
+				.mockResolvedValueOnce({ proceed: true });
+
+			const result = await navigator.navigate('/old?status=error#section-2');
+
+			// Negative pin, per BUG-07-098's §01/§02 scope boundary: the hook
+			// already owns and can compose its own redirect target, so this
+			// branch (a different mechanism from the config-redirect branch the
+			// fix touches) stays unchanged — the query and hash the hook did not
+			// itself compose into `/new` are dropped, not carried.
+			expect(result.location?.pathname).toBe('/new');
+			expect(result.location?.path).toBe('/new');
 		});
 	});
 
