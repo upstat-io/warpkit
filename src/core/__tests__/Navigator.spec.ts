@@ -402,6 +402,24 @@ describe('Navigator', () => {
 			expect(result.location?.path).toBe('/activity?scope=default#top');
 		});
 
+		it("should let hop-two's own target win over what hop one carried", async () => {
+			const targetRoute = createMockRoute('/activity');
+
+			// Every prior two-hop case gives hop two a bare target. Here hop one's
+			// target is bare (so it carries the original request's components
+			// forward unchanged), and hop two's target declares its OWN query and
+			// hash — proving the merge re-evaluates precedence fresh at hop two
+			// rather than treating whatever hop one produced as immutable.
+			mockMatcher.match
+				.mockReturnValueOnce({ redirect: '/legacy-alias' })
+				.mockReturnValueOnce({ redirect: '/activity?scope=override#end' })
+				.mockReturnValueOnce({ route: targetRoute, params: {}, state: 'authenticated' });
+
+			const result = await navigator.navigate('/jobs?status=error#section-2');
+
+			expect(result.location?.path).toBe('/activity?scope=override#end');
+		});
+
 		it('should return TOO_MANY_REDIRECTS after 10 redirects', async () => {
 			// Always return redirect
 			mockMatcher.match.mockReturnValue({ redirect: '/loop' });
