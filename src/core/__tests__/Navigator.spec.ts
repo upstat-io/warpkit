@@ -300,6 +300,22 @@ describe('Navigator', () => {
 			expect(result.location?.path).toBe('/activity?scope=default#section-2');
 		});
 
+		it('should carry both target-declared components when the target owns query and hash', async () => {
+			const targetRoute = createMockRoute('/activity');
+
+			// Neither precedent case above pins a target that owns BOTH
+			// components at once — a fix that only checked one component before
+			// falling back to the original request could still pass both
+			// single-component cases while dropping the other here.
+			mockMatcher.match
+				.mockReturnValueOnce({ redirect: '/activity?scope=default#top' })
+				.mockReturnValueOnce({ route: targetRoute, params: {}, state: 'authenticated' });
+
+			const result = await navigator.navigate('/jobs?status=error#section-2');
+
+			expect(result.location?.path).toBe('/activity?scope=default#top');
+		});
+
 		it('should NOT carry the query across a no-match-to-default redirect (different mechanism)', async () => {
 			mockGetResolvedDefault.mockReturnValue('/dashboard');
 			const dashboardRoute = createMockRoute('/dashboard');
