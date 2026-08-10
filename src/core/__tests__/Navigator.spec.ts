@@ -316,6 +316,24 @@ describe('Navigator', () => {
 			expect(result.location?.path).toBe('/dashboard');
 		});
 
+		it('should carry the query through a two-hop config-redirect chain', async () => {
+			const targetRoute = createMockRoute('/activity');
+
+			// Each hop reparses the CURRENT request's path, so a second redirect
+			// entry chained onto the first must see the already-merged query from
+			// hop one and carry it forward again, rather than the fix only
+			// applying at the outermost call.
+			mockMatcher.match
+				.mockReturnValueOnce({ redirect: '/legacy-alias' })
+				.mockReturnValueOnce({ redirect: '/activity' })
+				.mockReturnValueOnce({ route: targetRoute, params: {}, state: 'authenticated' });
+
+			const result = await navigator.navigate('/jobs?status=error');
+
+			expect(result.location?.path).toBe('/activity?status=error');
+			expect(mockMatcher.match).toHaveBeenCalledTimes(3);
+		});
+
 		it('should return TOO_MANY_REDIRECTS after 10 redirects', async () => {
 			// Always return redirect
 			mockMatcher.match.mockReturnValue({ redirect: '/loop' });
