@@ -15,8 +15,16 @@ import type { DataClient } from './DataClient';
 /**
  * Svelte context key for DataClient.
  * Use with getContext(DATA_CLIENT_CONTEXT) to access the client.
+ *
+ * @remarks
+ * Uses the global symbol registry (`Symbol.for`) rather than a local
+ * `Symbol()` call, for the same reason as `@warpkit/core`'s
+ * `WARPKIT_CONTEXT` (see `src/context.ts` there): a local `Symbol()` breaks
+ * `setContext`/`getContext` matching across duplicate module instances that
+ * Vite's dev server can serve when this package's `dist/` is rebuilt live
+ * while a consumer app's dev server holds it open via a symlink.
  */
-export const DATA_CLIENT_CONTEXT: unique symbol = Symbol('warpkit:data-client');
+export const DATA_CLIENT_CONTEXT: symbol = Symbol.for('warpkit:data-client');
 
 /**
  * @deprecated Use DATA_CLIENT_CONTEXT instead
