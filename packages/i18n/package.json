@@ -1,0 +1,23 @@
+{
+  "name": "@warpkit/i18n",
+  "version": "0.0.1",
+  "description": "Typed ICU messages, locale negotiation and reactive Svelte integration for WarpKit",
+  "license": "MIT",
+  "repository": { "type": "git", "url": "https://github.com/upstat-io/warpkit.git", "directory": "packages/i18n" },
+  "type": "module",
+  "files": ["dist"],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
+    "./svelte": { "types": "./dist/svelte/index.d.ts", "browser": "./dist/svelte/context.client.js", "default": "./dist/svelte/context.server.js" }
+  },
+  "scripts": { "build": "tsc --noEmit --emitDeclarationOnly false && svelte-package -i src -o dist && bun scripts/build.ts", "clean": "rm -rf dist" },
+  "dependencies": {
+    "intl-messageformat": "11.2.14",
+    "@formatjs/icu-messageformat-parser": "3.5.17",
+    "@formatjs/intl-localematcher": "0.8.13"
+  },
+  "peerDependencies": { "svelte": "^5.53.7" },
+  "peerDependenciesMeta": { "svelte": { "optional": true } }
+}

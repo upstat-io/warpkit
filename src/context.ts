@@ -23,8 +23,24 @@ import type { EventEmitterAPI, WarpKitEventRegistry } from './events/types.js';
 /**
  * Svelte context key for WarpKit v2.
  * Use with getContext(WARPKIT_CONTEXT) to access the context.
+ *
+ * @remarks
+ * Uses the global symbol registry (`Symbol.for`) rather than a local
+ * `Symbol()` call. In a monorepo dev setup where this package's `dist/`
+ * output is rebuilt live while a consumer app's Vite dev server holds it
+ * open via a filesystem symlink, Vite's HMR can serve two distinct module
+ * instances of this file to different import chains in the same page load
+ * (observed: `dist/context.js` fetched both with and without a `?t=`
+ * cache-busting query at different timestamps). A local `Symbol()` would
+ * make those two instances produce two different context keys, so
+ * `setContext(WARPKIT_CONTEXT, ...)` in one instance would never match
+ * `getContext(WARPKIT_CONTEXT)` in the other — surfacing as "usePage must
+ * be called within WarpKitProvider" even though the component tree is
+ * correctly nested. `Symbol.for` resolves to the same registry entry
+ * regardless of how many times this module is evaluated, so the context
+ * key stays stable across duplicate module instances.
  */
-export const WARPKIT_CONTEXT: unique symbol = Symbol('warpkit-v2');
+export const WARPKIT_CONTEXT: symbol = Symbol.for('warpkit-v2');
 
 // ============================================================================
 // Context Types

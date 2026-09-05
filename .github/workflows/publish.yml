@@ -111,6 +111,7 @@ jobs:
             packages/data-firestore \
             packages/cache \
             packages/forms \
+            packages/i18n \
             packages/websocket \
             packages/auth-firebase \
             packages/storage-firebase \
