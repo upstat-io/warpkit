@@ -8,6 +8,7 @@ Thank you for your interest in contributing to WarpKit!
 2. Install dependencies: `bun install`
 3. Run tests: `bun test`
 4. Type check: `bun run typecheck`
+5. For browser tests, install matching Chromium with `bun run test:install-browser`, then run `bun run test:browser`. The install command uses `@playwright/test/cli` because the experimental component-test package also provides a binary named `playwright`.
 
 ## Code Style
 

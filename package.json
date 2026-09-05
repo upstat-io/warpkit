@@ -43,6 +43,7 @@
 		"test": "bun test src",
 		"test:packages": "bunx vitest run --config vitest.config.ts",
 		"test:browser": "bunx vitest run --config vitest.browser.config.ts",
+		"test:install-browser": "bun scripts/playwright.ts install --with-deps chromium",
 		"test:all": "bun run test && bun run test:packages && bun run test:browser",
 		"test:watch": "bun test src --watch",
 		"test:coverage": "bun test src --coverage",
