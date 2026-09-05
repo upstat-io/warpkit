@@ -25,7 +25,7 @@ import type { StateRoutes } from '../src/core/types';
 // Simple test routes
 type TestState = 'authenticated' | 'unauthenticated';
 
-const createTestRoutes = (): StateRoutes<TestState> => ({
+const createTestRoutes = (defaultRoute: string | null = '/dashboard'): StateRoutes<TestState> => ({
 	authenticated: {
 		routes: [
 			{
@@ -44,7 +44,7 @@ const createTestRoutes = (): StateRoutes<TestState> => ({
 				meta: { title: 'User' }
 			}
 		],
-		default: '/dashboard'
+		default: defaultRoute
 	},
 	unauthenticated: {
 		routes: [
@@ -70,15 +70,12 @@ describe('createMockWarpKit', () => {
 			expect(warpkit.page).toBeDefined();
 		});
 
-		test('should have error when initial path has no matching route', async () => {
-			const warpkit = await createMockWarpKit({
-				routes: createTestRoutes(),
+		test('should reject startup when the initial path and fallback have no route', async () => {
+			await expect(createMockWarpKit({
+				routes: createTestRoutes(null),
 				initialState: 'authenticated'
-				// Default initialPath is '/' which has no route
-			});
-
-			// '/' has no matching route, so there's an error
-			expect(warpkit.page.error).not.toBeNull();
+				// No fallback is configured; '/' must produce a not-found error.
+			})).rejects.toThrow('Initial navigation failed, no active route');
 		});
 
 		test('should start at custom initial path', async () => {
@@ -350,7 +347,7 @@ describe('expectations', () => {
 
 		test('should pass when has error and expected true', async () => {
 			const warpkit = await createMockWarpKit({
-				routes: createTestRoutes(),
+				routes: createTestRoutes(null),
 				initialState: 'authenticated',
 				initialPath: '/dashboard'
 			});

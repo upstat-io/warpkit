@@ -22,6 +22,7 @@ A standalone Svelte 5 SPA framework providing state-based routing, data fetching
 | [`@warpkit/core`](https://www.npmjs.com/package/@warpkit/core) | Router, state machine, events, components |
 | [`@warpkit/data`](https://www.npmjs.com/package/@warpkit/data) | Data fetching, caching, mutations |
 | [`@warpkit/cache`](https://www.npmjs.com/package/@warpkit/cache) | Cache implementations (Memory, Storage, E-Tag) |
+| `@warpkit/i18n` | Typed ICU messages, locale negotiation and reactive Svelte integration |
 | [`@warpkit/forms`](https://www.npmjs.com/package/@warpkit/forms) | Schema-driven form state management |
 | [`@warpkit/validation`](https://www.npmjs.com/package/@warpkit/validation) | StandardSchema validation (Zod, TypeBox) |
 | [`@warpkit/websocket`](https://www.npmjs.com/package/@warpkit/websocket) | WebSocket client with reconnection |

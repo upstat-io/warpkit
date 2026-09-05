@@ -31,3 +31,9 @@ jobs:
 
       - name: Package tests
         run: bun run test:packages
+
+      - name: Install browser for compiled localisation consumer tests
+        run: bunx playwright install --with-deps chromium
+
+      - name: Compiled localisation and render helper browser tests
+        run: bunx vitest run --config vitest.browser.config.ts packages/i18n/tests/context.svelte.test.ts __browser_tests__/render-helper.svelte.test.ts

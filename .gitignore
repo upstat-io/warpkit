@@ -20,6 +20,7 @@ vite.config.ts.timestamp-*
 # Vitest
 coverage/
 __screenshots__/
+.vitest-attachments/
 
 # Playwright
 playwright-report/

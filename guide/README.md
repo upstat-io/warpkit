@@ -32,6 +32,8 @@ This guide is for frontend developers who want to build robust, production-ready
 10. [**Testing**](./10-testing.md) — Mock providers, assertion helpers, and testing strategies
 11. [**Architecture & Design Decisions**](./11-architecture.md) — Why WarpKit is built the way it is
 
+12. [**Internationalisation**](./12-internationalisation.md) — Typed ICU messages, locale lifecycle and Svelte integration
+
 ## Package Overview
 
 | Package | Purpose |
@@ -39,6 +41,7 @@ This guide is for frontend developers who want to build robust, production-ready
 | `@warpkit/core` | Router, state machine, events, components |
 | `@warpkit/data` | Data fetching, caching, mutations |
 | `@warpkit/cache` | MemoryCache, StorageCache, ETagCacheProvider |
+| `@warpkit/i18n` | Typed ICU messages, locale negotiation and reactive localisation |
 | `@warpkit/forms` | Schema-driven form state management |
 | `@warpkit/validation` | StandardSchema validation utilities |
 | `@warpkit/websocket` | WebSocket client with reconnection |
