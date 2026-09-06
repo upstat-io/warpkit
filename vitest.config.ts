@@ -15,6 +15,8 @@ export default defineConfig({
 		}
 	},
 	test: {
+		// Transform Zod's ESM exports instead of relying on native-runner interop.
+		server: { deps: { inline: ['zod'] } },
 		include: ['src/**/*.spec.ts', 'packages/**/*.spec.ts'],
 		exclude: [
 			...configDefaults.exclude,

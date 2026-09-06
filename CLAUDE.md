@@ -67,6 +67,8 @@
 - **Browser tests**: `bun run test:browser` — vitest-browser-svelte + Playwright
 - `createMockWarpKit()` with MemoryBrowserProvider for isolated testing
 - `renderWithWarpKit()` renders component within WarpKitProvider context
+- Install each contribution worktree's complete dependencies and verify its frozen lockfile; do not borrow another checkout's entire `node_modules` tree.
+- Verify test-library public exports after dependency changes; derive helper results from the actual function when its result type is not exported. Exercise real dependency imports through the selected test runner.
 - NO timer-based tests — use deterministic approaches (manual flush, callbacks)
 - NO jsdom — Svelte 5's mount() requires real browser (Playwright)
 
