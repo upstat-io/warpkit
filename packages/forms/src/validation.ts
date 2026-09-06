@@ -7,6 +7,8 @@
  */
 
 import type { StandardSchema } from '@warpkit/validation';
+import type { ValueError } from '@sinclair/typebox/errors';
+import type { TypeBoxSchemaLike } from './defaults';
 import { isStandardSchema } from '@warpkit/validation';
 import type { ValidationMode } from './types';
 import { pathToString } from './paths';
@@ -44,20 +46,25 @@ async function validateTypeBoxAsync<T>(schema: unknown, values: T): Promise<Vali
 		return { valid: true, errors: {} };
 	}
 
-	const errors: Record<string, string> = {};
-	for (const error of Value.Errors(schema as never, values)) {
-		const path = jsonPointerToDotPath(error.path);
-		const key = path || '_root';
-		if (!(key in errors)) {
-			errors[key] = extractTypeBoxErrorMessage(error);
-		}
-	}
-
-	return { valid: false, errors };
+	return { valid: false, errors: collectTypeBoxErrors(Value.Errors(schema as never, values)) };
 }
 
 // Cache for TypeBox Value module (loaded once via dynamic import, reused by sync path)
-let _typeboxValue: { Check: (schema: never, value: unknown) => boolean; Errors: (schema: never, value: unknown) => Iterable<{ path: string; message: string; schema: Record<string, unknown> }> } | undefined;
+let _typeboxValue: { Check: (schema: never, value: unknown) => boolean; Errors: (schema: never, value: unknown) => Iterable<ValueError> } | undefined;
+
+/** Keep union summaries and nested branch diagnostics without selecting an alternative. */
+function collectTypeBoxErrors(issues: Iterable<ValueError>): Record<string, string> {
+	const errors: Record<string, string> = {};
+	function visit(branch: Iterable<ValueError>): void {
+		for (const error of branch) {
+			const key = jsonPointerToDotPath(error.path) || '_root';
+			if (!(key in errors)) errors[key] = extractTypeBoxErrorMessage(error);
+			for (const nested of error.errors) visit(nested);
+		}
+	}
+	visit(issues);
+	return errors;
+}
 
 /**
  * Extract the best error message from a TypeBox validation error.
@@ -73,7 +80,7 @@ function extractTypeBoxErrorMessage(error: { message: string; schema: Record<str
 /**
  * Validate values against a TypeBox schema synchronously.
  * Requires that validateTypeBoxAsync was called first to cache the TypeBox module.
- * Falls back to assuming valid if TypeBox hasn't been loaded yet.
+ * Throws until the async path has loaded TypeBox.
  */
 function validateTypeBoxSync<T>(schema: unknown, values: T): ValidationResult {
 	if (!_typeboxValue) {
@@ -89,16 +96,7 @@ function validateTypeBoxSync<T>(schema: unknown, values: T): ValidationResult {
 		return { valid: true, errors: {} };
 	}
 
-	const errors: Record<string, string> = {};
-	for (const error of _typeboxValue.Errors(schema as never, values)) {
-		const path = jsonPointerToDotPath(error.path);
-		const key = path || '_root';
-		if (!(key in errors)) {
-			errors[key] = extractTypeBoxErrorMessage(error);
-		}
-	}
-
-	return { valid: false, errors };
+	return { valid: false, errors: collectTypeBoxErrors(_typeboxValue.Errors(schema as never, values)) };
 }
 
 /**
@@ -157,7 +155,7 @@ export interface ValidationResult {
  * // { valid: false, errors: { email: 'Invalid email format' } }
  * ```
  */
-export function validateSchema<T>(schema: StandardSchema<T> | undefined, values: T): ValidationResult {
+export function validateSchema<T>(schema: StandardSchema<T> | TypeBoxSchemaLike | undefined, values: T): ValidationResult {
 	// No schema = always valid
 	if (!schema) {
 		return { valid: true, errors: {} };
@@ -217,7 +215,7 @@ export function validateSchema<T>(schema: StandardSchema<T> | undefined, values:
  * ```
  */
 export async function validateSchemaAsync<T>(
-	schema: StandardSchema<T> | undefined,
+	schema: StandardSchema<T> | TypeBoxSchemaLike | undefined,
 	values: T
 ): Promise<ValidationResult> {
 	// No schema = always valid

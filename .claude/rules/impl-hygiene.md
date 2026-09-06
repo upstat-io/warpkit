@@ -18,6 +18,7 @@ paths:
 
 ## Error Flow Discipline
 
+- **Structured validation errors**: Preserve nested union/alternative diagnostics at their field paths as well as parent summaries. Verify nullable objects, nested arrays, valid alternatives and sync/async parity through the real validator; a failed root check alone does not prove usable field feedback.
 - **Errors are never silent**: Every `catch` block must either rethrow, call `reportError()`, or log to console. No empty `catch {}` blocks.
 - **`reportError()` is the bridge**: Sub-packages report via `reportError(source, error, options)`. Core subscribes via `onErrorReport()` and routes to `errorStore` + ErrorOverlay.
 - **`showUI` defaults are severity-based**: `true` for `error`/`fatal`, `false` for `warning`/`info`. Callsites that override to `showUI: false` for `error` severity must justify it — the component must have visible error UI.
@@ -50,6 +51,7 @@ paths:
 
 ## Build & Ship Discipline
 
+- **Fresh-checkout checks**: Reconcile the lockfile with declared manifests, verify a frozen install, and declare the type packages referenced by the owning compiler configuration, including Svelte runes for `.svelte.ts` checks, before claiming typecheck success.
 - **Ship compiled JS**: Every package MUST have a build step producing `dist/`. Consumers never compile WarpKit source.
 - **No relative paths in configs**: Always use package names (`@warpkit/errors`), not relative paths (`../../packages/errors`).
 - **`workspace:*` resolved at publish**: Internal deps use `workspace:*` during development. The publish pipeline resolves them to actual versions.
@@ -79,6 +81,7 @@ paths:
 
 ## Testing Discipline
 
+- **Runner import compatibility**: Verify integration-library exports through the supported Bun/Vitest runner. If a named namespace alias is unavailable there, use an equivalent export verified in the installed package and rerun the actual integration suites; do not replace them with mocks.
 - **Test from consumer perspective**: If `bun add @warpkit/core` + `bun dev` doesn't work, it's broken.
 - **`createMockWarpKit()` for isolation**: Tests use `MemoryBrowserProvider`, not real browser APIs.
 - **No timer-based tests**: Use deterministic approaches (manual flush, callbacks). No `setTimeout` waits.

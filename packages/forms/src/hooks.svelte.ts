@@ -6,7 +6,6 @@
  */
 
 import { reportError } from '@warpkit/errors';
-import type { StandardSchema } from '@warpkit/validation';
 import type {
 	FormOptions,
 	FormState,
@@ -199,7 +198,7 @@ export function useForm<T extends object>(options: FormOptions<T>): FormState<T>
 		let fieldError: string | undefined;
 
 		if (schema) {
-			const result = await validateSchemaAsync(schema as StandardSchema<T>, values);
+			const result = await validateSchemaAsync(schema, values);
 			fieldError = result.errors[field];
 		}
 
@@ -309,7 +308,7 @@ export function useForm<T extends object>(options: FormOptions<T>): FormState<T>
 
 			// Run schema validation
 			if (schema) {
-				const result = await validateSchemaAsync(schema as StandardSchema<T>, values);
+				const result = await validateSchemaAsync(schema, values);
 				allErrors = { ...result.errors };
 			}
 

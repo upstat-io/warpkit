@@ -4,7 +4,7 @@
  * Verifies @warpkit/validation works with real Zod schemas.
  */
 import { describe, it, expect } from 'vitest';
-import { z } from 'zod';
+import z from 'zod';
 import { isStandardSchema, ValidatedType, validate, ValidationError } from '../index';
 
 describe('Zod Integration', () => {

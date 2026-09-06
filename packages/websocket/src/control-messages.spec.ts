@@ -4,7 +4,7 @@
  * Tests for client-side message definitions.
  */
 import { describe, it, expect } from 'vitest';
-import { z } from 'zod';
+import z from 'zod';
 import { ClientMessage, JoinRoom, LeaveRoom, Heartbeat } from './control-messages';
 import { isStandardSchema, validate, ValidatedType } from '@warpkit/validation';
 import type { ValidatedMessageDefinition } from './types';

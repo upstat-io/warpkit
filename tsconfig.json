@@ -15,7 +15,7 @@
 		"isolatedModules": true,
 		"noEmit": true,
 		"verbatimModuleSyntax": true,
-		"types": ["bun-types"],
+		"types": ["bun", "svelte"],
 		"paths": {
 			"@warpkit/data": ["./packages/data/src/index.ts"],
 			"@warpkit/cache": ["./packages/cache/src/index.ts"],

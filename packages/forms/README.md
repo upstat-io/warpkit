@@ -104,3 +104,9 @@ Returns:
 - `swap(field, indexA, indexB)` - Swap array items
 - `field(path)` - Get field-centric state view
 - `cleanup()` - Clean up timers (automatic via $effect)
+
+## Native TypeBox errors
+
+Raw TypeBox schemas are validated without a StandardSchema wrapper. Install TypeBox in the consuming application and register any formats it uses. Validation checks encoded values; it does not decode transforms before submission.
+
+For unions, including nullable objects and nested array entries, `form.errors` retains the union summary and descendant field diagnostics using dotted paths, such as `contact.email` or `entries.1.contact.email`. The first diagnostic at each path wins, with a schema's string `error` annotation preferred to the default message. Alternative diagnostics describe why validation failed; they do not select a branch or establish that a value is valid. Valid alternatives produce no errors. Async validation and the sync path after TypeBox has loaded use the same mapping.
