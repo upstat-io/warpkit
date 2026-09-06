@@ -4,14 +4,14 @@
 
 - **Package**: `@warpkit/core` — Svelte 5 SPA framework (state-driven routing, navigation lifecycle, provider architecture)
 - **Repo**: https://github.com/upstat-io/warpkit
-- **Runtime**: Bun (never Node/npm for running — `bun test`, `bun run`, `bun add`)
+- **Runtime**: Bun (never Node/npm for running — `bun test`, `bun run`, `bun add`). Launch the installed test CLI through Bun; `bunx` can start a Node child. Verify the actual test process runtime.
 - **Language**: TypeScript strict, Svelte 5 runes
 - **Monorepo**: `packages/*` workspace packages under `@warpkit/*` scope
 
 ## Critical Rules
 
 - **Ship compiled JS** — every package MUST have a build step; consumers never compile our source
-- Generate public declarations from canonical TypeScript. Do not keep a same-basename `.d.ts` beside `.ts` source: svelte-package prefers the handwritten declaration. Verify changed APIs through the built package export map with a consumer compiler check.
+- Generate public declarations from canonical TypeScript. Do not keep a same-basename `.d.ts` beside `.ts` source: svelte-package prefers the handwritten declaration. Verify changed APIs through the built package export map with a consumer compiler check. Give scoped compiler checks an explicit tsconfig; source-file arguments do not use the repository's implicit configuration.
 - **Framework-agnostic** — no consumer-specific code, concepts, or coupling
 - **No relative paths in docs/configs** — always use package names
 - **No hardcoded versions in templates** — scaffolding tools must resolve versions dynamically

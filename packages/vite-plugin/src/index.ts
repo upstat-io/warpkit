@@ -1,4 +1,5 @@
 import type { Plugin, UserConfig } from 'vite';
+export { localPackageBuilds, type LocalPackageBuild, type LocalPackageBuildPlugin } from './local-packages.js';
 
 export interface WarpKitPluginOptions {
 	/**

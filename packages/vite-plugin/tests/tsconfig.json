@@ -1,0 +1,13 @@
+{
+	"compilerOptions": {
+		"target": "ESNext",
+		"module": "ESNext",
+		"moduleResolution": "bundler",
+		"strict": true,
+		"noUncheckedIndexedAccess": true,
+		"noEmit": true,
+		"types": [],
+		"skipLibCheck": false
+	},
+	"files": ["consumer.ts"]
+}

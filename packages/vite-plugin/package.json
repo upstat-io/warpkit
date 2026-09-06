@@ -26,9 +26,13 @@
 	},
 	"scripts": {
 		"clean": "rm -rf dist",
-		"build": "tsc -p tsconfig.build.json && bun build src/index.ts --outdir dist --format esm --target node"
+		"build": "tsc -p tsconfig.build.json && bun build src/index.ts --outdir dist --format esm --target node",
+		"check:types": "tsc -p tests/tsconfig.json"
 	},
 	"peerDependencies": {
 		"vite": "^5.0.0 || ^6.0.0 || ^7.0.0"
+	},
+	"devDependencies": {
+		"@playwright/test": "1.63.0"
 	}
 }
