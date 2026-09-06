@@ -104,15 +104,19 @@ const client = new DataClient({
 
 ### useQuery(options)
 
-Returns reactive query state: `data`, `isLoading`, `isError`, `error`, `isSuccess`, `isRevalidating`, `refetch()`.
+Returns reactive query state: `data`, `dataParams`, `pendingParams`, `isLoading`, `isError`, `error`, `isSuccess`, `isRevalidating`, `refetch()`.
+
+`dataParams` identifies the parameters associated with the displayed data; `pendingParams` identifies an in-flight request when it has parameters. Both can be undefined. Use them to distinguish retained data from the current request; background failures can retain earlier data. A reactive `params` getter may return undefined.
 
 ### useData(key, config)
 
-Same return shape as `useQuery`. Config accepts `invalidateOn?: string[]` and `enabled?: boolean | (() => boolean)`.
+Returns the existing data/loading/error state and `refetch`; its declared `DataState` does not expose query-parameter metadata. Config accepts `invalidateOn?: string[]` and `enabled?: boolean | (() => boolean)`.
 
 ### useMutation(options)
 
 Returns mutation state: `mutate()`, `mutateAsync()`, `isPending`, `isSuccess`, `isError`, `error`, `data`, `reset()`.
+
+`mutate` reports failures through state and callbacks, resolving to undefined. `mutateAsync` rejects after failure callbacks and is the awaited entry point for callers that need the outcome.
 
 ### DataClient
 
@@ -123,3 +127,11 @@ Options:
 - `onRequest` - Request interceptor
 - `retryOn429` - Auto-retry on 429 (default: true)
 - `maxRetries` - Max 429 retries (default: 3)
+
+## Package verification
+
+Build `@warpkit/errors`, `@warpkit/validation` and `@warpkit/data`, then run `bun run --filter @warpkit/data check:types`. This consumer check resolves compiled package exports without source aliases. Declarations are generated from canonical TypeScript; do not add a same-basename declaration file beside a TypeScript source file.
+
+The data integration tests additionally need a built `@warpkit/cache`. Run them from the repository root with `bun run test:data`.
+
+The request deadline remains active through JSON, text or blob body consumption. A `raw` mutation transfers response-body ownership to the caller; its deadline ends when the response is returned. A timeout aborts the request signal, so custom transports must honour that signal.

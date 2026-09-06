@@ -59,9 +59,13 @@ export function useMutation<TData, TError = Error, TVariables = void>(
 	const isIdle = $derived(status === 'idle');
 
 	/**
-	 * Execute the mutation.
+	 * Execute the mutation and surface failures to the caller.
+	 *
+	 * Rejects when the mutation fails, AFTER `onError` / `onSettled` have run and
+	 * state has been updated. Use this when the caller needs to branch on the
+	 * outcome; use `mutate` when `onError` is the whole error story.
 	 */
-	async function mutate(variables: TVariables): Promise<TData> {
+	async function mutateAsync(variables: TVariables): Promise<TData> {
 		isPending = true;
 		status = 'pending';
 		error = null;
@@ -109,6 +113,23 @@ export function useMutation<TData, TError = Error, TVariables = void>(
 	}
 
 	/**
+	 * Execute the mutation without surfacing failures to the caller.
+	 *
+	 * Never rejects. Failure is already reported through `error` / `isError` and
+	 * the `onError` callback, so rethrowing here would land in a void event
+	 * handler and become an unhandled rejection. Returns `undefined` on failure.
+	 *
+	 * Callers that need the outcome use `mutateAsync`.
+	 */
+	async function mutate(variables: TVariables): Promise<TData | undefined> {
+		try {
+			return await mutateAsync(variables);
+		} catch {
+			return undefined;
+		}
+	}
+
+	/**
 	 * Reset mutation state to idle.
 	 */
 	function reset(): void {
@@ -121,7 +142,7 @@ export function useMutation<TData, TError = Error, TVariables = void>(
 	// Return state object with getters for reactivity
 	return {
 		mutate,
-		mutateAsync: mutate,
+		mutateAsync,
 		get isPending() {
 			return isPending;
 		},

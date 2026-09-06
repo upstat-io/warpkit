@@ -11,7 +11,7 @@
  * </DataClientProvider>
  */
 
-import { setContext, type Snippet } from 'svelte';
+import { setContext, type Snippet, untrack } from 'svelte';
 import { DATA_CLIENT_CONTEXT } from './context';
 import type { DataClient } from './DataClient';
 
@@ -24,7 +24,10 @@ interface Props {
 
 const { children, ...rest }: Props = $props();
 
-setContext(DATA_CLIENT_CONTEXT, rest.client);
+// setContext must run during initialisation, so the client is read once by
+// design. Consumers receive the instance the app created at startup; a
+// provider that swapped clients mid-life would need a getter-based context.
+setContext(DATA_CLIENT_CONTEXT, untrack(() => rest.client));
 </script>
 
 {@render children()}

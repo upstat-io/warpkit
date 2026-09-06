@@ -11,11 +11,13 @@
 ## Critical Rules
 
 - **Ship compiled JS** — every package MUST have a build step; consumers never compile our source
+- Generate public declarations from canonical TypeScript. Do not keep a same-basename `.d.ts` beside `.ts` source: svelte-package prefers the handwritten declaration. Verify changed APIs through the built package export map with a consumer compiler check.
 - **Framework-agnostic** — no consumer-specific code, concepts, or coupling
 - **No relative paths in docs/configs** — always use package names
 - **No hardcoded versions in templates** — scaffolding tools must resolve versions dynamically
 - **Fix ALL errors immediately** — no "pre-existing" or "unrelated" errors; stop and fix now
 - **Test from consumer perspective** — if `bun add @warpkit/core` + `bun dev` doesn't work, it's broken
+- HTTP timeout checks must include headers arriving before a stalled response body. Keep the request signal active until an owned body is consumed; document the ownership transfer for raw responses.
 
 ## Package Architecture
 
@@ -67,6 +69,7 @@
 - **Browser tests**: `bun run test:browser` — vitest-browser-svelte + Playwright
 - `createMockWarpKit()` with MemoryBrowserProvider for isolated testing
 - `renderWithWarpKit()` renders component within WarpKitProvider context
+- Await thenable render results before extending them. Derive their types from the public renderer function; private or removed type exports are not a contract. Verify that the async wrapper retains its added helpers.
 - NO timer-based tests — use deterministic approaches (manual flush, callbacks)
 - NO jsdom — Svelte 5's mount() requires real browser (Playwright)
 

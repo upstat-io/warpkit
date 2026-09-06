@@ -6,7 +6,6 @@
  */
 
 import type { Component } from 'svelte';
-import type { RenderResult } from 'vitest-browser-svelte';
 import { render } from 'vitest-browser-svelte';
 import type { StateRoutes, NavigationError, NavigationErrorContext } from '../core/types';
 import type { MockWarpKit } from './createMockWarpKit';
@@ -34,11 +33,11 @@ export interface RenderWithWarpKitOptions<TAppState extends string> {
 /**
  * Result from renderWithWarpKit.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export interface RenderWithWarpKitResult<TAppState extends string> extends RenderResult<any> {
-	/** The mock WarpKit instance with test helpers */
-	warpkit: MockWarpKit<TAppState>;
-}
+export type RenderWithWarpKitResult<TAppState extends string> =
+	Awaited<ReturnType<typeof render<typeof WarpKitTestWrapper>>> & {
+		/** The mock WarpKit instance with test helpers */
+		warpkit: MockWarpKit<TAppState>;
+	};
 
 /**
  * Render a component with WarpKit context.
@@ -92,7 +91,7 @@ export async function renderWithWarpKit<TAppState extends string>(
 	// Render WarpKitTestWrapper with the target component and props
 	// WarpKitTestWrapper sets up Svelte context and renders the target via
 	// its targetComponent/targetProps props (using {@const} dynamic rendering)
-	const result = render(WarpKitTestWrapper, {
+	const result = await render(WarpKitTestWrapper, {
 		props: {
 			warpkit,
 			targetComponent: component,

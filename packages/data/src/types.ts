@@ -258,6 +258,23 @@ export interface FetchResult<T> {
 export interface QueryState<T> {
 	/** The fetched data, undefined while loading */
 	readonly data: T | undefined;
+	/**
+	 * The params `data` was fetched for, or undefined before any data arrives.
+	 *
+	 * Lets a consumer whose params change tell whether the data in hand belongs
+	 * to the params it is currently asking about. Inferring that from an
+	 * `isLoading` transition is unreliable: a cache hit can deliver data without
+	 * ever exposing a loading phase.
+	 */
+	readonly dataParams: Record<string, string> | undefined;
+	/**
+	 * The params of the fetch currently in flight, or undefined when idle.
+	 *
+	 * Lets a consumer refuse to act on data that predates a param change while
+	 * the fetch for the current params is still outstanding, without inferring
+	 * that state from `isLoading` transitions.
+	 */
+	readonly pendingParams: Record<string, string> | undefined;
 	/** Error if fetch failed, null otherwise */
 	readonly error: Error | null;
 	/** True while initial fetch is in progress */
@@ -366,7 +383,13 @@ export interface UseQueryOptions<K extends DataKey> {
 	 * Can be a static object or a getter function for reactive params (Svelte 5).
 	 * When a getter is used, the $effect tracks its dependencies and refetches on change.
 	 */
-	params?: Record<string, string> | (() => Record<string, string>);
+	/**
+	 * The getter may return undefined: `params` is optional, and a caller whose
+	 * params are conditional needs to express "none right now" without dropping
+	 * reactivity by reading the source outside the getter. resolveParams()
+	 * already passes the getter's return through untouched.
+	 */
+	params?: Record<string, string> | (() => Record<string, string> | undefined);
 	/**
 	 * If false, query will not execute.
 	 * Can be a boolean or a getter function for reactive behavior.
@@ -405,9 +428,16 @@ export interface UseMutationOptions<TData, TError = Error, TVariables = void> {
  * State returned by useMutation hook.
  */
 export interface MutationState<TData, TError = Error, TVariables = void> {
-	/** Execute the mutation */
-	mutate: (variables: TVariables) => Promise<TData>;
-	/** Execute mutation and return promise (alias for mutate) */
+	/**
+	 * Execute the mutation without surfacing failures to the caller.
+	 * Never rejects; resolves to `undefined` when the mutation fails. Failure is
+	 * reported through `error` / `isError` and the `onError` callback.
+	 */
+	mutate: (variables: TVariables) => Promise<TData | undefined>;
+	/**
+	 * Execute the mutation and surface failures to the caller.
+	 * Rejects on failure, after `onError` / `onSettled` have run.
+	 */
 	mutateAsync: (variables: TVariables) => Promise<TData>;
 	/** True while mutation is executing */
 	readonly isPending: boolean;

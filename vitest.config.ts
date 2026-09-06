@@ -1,6 +1,9 @@
+import { svelte } from '@sveltejs/vite-plugin-svelte';
 import { configDefaults, defineConfig } from 'vitest/config';
 
 export default defineConfig({
+	// Rune modules require compilation in the package test runner too.
+	plugins: [svelte({ hot: false })],
 	resolve: {
 		alias: {
 			'@warpkit/errors': './packages/errors/src/index.ts',

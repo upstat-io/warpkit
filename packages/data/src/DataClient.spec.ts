@@ -418,6 +418,42 @@ describe('DataClient', () => {
 	});
 
 	describe('timeout', () => {
+		const bodyReads: { name: string; run: (client: DataClient) => Promise<unknown> }[] = [
+			{ name: 'query', run: (client) => client.fetch('monitors') },
+			{ name: 'JSON mutation', run: (client) => client.mutate('/write', { method: 'POST' }) },
+			{ name: 'text mutation', run: (client) => client.mutate('/write', { method: 'POST', responseType: 'text' }) },
+			{ name: 'blob mutation', run: (client) => client.mutate('/write', { method: 'POST', responseType: 'blob' }) }
+		];
+		for (const operation of bodyReads) {
+			it(`keeps the ${operation.name} deadline active while its response body is incomplete`, async () => {
+				let signal: AbortSignal | undefined;
+				let headersReady = () => {};
+				let finishBody = () => {};
+				const ready = new Promise<void>((resolve) => { headersReady = resolve; });
+				mockFetch.mockImplementation(async (request: Request) => {
+					signal = request.signal;
+					const response = new Response(new ReadableStream<Uint8Array>({ start(controller) {
+						controller.enqueue(new TextEncoder().encode('[]'));
+						finishBody = () => controller.close();
+						request.signal.addEventListener('abort', () => controller.error(request.signal.reason), { once: true });
+					} }));
+					headersReady();
+					return response;
+				});
+				const client = new DataClient(createTestConfig({ timeout: 50 }));
+				const rejected = operation.run(client).then(() => false, () => true);
+				try {
+					await ready;
+					await vi.advanceTimersByTimeAsync(51);
+					expect(signal?.aborted).toBe(true);
+					expect(await rejected).toBe(true);
+				} finally {
+					if (!signal?.aborted) finishBody();
+					await rejected;
+				}
+			});
+		}
+
 		it('should abort fetch when timeout is reached', async () => {
 			vi.useRealTimers(); // Use real timers for this test
 			const config = createTestConfig({ timeout: 50 }); // Very short timeout

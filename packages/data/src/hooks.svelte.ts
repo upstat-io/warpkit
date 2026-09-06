@@ -43,6 +43,16 @@ export function useQuery<K extends DataKey>(options: UseQueryOptions<K>): QueryS
 
 	// Reactive state using $state rune
 	let data = $state<DataType<K> | undefined>(undefined);
+	// The params `data` was fetched for. Consumers that switch params need to
+	// know whether the data in hand belongs to the params they are asking about;
+	// without this they must infer it from loading edges, which a cache hit can
+	// skip entirely.
+	let dataParams = $state<Record<string, string> | undefined>(undefined);
+	// The params of the fetch currently in flight, or undefined when idle. A
+	// consumer that must not act on data predating a param change can ask
+	// whether a fetch for the params it cares about is still outstanding,
+	// instead of inferring it from `isLoading` edges.
+	let pendingParams = $state<Record<string, string> | undefined>(undefined);
 	let error = $state<Error | null>(null);
 	let isLoading = $state(true);
 	let isRevalidating = $state(false);
@@ -54,6 +64,8 @@ export function useQuery<K extends DataKey>(options: UseQueryOptions<K>): QueryS
 	// Track current fetch to handle race conditions
 	let fetchId = 0;
 	let abortController: AbortController | null = null;
+	/** Disposer for a fetch deferred until the client resumes; see doFetch. */
+	let cancelDeferredFetch: (() => void) | null = null;
 
 	/**
 	 * Resolve params from either a static object or getter function.
@@ -80,11 +92,27 @@ export function useQuery<K extends DataKey>(options: UseQueryOptions<K>): QueryS
 		resolvedParams: Record<string, string> | undefined,
 		opts?: { silent?: boolean; invalidate?: boolean; swr?: boolean }
 	): Promise<void> {
-		// Skip fetch when DataClient is paused (e.g., during logout)
-		if (client.isPaused) return;
+		// Defer — never drop — while the client is paused. A component mounted
+		// during a state transition runs its initial-fetch effect inside the
+		// pause window; returning here without re-arming leaves it stranded,
+		// since isPaused is not reactive and resume() re-runs no effects.
+		if (client.isPaused) {
+			// Only the newest deferral survives, so params cannot go stale.
+			cancelDeferredFetch?.();
+			const deferredFetchId = fetchId;
+			cancelDeferredFetch = client.onResume(() => {
+				cancelDeferredFetch = null;
+				// A real fetch that started meanwhile bumped fetchId and already
+				// supersedes this one.
+				if (deferredFetchId !== fetchId) return;
+				void doFetch(resolvedParams, opts);
+			});
+			return;
+		}
 
 		// Increment fetch ID to track this specific fetch
 		const currentFetchId = ++fetchId;
+		pendingParams = resolvedParams;
 
 		// Abort any in-flight request
 		abortController?.abort();
@@ -103,6 +131,7 @@ export function useQuery<K extends DataKey>(options: UseQueryOptions<K>): QueryS
 				if (currentFetchId !== fetchId) return;
 				if (cachedData !== undefined) {
 					data = cachedData;
+					dataParams = resolvedParams;
 					isLoading = false;
 					isRevalidating = true;
 					hasStaleData = true;
@@ -135,6 +164,7 @@ export function useQuery<K extends DataKey>(options: UseQueryOptions<K>): QueryS
 			// Only update state if this is still the current fetch
 			if (currentFetchId === fetchId) {
 				data = result.data;
+				dataParams = resolvedParams;
 			}
 		} catch (e) {
 			// Only update error if this is still the current fetch
@@ -165,6 +195,7 @@ export function useQuery<K extends DataKey>(options: UseQueryOptions<K>): QueryS
 			if (currentFetchId === fetchId) {
 				isLoading = false;
 				isRevalidating = false;
+				pendingParams = undefined;
 			}
 		}
 	}
@@ -199,9 +230,12 @@ export function useQuery<K extends DataKey>(options: UseQueryOptions<K>): QueryS
 
 		doFetch(params, swrEnabled ? { swr: true } : undefined);
 
-		// Cleanup: abort fetch on unmount or re-run
+		// Cleanup: abort fetch on unmount or re-run, and drop any deferral so a
+		// destroyed component does not fetch when the client resumes.
 		return () => {
 			abortController?.abort();
+			cancelDeferredFetch?.();
+			cancelDeferredFetch = null;
 		};
 	});
 
@@ -254,6 +288,12 @@ export function useQuery<K extends DataKey>(options: UseQueryOptions<K>): QueryS
 	return {
 		get data() {
 			return data;
+		},
+		get dataParams() {
+			return dataParams;
+		},
+		get pendingParams() {
+			return pendingParams;
 		},
 		get error() {
 			return error;

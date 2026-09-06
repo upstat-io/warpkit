@@ -95,6 +95,8 @@ export class DataClient {
 	private readonly maxRetries: number;
 	private eventUnsubscribes: Array<() => void> = [];
 	private _paused = false;
+	/** One-shot callbacks released by the next resume(); see onResume(). */
+	private readonly resumeListeners = new Set<() => void>();
 
 	/**
 	 * Create a new DataClient.
@@ -213,7 +215,6 @@ export class DataClient {
 			}
 
 			const response = await this.fetchWithRetry(request);
-			clearTimeout(timeoutId);
 
 			// Handle 304 Not Modified
 			if (useCache && response.status === 304 && cached) {
@@ -312,7 +313,6 @@ export class DataClient {
 			}
 
 			const response = await this.fetchWithRetry(request);
-			clearTimeout(timeoutId);
 
 			if (!response.ok) {
 				const body = typeof response.json === 'function'
@@ -449,16 +449,47 @@ export class DataClient {
 	 * When paused, hooks skip refetch intervals and new fetches.
 	 * Use during app state transitions (e.g., logout) to prevent
 	 * requests from firing after auth is cleared.
+	 *
+	 * A pause DEFERS a query's first fetch; it never cancels it. Components
+	 * mounted during the pause window register through {@link onResume} and
+	 * fetch when it lifts. Dropping those fetches instead stranded every query
+	 * owned by a route mounted during a state transition, because the flag is
+	 * not reactive and nothing re-ran the effect afterwards.
 	 */
 	public pause(): void {
 		this._paused = true;
 	}
 
 	/**
-	 * Resume query activity after a pause.
+	 * Resume query activity after a pause, releasing anything deferred.
+	 *
+	 * Listeners run once and are cleared before invocation, so a listener that
+	 * re-registers (a refetch that pauses again) cannot be dropped or replayed.
 	 */
 	public resume(): void {
 		this._paused = false;
+		if (this.resumeListeners.size === 0) return;
+		const listeners = [...this.resumeListeners];
+		this.resumeListeners.clear();
+		for (const listener of listeners) {
+			listener();
+		}
+	}
+
+	/**
+	 * Register a one-shot callback for the next {@link resume}.
+	 *
+	 * Used by query hooks to defer a fetch that arrived mid-pause. The returned
+	 * disposer MUST be called on unmount — otherwise a component destroyed
+	 * during the pause window still fetches when the pause lifts.
+	 *
+	 * @returns Disposer that unregisters the callback.
+	 */
+	public onResume(listener: () => void): () => void {
+		this.resumeListeners.add(listener);
+		return () => {
+			this.resumeListeners.delete(listener);
+		};
 	}
 
 	/**
