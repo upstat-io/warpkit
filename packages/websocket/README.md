@@ -1,119 +1,26 @@
 # @warpkit/websocket
 
-Type-safe WebSocket client with auto-reconnect for Svelte 5.
+Typed WebSocket client with native reconnection, room subscriptions and heartbeat for WarpKit.
 
-## Installation
+```ts
+import { SocketClient, ClientMessage, Connected } from '@warpkit/websocket';
 
-```bash
-bun add @warpkit/websocket
-```
-
-## Features
-
-- **Type-safe messages** - Define message types with TypeScript
-- **Auto-reconnect** - Exponential backoff with jitter
-- **Heartbeat** - Keep connections alive
-- **Message buffering** - Queue messages during reconnection
-
-## Usage
-
-### Define Message Types
-
-```typescript
-// types.ts
-import { ControlMessage } from '@warpkit/websocket';
-
-// Server -> Client messages
-type ServerMessage =
-  | { type: 'user.online'; userId: string }
-  | { type: 'monitor.alert'; monitorId: string; status: string }
-  | ControlMessage;
-
-// Client -> Server messages
-type ClientMessage =
-  | { type: 'subscribe'; channel: string }
-  | { type: 'unsubscribe'; channel: string };
-```
-
-### Create Client
-
-```typescript
-import { createWebSocketClient } from '@warpkit/websocket';
-
-const ws = createWebSocketClient<ServerMessage, ClientMessage>({
+const Updated = ClientMessage.define<{ uuid: string }>('resource.updated');
+const socket = new SocketClient(async () => ({
   url: 'wss://api.example.com/ws',
-  reconnect: {
-    enabled: true,
-    maxAttempts: 10
-  },
-  heartbeat: {
-    enabled: true,
-    interval: 30_000
-  }
-});
-
-// Connect
-ws.connect();
-
-// Send messages
-ws.send({ type: 'subscribe', channel: 'alerts' });
-
-// Listen for messages
-ws.on('monitor.alert', (message) => {
-  console.log('Alert:', message.monitorId, message.status);
-});
-
-// Check connection
-if (ws.isConnected) {
-  // ...
-}
-
-// Disconnect
-ws.disconnect();
+  protocols: ['app-v1', `bearer.${await getFreshToken()}`]
+}));
+socket.on(Updated, (data, envelope) => { /* Validate and refetch authorised state. */ });
+socket.on(Connected, () => { /* TCP connected; wait for your server's subscription acknowledgement. */ });
+socket.connect();
+// On terminal session teardown:
+socket.dispose();
 ```
 
-### With Authentication
+The URL factory runs for every connection attempt. Credentials belong in an authenticated handshake such as the subprotocol header, never a URL query. The application defines and verifies its server protocol. Incoming messages use `{ name, data, timestamp }`; outgoing typed emission uses `{ type, ...data }`. Incoming definitions carry types; consumers validate untrusted payloads before using them.
 
-```typescript
-const ws = createWebSocketClient<ServerMessage, ClientMessage>({
-  url: () => `wss://api.example.com/ws?token=${getToken()}`,
-  // URL is re-evaluated on each reconnect
-});
-```
+`joinRoom()` remembers subscriptions for reconnection. Server-side authorisation is required for every protected room; automatic rejoin and buffered traffic precede `Connected`, so an asynchronous authentication message in that callback cannot protect that traffic. Heartbeat uses the exported `PING_FRAME`/`PONG_FRAME` constants.
 
-## API
+`disconnect()` pauses automatic reconnection until an explicit `connect()`. `dispose()` permanently retires the client: it closes the socket, cancels pending connection results and timers, removes browser listeners and clears subscriptions/handlers. Create a new client for a new authenticated identity. Old connection callbacks cannot affect a replacement connection; sends after disposal throw.
 
-### createWebSocketClient(options)
-
-Options:
-- `url` - WebSocket URL or getter function
-- `protocols` - WebSocket sub-protocols
-- `reconnect` - Reconnection settings
-  - `enabled` - Enable auto-reconnect
-  - `maxAttempts` - Maximum reconnection attempts
-  - `minDelay` - Initial delay (ms)
-  - `maxDelay` - Maximum delay (ms)
-- `heartbeat` - Heartbeat settings
-  - `enabled` - Enable heartbeat
-  - `interval` - Ping interval (ms)
-  - `timeout` - Pong timeout (ms)
-
-Returns:
-- `connect()` - Open connection
-- `disconnect()` - Close connection
-- `send(message)` - Send typed message
-- `on(type, handler)` - Listen for message type
-- `off(type, handler)` - Remove listener
-- `isConnected` - Connection state
-- `readyState` - WebSocket ready state
-
-## Control Messages
-
-Built-in control message types:
-
-```typescript
-type ControlMessage =
-  | { type: '__ping__' }
-  | { type: '__pong__' }
-  | { type: '__ack__'; id: string };
-```
+Use `onStateChange()` and `onError()` for connection observation. Event registration returns an unsubscribe function. Reconnect, heartbeat and timeout bounds are configured through `SocketClientOptions`.

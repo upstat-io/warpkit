@@ -47,6 +47,7 @@ class MockWebSocket {
 	readonly CLOSED = 3;
 
 	url: string;
+	protocols?: string[];
 	readyState: number = MockWebSocket.CONNECTING;
 	onopen: ((event: MockEvent) => void) | null = null;
 	onclose: ((event: MockCloseEvent) => void) | null = null;
@@ -57,8 +58,9 @@ class MockWebSocket {
 	closeCode?: number;
 	closeReason?: string;
 
-	constructor(url: string) {
+	constructor(url: string, protocols?: string[]) {
 		this.url = url;
+		this.protocols = protocols;
 	}
 
 	send(data: string): void {
@@ -114,8 +116,8 @@ const OriginalWebSocket = globalThis.WebSocket;
 // Create a proper WebSocket mock class that can be instantiated with 'new'
 function createMockWebSocketClass() {
 	return class MockWebSocketConstructor extends MockWebSocket {
-		constructor(url: string) {
-			super(url);
+		constructor(url: string, protocols?: string[]) {
+			super(url, protocols);
 			mockWebSocketInstances.push(this);
 		}
 
@@ -149,6 +151,45 @@ describe('SocketClient', () => {
 		return new SocketClient(() => 'wss://example.com/ws', options);
 	}
 
+	describe('terminal lifecycle', () => {
+		it('disposes listeners, rooms and callbacks and cannot reconnect', () => {
+			const network = new EventTarget(); const document = new EventTarget();
+			const remove = vi.fn(network.removeEventListener.bind(network));
+			vi.stubGlobal('addEventListener', network.addEventListener.bind(network));
+			vi.stubGlobal('removeEventListener', remove);
+			vi.stubGlobal('document', document);
+			try {
+				const client = createClient(); const received = vi.fn();
+				client.on(Connected, received); client.connect();
+				const socket = getLastWebSocket(); socket.simulateOpen(); client.joinRoom('example');
+				client.dispose(); client.dispose(); received.mockClear();
+				network.dispatchEvent(new Event('offline')); network.dispatchEvent(new Event('online'));
+				document.dispatchEvent(new Event('visibilitychange')); client.connect();
+				socket.simulateOpen(); socket.simulateClose();
+				expect(mockWebSocketInstances).toHaveLength(1);
+				expect(received).not.toHaveBeenCalled();
+				expect(client.connectionState).toBe('disconnected');
+				expect(client.joinedRooms.size).toBe(0); expect(remove).toHaveBeenCalledTimes(2);
+				expect(() => client.sendRaw('secret', { buffer: true })).toThrow('disposed');
+			} finally { vi.unstubAllGlobals(); }
+		});
+		it('ignores a previous async credential result after an explicit reconnect', async () => {
+			let resolveOld!: (value: string) => void;
+			const old = new Promise<string>((resolve) => { resolveOld = resolve; });
+			const factory = vi.fn().mockReturnValueOnce(old).mockReturnValue('wss://example.com/new');
+			const client = new SocketClient(factory); client.connect(); client.disconnect(); client.connect();
+			resolveOld('wss://example.com/old'); await Promise.resolve();
+			try { expect(mockWebSocketInstances).toHaveLength(1); expect(getLastWebSocket().url).toBe('wss://example.com/new'); }
+			finally { client.dispose(); }
+		});
+		it('ignores late callbacks from an old socket after reconnect', () => {
+			const client = createClient(); client.connect(); const old = getLastWebSocket(); old.simulateOpen();
+			client.disconnect(); client.connect(); const current = getLastWebSocket(); current.simulateOpen();
+			old.simulateClose(); old.simulateOpen(); old.simulateError();
+			try { expect(client.isConnected).toBe(true); expect(current.readyState).toBe(MockWebSocket.OPEN); }
+			finally { client.dispose(); }
+		});
+	});
 	describe('constructor', () => {
 		it('should create client with default options', () => {
 			const client = createClient();
@@ -178,6 +219,33 @@ describe('SocketClient', () => {
 			expect(mockWebSocketInstances).toHaveLength(1);
 			expect(mockWebSocketInstances[0].url).toBe('wss://example.com/ws');
 			expect(client.connectionState).toBe('connecting');
+		});
+
+		it('should never place a token in the URL query string when connecting via a bare string factory', () => {
+			// Regression: a factory returning a bare URL must open a WebSocket
+			// with no protocols and a URL carrying no query string — the caller
+			// is responsible for not concatenating a token onto that URL.
+			const client = createClient();
+			client.connect();
+
+			expect(mockWebSocketInstances[0].url).not.toContain('?');
+			expect(mockWebSocketInstances[0].protocols).toBeUndefined();
+		});
+
+		it('should pass an auth token through the Sec-WebSocket-Protocol subprotocol list, never the URL', () => {
+			const client = new SocketClient(async () => ({
+				url: 'wss://example.com/ws',
+				protocols: ['bearer.fake-id-token', 'appcheck.fake-app-check-token']
+			}));
+
+			client.connect();
+			// Async factory resolution needs a microtask flush.
+			return Promise.resolve().then(() => {
+				const socket = getLastWebSocket();
+				expect(socket.url).toBe('wss://example.com/ws');
+				expect(socket.url).not.toContain('fake-id-token');
+				expect(socket.protocols).toEqual(['bearer.fake-id-token', 'appcheck.fake-app-check-token']);
+			});
 		});
 
 		it('should not create duplicate connections', () => {

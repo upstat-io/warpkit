@@ -168,7 +168,19 @@ export type ConnectionStateHandler = (state: ConnectionState) => void;
 export type ErrorHandler = (error: Error) => void;
 
 /**
- * Factory function that produces a WebSocket URL.
+ * Resolved connection target for a single connect/reconnect attempt.
+ *
+ * A bare string is the WebSocket URL with no subprotocols. The object form
+ * additionally carries `protocols` — passed as the `protocols` argument to
+ * the `WebSocket` constructor (the `Sec-WebSocket-Protocol` request header).
+ * Auth tokens belong in `protocols`, never appended to `url` as a query
+ * string: request URLs are recorded by load balancers, reverse proxies, and
+ * CDNs by default, and are visible in the browser devtools network panel.
+ */
+export type ConnectionTarget = string | { url: string; protocols?: string[] };
+
+/**
+ * Factory function that produces a WebSocket connection target.
  * Called on every connect/reconnect, allowing fresh auth tokens.
  */
-export type UrlFactory = () => string | Promise<string>;
+export type UrlFactory = () => ConnectionTarget | Promise<ConnectionTarget>;

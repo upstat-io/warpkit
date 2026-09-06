@@ -20,10 +20,12 @@
  *
  * const client = new SocketClient(() => 'wss://api.example.com/ws');
  *
- * // With auth token refresh on every connect/reconnect:
+ * // With auth token refresh on every connect/reconnect — pass the token as a
+ * // WebSocket subprotocol (Sec-WebSocket-Protocol), never in the URL. Request
+ * // URLs are recorded by load balancers, reverse proxies, and CDNs by default.
  * const client = new SocketClient(async () => {
  *   const token = await getAuthToken();
- *   return `wss://api.example.com/ws?token=${token}`;
+ *   return { url: 'wss://api.example.com/ws', protocols: [`bearer.${token}`] };
  * });
  *
  * // Type-safe message handlers
@@ -37,6 +39,7 @@
 
 import type {
 	ClientMessageDefinition,
+	ConnectionTarget,
 	MessageEnvelope,
 	MessageHandler,
 	ConnectionState,
@@ -146,6 +149,9 @@ export class SocketClient {
 
 	/** Rooms the client has joined (for auto-rejoin on reconnect) */
 	private readonly rooms = new Set<string>();
+	private disposed = false;
+	private connectionGeneration = 0;
+	private readonly removeNetworkListeners: Array<() => void> = [];
 
 	/** Send buffer for messages queued while disconnected */
 	private readonly sendBuffer: Array<() => void> = [];
@@ -226,7 +232,7 @@ export class SocketClient {
 	 * always use a fresh URL (e.g., with a refreshed auth token).
 	 */
 	connect(): void {
-		if (this.state === 'connected' || this.state === 'connecting') {
+		if (this.disposed || this.state === 'connected' || this.state === 'connecting') {
 			return;
 		}
 
@@ -238,11 +244,12 @@ export class SocketClient {
 	}
 
 	/**
-	 * Resolve the URL from the factory and open the WebSocket.
+	 * Resolve the connection target from the factory and open the WebSocket.
 	 * Handles both sync and async URL factories.
 	 */
 	private resolveUrlAndConnect(): void {
-		let result: string | Promise<string>;
+		const generation = ++this.connectionGeneration;
+		let result: ConnectionTarget | Promise<ConnectionTarget>;
 		try {
 			result = this.createUrl();
 		} catch (error) {
@@ -252,17 +259,17 @@ export class SocketClient {
 			return;
 		}
 
-		if (typeof result === 'string') {
+		if (typeof result === 'string' || !(result instanceof Promise)) {
 			this.openSocket(result);
 		} else {
 			result.then(
-				(url) => {
+				(target) => {
 					// Guard: state may have changed while awaiting
-					if (this.state !== 'connecting') return;
-					this.openSocket(url);
+					if (this.disposed || generation !== this.connectionGeneration || this.state !== 'connecting') return;
+					this.openSocket(target);
 				},
 				(error) => {
-					if (this.state !== 'connecting') return;
+					if (this.disposed || generation !== this.connectionGeneration || this.state !== 'connecting') return;
 					this.notifyError(error instanceof Error ? error : new Error(String(error)));
 					this.setState('disconnected');
 					this.maybeReconnect();
@@ -272,10 +279,18 @@ export class SocketClient {
 	}
 
 	/**
-	 * Open the WebSocket connection to the resolved URL.
+	 * Open the WebSocket connection to the resolved target.
+	 *
+	 * A bare string target carries no subprotocols. The object form's
+	 * `protocols` becomes the `Sec-WebSocket-Protocol` request header — the
+	 * channel auth tokens travel through, never the URL's query string.
 	 */
-	private openSocket(url: string): void {
-		this.ws = new WebSocket(url);
+	private openSocket(target: ConnectionTarget): void {
+		const url = typeof target === 'string' ? target : target.url;
+		const protocols = typeof target === 'string' ? undefined : target.protocols;
+
+		const socket = protocols && protocols.length > 0 ? new WebSocket(url, protocols) : new WebSocket(url);
+		this.ws = socket;
 
 		// Connection timeout - fail fast if server doesn't respond
 		if (this.options.connectionTimeout > 0) {
@@ -288,7 +303,8 @@ export class SocketClient {
 			}, this.options.connectionTimeout);
 		}
 
-		this.ws.onopen = () => {
+		socket.onopen = () => {
+			if (this.disposed || this.ws !== socket) return;
 			// Clear connection timeout
 			this.clearConnectionTimeout();
 
@@ -307,11 +323,13 @@ export class SocketClient {
 			this.emitInternal(CONNECTED_MESSAGE, { reconnected: wasReconnect });
 		};
 
-		this.ws.onmessage = (event) => {
+		socket.onmessage = (event) => {
+			if (this.disposed || this.ws !== socket) return;
 			this.handleMessage(event.data as string);
 		};
 
-		this.ws.onclose = () => {
+		socket.onclose = () => {
+			if (this.disposed || this.ws !== socket) return;
 			// Clear connection timeout
 			this.clearConnectionTimeout();
 
@@ -327,7 +345,8 @@ export class SocketClient {
 			this.maybeReconnect();
 		};
 
-		this.ws.onerror = () => {
+		socket.onerror = () => {
+			if (this.disposed || this.ws !== socket) return;
 			this.notifyError(new Error('WebSocket connection error'));
 			// onclose will fire after onerror, so we don't change state here
 		};
@@ -371,6 +390,7 @@ export class SocketClient {
 	 * Prevents automatic reconnection.
 	 */
 	disconnect(): void {
+		this.connectionGeneration += 1;
 		// Prevent reconnection
 		this.skipReconnect = true;
 		this.reconnecting = false;
@@ -395,6 +415,18 @@ export class SocketClient {
 		}
 
 		this.setState('disconnected');
+	}
+
+	/** Permanently retire the client, removing browser listeners and pending work. */
+	dispose(): void {
+		if (this.disposed) return;
+		this.disposed = true;
+		this.disconnect();
+		this.rooms.clear();
+		for (const remove of this.removeNetworkListeners.splice(0)) remove();
+		this.handlers.clear();
+		this.stateHandlers.clear();
+		this.errorHandlers.clear();
 	}
 
 	/**
@@ -468,6 +500,7 @@ export class SocketClient {
 	 * @deprecated Use emit() with typed message definitions instead
 	 */
 	send(type: string, payload: Record<string, unknown>, options?: { buffer?: boolean }): void {
+		if (this.disposed) throw new Error('SocketClient is disposed');
 		const message = JSON.stringify({ type, ...payload });
 		const buffer = options?.buffer ?? true; // Default to buffering
 
@@ -504,6 +537,7 @@ export class SocketClient {
 	 * ```
 	 */
 	emit<TData>(message: ClientMessageDefinition<TData>, data: TData, options?: { buffer?: boolean }): void {
+		if (this.disposed) throw new Error('SocketClient is disposed');
 		const envelope = JSON.stringify({ type: message.name, ...data });
 		const buffer = options?.buffer ?? true; // Default to buffering
 
@@ -528,6 +562,7 @@ export class SocketClient {
 	 * @param options - Send options
 	 */
 	sendRaw(data: string, options?: { buffer?: boolean }): void {
+		if (this.disposed) throw new Error('SocketClient is disposed');
 		const buffer = options?.buffer ?? false; // Default to NOT buffering raw data
 
 		if (this.isConnected && this.ws) {
@@ -779,17 +814,21 @@ export class SocketClient {
 		this.networkEventsSet = true;
 
 		// Offline detection - close connection immediately when network is lost
-		win.addEventListener('offline', () => {
+		const onOffline = () => {
+			if (this.disposed || this.skipReconnect) return;
 			this.deviceWentOffline = true;
 			if (this.state === 'connected' || this.state === 'connecting') {
 				if (this.ws) {
 					this.ws.close();
 				}
 			}
-		});
+		};
+		win.addEventListener('offline', onOffline);
+		this.removeNetworkListeners.push(() => globalThis.removeEventListener?.('offline', onOffline));
 
 		// Online detection - reconnect immediately when network is restored
-		win.addEventListener('online', () => {
+		const onOnline = () => {
+			if (this.disposed || this.skipReconnect) return;
 			if (this.deviceWentOffline) {
 				this.deviceWentOffline = false;
 				if (this.reconnectTimer !== null) {
@@ -801,11 +840,14 @@ export class SocketClient {
 					this.connect();
 				}
 			}
-		});
+		};
+		win.addEventListener('online', onOnline);
+		this.removeNetworkListeners.push(() => globalThis.removeEventListener?.('online', onOnline));
 
 		// Visibility change - skip reconnecting while page is hidden
 		if (win.document && typeof win.document.addEventListener === 'function') {
-			win.document.addEventListener('visibilitychange', () => {
+			const onVisibility = () => {
+				if (this.disposed || this.skipReconnect) return;
 				if (win.document?.visibilityState === 'hidden') {
 					this.pageHidden = true;
 				} else {
@@ -819,7 +861,9 @@ export class SocketClient {
 						this.connect();
 					}
 				}
-			});
+			};
+			win.document.addEventListener('visibilitychange', onVisibility);
+			this.removeNetworkListeners.push(() => globalThis.document?.removeEventListener('visibilitychange', onVisibility));
 		}
 	}
 
